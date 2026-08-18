@@ -47,6 +47,8 @@ public class SecurityConfig {
                 // Public endpoints
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/delivery-zones").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
                 .requestMatchers("/login/oauth2/**", "/oauth2/**").permitAll()
                 // Admin-only

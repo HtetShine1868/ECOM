@@ -17,6 +17,8 @@ public class ProductResponse {
     private Integer stock;
     private BigDecimal cargoPrice;
     private String imageUrl;
+    private Long categoryId;
+    private String categoryName;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -29,6 +31,8 @@ public class ProductResponse {
                 .stock(product.getStock())
                 .cargoPrice(product.getCargoPrice())
                 .imageUrl(product.getImageUrl())
+                .categoryId(product.getCategory() != null ? product.getCategory().getId() : null)
+                .categoryName(product.getCategory() != null ? product.getCategory().getName() : null)
                 .createdAt(product.getCreatedAt())
                 .updatedAt(product.getUpdatedAt())
                 .build();

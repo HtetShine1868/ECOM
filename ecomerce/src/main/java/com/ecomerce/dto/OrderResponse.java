@@ -17,6 +17,8 @@ public class OrderResponse {
     private String customerEmail;
     private String customerPhone;
     private String deliveryAddress;
+    private String townName;
+    private BigDecimal deliveryFee;
     private BigDecimal subtotal;
     private BigDecimal cargoTotal;
     private BigDecimal total;
@@ -57,6 +59,8 @@ public class OrderResponse {
                 .customerEmail(order.getUser().getEmail())
                 .customerPhone(order.getCustomerPhone())
                 .deliveryAddress(order.getDeliveryAddress())
+                .townName(order.getTownName())
+                .deliveryFee(order.getDeliveryFee())
                 .subtotal(order.getSubtotal())
                 .cargoTotal(order.getCargoTotal())
                 .total(order.getTotal())

@@ -1,5 +1,6 @@
 package com.ecomerce.controller;
 
+import com.ecomerce.dto.BestSellerResponse;
 import com.ecomerce.dto.OrderStatusUpdateRequest;
 import com.ecomerce.dto.ProductRequest;
 import com.ecomerce.dto.ProductResponse;
@@ -67,6 +68,22 @@ public class AdminController {
         storageService.deleteProductImage(oldImageUrl);
 
         return ResponseEntity.ok(updated);
+    }
+
+    // ----- Best-Sellers Dashboard (Admin) -----
+
+    /**
+     * GET /api/admin/products/best-sellers
+     * Returns products ranked by total quantity sold — for the admin dashboard.
+     * Optional query params:
+     *   categoryId — filter by category
+     *   limit      — max results (default 20)
+     */
+    @GetMapping("/products/best-sellers")
+    public ResponseEntity<List<BestSellerResponse>> getAdminBestSellers(
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(defaultValue = "20") int limit) {
+        return ResponseEntity.ok(productService.getBestSellers(categoryId, limit));
     }
 
     // ----- Order Management (Admin) -----

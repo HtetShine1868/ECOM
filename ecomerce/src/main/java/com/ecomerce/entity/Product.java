@@ -40,6 +40,11 @@ public class Product {
 
     private String imageUrl;
 
+    /** Optional category — nullable so existing products are unaffected */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id")
+    private Category category;
+
     @CreationTimestamp
     @Column(updatable = false)
     private LocalDateTime createdAt;

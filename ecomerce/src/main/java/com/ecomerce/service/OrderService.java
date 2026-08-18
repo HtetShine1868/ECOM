@@ -24,6 +24,7 @@ public class OrderService {
     private final CartRepository cartRepository;
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
+    private final DeliveryZoneService deliveryZoneService;
 
     @Transactional
     public OrderResponse placeOrder(Long userId, OrderRequest request) {
@@ -35,6 +36,27 @@ public class OrderService {
 
         if (cart.getCartItems().isEmpty()) {
             throw new IllegalArgumentException("Cart is empty. Add items before placing an order.");
+        }
+
+        // Validate that at least one delivery option is provided
+        if (request.getDeliveryZoneId() == null
+                && (request.getCustomDeliveryAddress() == null || request.getCustomDeliveryAddress().isBlank())) {
+            throw new IllegalArgumentException(
+                    "Please select a delivery zone or provide a custom delivery address.");
+        }
+
+        // Resolve delivery zone / address
+        String townName = null;
+        String deliveryAddress;
+        BigDecimal deliveryFee = BigDecimal.ZERO;
+
+        if (request.getDeliveryZoneId() != null) {
+            DeliveryZone zone = deliveryZoneService.resolveZone(request.getDeliveryZoneId());
+            townName = zone.getTownName();
+            deliveryAddress = zone.getTownName();
+            deliveryFee = zone.getFee();
+        } else {
+            deliveryAddress = request.getCustomDeliveryAddress().trim();
         }
 
         // Validate stock and build order items
@@ -72,15 +94,19 @@ public class OrderService {
             productRepository.save(product);
         }
 
+        BigDecimal total = subtotal.add(cargoTotal).add(deliveryFee);
+
         // Create order
         Order order = Order.builder()
                 .user(user)
                 .customerName(request.getCustomerName())
                 .customerPhone(request.getCustomerPhone())
-                .deliveryAddress(request.getDeliveryAddress())
+                .deliveryAddress(deliveryAddress)
+                .townName(townName)
+                .deliveryFee(deliveryFee)
                 .subtotal(subtotal)
                 .cargoTotal(cargoTotal)
-                .total(subtotal.add(cargoTotal))
+                .total(total)
                 .status(Order.OrderStatus.PENDING)
                 .build();
 

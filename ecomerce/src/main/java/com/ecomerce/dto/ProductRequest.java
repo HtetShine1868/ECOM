@@ -24,4 +24,7 @@ public class ProductRequest {
     @NotNull(message = "Cargo price is required")
     @DecimalMin(value = "0.0", message = "Cargo price cannot be negative")
     private BigDecimal cargoPrice;
+
+    /** Optional — ID of a predefined category */
+    private Long categoryId;
 }

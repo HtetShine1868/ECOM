@@ -34,6 +34,14 @@ public class Order {
     @Column(nullable = false)
     private String deliveryAddress;
 
+    /** Town name snapshot from a predefined DeliveryZone (null if custom address) */
+    private String townName;
+
+    /** Delivery fee from the chosen zone (0 if custom address) */
+    @Column(nullable = false, precision = 10, scale = 2)
+    @Builder.Default
+    private BigDecimal deliveryFee = BigDecimal.ZERO;
+
     /** Sum of (unitPrice × quantity) for all items */
     @Column(nullable = false, precision = 15, scale = 2)
     private BigDecimal subtotal;
@@ -42,7 +50,7 @@ public class Order {
     @Column(nullable = false, precision = 15, scale = 2)
     private BigDecimal cargoTotal;
 
-    /** subtotal + cargoTotal */
+    /** subtotal + cargoTotal + deliveryFee */
     @Column(nullable = false, precision = 15, scale = 2)
     private BigDecimal total;
 
