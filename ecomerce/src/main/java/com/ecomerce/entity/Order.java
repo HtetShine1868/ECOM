@@ -38,7 +38,7 @@ public class Order {
     private String townName;
 
     /** Delivery fee from the chosen zone (0 if custom address) */
-    @Column(nullable = false, precision = 10, scale = 2)
+    @Column(nullable = true, precision = 10, scale = 2)
     @Builder.Default
     private BigDecimal deliveryFee = BigDecimal.ZERO;
 

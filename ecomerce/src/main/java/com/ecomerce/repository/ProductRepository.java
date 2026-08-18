@@ -23,8 +23,9 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     // Filter with optional search, category, and price range using a single flexible JPQL query
     @Query("""
             SELECT p FROM Product p
+            LEFT JOIN p.category c
             WHERE (:search IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', :search, '%')))
-            AND (:categoryId IS NULL OR p.category.id = :categoryId)
+            AND (:categoryId IS NULL OR c.id = :categoryId)
             AND (:minPrice IS NULL OR p.price >= :minPrice)
             AND (:maxPrice IS NULL OR p.price <= :maxPrice)
             """)

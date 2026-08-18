@@ -60,7 +60,7 @@ public class OrderResponse {
                 .customerPhone(order.getCustomerPhone())
                 .deliveryAddress(order.getDeliveryAddress())
                 .townName(order.getTownName())
-                .deliveryFee(order.getDeliveryFee())
+                .deliveryFee(order.getDeliveryFee() != null ? order.getDeliveryFee() : java.math.BigDecimal.ZERO)
                 .subtotal(order.getSubtotal())
                 .cargoTotal(order.getCargoTotal())
                 .total(order.getTotal())
