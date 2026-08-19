@@ -38,26 +38,19 @@ public class OrderService {
             throw new IllegalArgumentException("Cart is empty. Add items before placing an order.");
         }
 
-        // Validate that at least one delivery option is provided
-        if (request.getDeliveryZoneId() == null
-                && (request.getCustomDeliveryAddress() == null || request.getCustomDeliveryAddress().isBlank())) {
-            throw new IllegalArgumentException(
-                    "Please select a delivery zone or provide a custom delivery address.");
+        // Validate that both delivery options are provided
+        if (request.getDeliveryZoneId() == null) {
+            throw new IllegalArgumentException("Please select a delivery zone (township).");
+        }
+        if (request.getCustomDeliveryAddress() == null || request.getCustomDeliveryAddress().isBlank()) {
+            throw new IllegalArgumentException("Please provide a specific delivery address (street, block, etc.).");
         }
 
-        // Resolve delivery zone / address
-        String townName = null;
-        String deliveryAddress;
-        BigDecimal deliveryFee = BigDecimal.ZERO;
-
-        if (request.getDeliveryZoneId() != null) {
-            DeliveryZone zone = deliveryZoneService.resolveZone(request.getDeliveryZoneId());
-            townName = zone.getTownName();
-            deliveryAddress = zone.getTownName();
-            deliveryFee = zone.getFee();
-        } else {
-            deliveryAddress = request.getCustomDeliveryAddress().trim();
-        }
+        // Resolve delivery zone
+        DeliveryZone zone = deliveryZoneService.resolveZone(request.getDeliveryZoneId());
+        String townName = zone.getTownName();
+        String deliveryAddress = request.getCustomDeliveryAddress().trim();
+        BigDecimal deliveryFee = zone.getFee() != null ? zone.getFee() : BigDecimal.ZERO;
 
         // Validate stock and build order items
         List<OrderItem> orderItems = new ArrayList<>();
@@ -77,12 +70,13 @@ public class OrderService {
             BigDecimal lineTotal = product.getPrice()
                     .multiply(BigDecimal.valueOf(cartItem.getQuantity()));
             subtotal = subtotal.add(lineTotal);
-            cargoTotal = cargoTotal.add(product.getCargoPrice());
+            BigDecimal itemCargoPrice = product.getCargoPrice() != null ? product.getCargoPrice() : BigDecimal.ZERO;
+            cargoTotal = cargoTotal.add(itemCargoPrice);
 
             OrderItem orderItem = OrderItem.builder()
                     .productName(product.getName())
                     .unitPrice(product.getPrice())
-                    .cargoPrice(product.getCargoPrice())
+                    .cargoPrice(itemCargoPrice)
                     .productImageUrl(product.getImageUrl())
                     .quantity(cartItem.getQuantity())
                     .product(product)

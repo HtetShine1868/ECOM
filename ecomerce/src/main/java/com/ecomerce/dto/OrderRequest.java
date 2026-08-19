@@ -1,6 +1,7 @@
 package com.ecomerce.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
@@ -12,15 +13,14 @@ public class OrderRequest {
     private String customerPhone;
 
     /**
-     * ID of a predefined DeliveryZone selected from the dropdown.
-     * If provided, the zone's fee is auto-applied and townName is captured.
-     * At least one of deliveryZoneId or customDeliveryAddress must be supplied.
+     * ID of a predefined DeliveryZone (township) selected from the dropdown.
      */
+    @NotNull(message = "Delivery zone (township) is required")
     private Long deliveryZoneId;
 
     /**
-     * Free-text address for locations not in the predefined zone list.
-     * Used when deliveryZoneId is null. Delivery fee will be 0.
+     * Specific street/block/detail location written by the user.
      */
+    @NotBlank(message = "Specific delivery address is required")
     private String customDeliveryAddress;
 }
