@@ -14,6 +14,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
+import jakarta.persistence.criteria.Predicate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,15 +39,23 @@ public class ProductService {
     public Page<ProductResponse> getProducts(String search, Long categoryId,
                                              BigDecimal minPrice, BigDecimal maxPrice,
                                              Pageable pageable) {
-        return productRepository
-                .findWithFilters(
-                        (search != null && !search.isBlank()) ? search : null,
-                        categoryId,
-                        minPrice,
-                        maxPrice,
-                        pageable
-                )
-                .map(ProductResponse::from);
+        Specification<Product> spec = (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            if (search != null && !search.isBlank()) {
+                predicates.add(cb.like(cb.lower(root.get("name")), "%" + search.toLowerCase() + "%"));
+            }
+            if (categoryId != null) {
+                predicates.add(cb.equal(root.get("category").get("id"), categoryId));
+            }
+            if (minPrice != null) {
+                predicates.add(cb.greaterThanOrEqualTo(root.get("price"), minPrice));
+            }
+            if (maxPrice != null) {
+                predicates.add(cb.lessThanOrEqualTo(root.get("price"), maxPrice));
+            }
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+        return productRepository.findAll(spec, pageable).map(ProductResponse::from);
     }
 
     public ProductResponse getProductById(Long id) {
@@ -120,7 +130,12 @@ public class ProductService {
      */
     public List<BestSellerResponse> getBestSellers(Long categoryId, int limit) {
         Pageable pageable = PageRequest.of(0, limit, Sort.unsorted());
-        List<Object[]> rows = orderItemRepository.findTopSellingProductIds(categoryId, pageable);
+        List<Object[]> rows;
+        if (categoryId != null) {
+            rows = orderItemRepository.findTopSellingProductIdsByCategory(categoryId, pageable);
+        } else {
+            rows = orderItemRepository.findTopSellingProductIds(pageable);
+        }
 
         List<BestSellerResponse> result = new ArrayList<>();
         for (Object[] row : rows) {

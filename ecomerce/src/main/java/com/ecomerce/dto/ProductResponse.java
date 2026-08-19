@@ -19,10 +19,12 @@ public class ProductResponse {
     private String imageUrl;
     private Long categoryId;
     private String categoryName;
+    private String category; // alias for frontend compatibility
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
     public static ProductResponse from(Product product) {
+        String catName = product.getCategory() != null ? product.getCategory().getName() : null;
         return ProductResponse.builder()
                 .id(product.getId())
                 .name(product.getName())
@@ -32,7 +34,8 @@ public class ProductResponse {
                 .cargoPrice(product.getCargoPrice())
                 .imageUrl(product.getImageUrl())
                 .categoryId(product.getCategory() != null ? product.getCategory().getId() : null)
-                .categoryName(product.getCategory() != null ? product.getCategory().getName() : null)
+                .categoryName(catName)
+                .category(catName)
                 .createdAt(product.getCreatedAt())
                 .updatedAt(product.getUpdatedAt())
                 .build();

@@ -12,18 +12,27 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
 
     /**
      * Returns [productId, totalSold] pairs ordered by totalSold DESC.
-     * Filters by categoryId if provided; excludes orphaned items (product IS NOT NULL).
+     * Excludes orphaned items (product IS NOT NULL).
      */
     @Query("""
             SELECT oi.product.id, SUM(oi.quantity) as totalSold
             FROM OrderItem oi
             WHERE oi.product IS NOT NULL
-            AND (:categoryId IS NULL OR oi.product.category.id = :categoryId)
             GROUP BY oi.product.id
             ORDER BY totalSold DESC
             """)
-    List<Object[]> findTopSellingProductIds(
-            @Param("categoryId") Long categoryId,
-            Pageable pageable
-    );
+    List<Object[]> findTopSellingProductIds(Pageable pageable);
+
+    /**
+     * Returns [productId, totalSold] pairs ordered by totalSold DESC for a specific category.
+     */
+    @Query("""
+            SELECT oi.product.id, SUM(oi.quantity) as totalSold
+            FROM OrderItem oi
+            WHERE oi.product IS NOT NULL
+            AND oi.product.category.id = :categoryId
+            GROUP BY oi.product.id
+            ORDER BY totalSold DESC
+            """)
+    List<Object[]> findTopSellingProductIdsByCategory(@Param("categoryId") Long categoryId, Pageable pageable);
 }
