@@ -35,7 +35,7 @@ public class OrderItem {
     private BigDecimal unitPrice;
 
     /** Purchase-time cargo price snapshot */
-    @Column(nullable = false, precision = 10, scale = 2)
+    @Column(nullable = true, precision = 10, scale = 2)
     private BigDecimal cargoPrice;
 
     private String productImageUrl;

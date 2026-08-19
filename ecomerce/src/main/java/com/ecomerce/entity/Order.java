@@ -47,7 +47,7 @@ public class Order {
     private BigDecimal subtotal;
 
     /** Sum of cargoPrice for all items */
-    @Column(nullable = false, precision = 15, scale = 2)
+    @Column(nullable = true, precision = 15, scale = 2)
     private BigDecimal cargoTotal;
 
     /** subtotal + cargoTotal + deliveryFee */
