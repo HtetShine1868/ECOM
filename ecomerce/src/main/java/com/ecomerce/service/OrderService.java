@@ -70,7 +70,7 @@ public class OrderService {
             BigDecimal lineTotal = product.getPrice()
                     .multiply(BigDecimal.valueOf(cartItem.getQuantity()));
             subtotal = subtotal.add(lineTotal);
-            BigDecimal itemCargoPrice = product.getCargoPrice() != null ? product.getCargoPrice() : BigDecimal.ZERO;
+            BigDecimal itemCargoPrice = BigDecimal.ZERO;
             cargoTotal = cargoTotal.add(itemCargoPrice);
 
             OrderItem orderItem = OrderItem.builder()

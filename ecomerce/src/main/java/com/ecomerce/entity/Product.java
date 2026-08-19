@@ -34,7 +34,7 @@ public class Product {
     @Builder.Default
     private Integer stock = 0;
 
-    @Column(nullable = false, precision = 10, scale = 2)
+    @Column(nullable = true, precision = 10, scale = 2)
     @Builder.Default
     private BigDecimal cargoPrice = BigDecimal.ZERO;
 

@@ -105,7 +105,7 @@ public class CartService {
                         .productName(item.getProduct().getName())
                         .productImageUrl(item.getProduct().getImageUrl())
                         .unitPrice(item.getProduct().getPrice())
-                        .cargoPrice(item.getProduct().getCargoPrice())
+                        .cargoPrice(BigDecimal.ZERO) // ignore individual product cargo price
                         .quantity(item.getQuantity())
                         .lineTotal(item.getProduct().getPrice()
                                 .multiply(BigDecimal.valueOf(item.getQuantity())))
@@ -116,9 +116,7 @@ public class CartService {
                 .map(CartResponse.CartItemResponse::getLineTotal)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        BigDecimal cargoTotal = itemResponses.stream()
-                .map(CartResponse.CartItemResponse::getCargoPrice)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal cargoTotal = BigDecimal.ZERO; // ignore individual product cargo price
 
         int totalItems = itemResponses.stream()
                 .mapToInt(CartResponse.CartItemResponse::getQuantity)
