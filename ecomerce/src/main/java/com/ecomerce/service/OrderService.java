@@ -54,18 +54,26 @@ public class OrderService {
         BigDecimal deliveryFee = zone.getFee() != null ? zone.getFee() : BigDecimal.ZERO;
 
         // Validate stock and build order items
+        if (cart.getCartItems() == null || cart.getCartItems().isEmpty()) {
+            throw new IllegalArgumentException("Your cart is empty. Please add items to your cart before placing an order.");
+        }
+
         List<OrderItem> orderItems = new ArrayList<>();
         BigDecimal subtotal = BigDecimal.ZERO;
         BigDecimal cargoTotal = BigDecimal.ZERO;
 
         for (CartItem cartItem : cart.getCartItems()) {
+            if (cartItem.getProduct() == null) {
+                continue;
+            }
             Product product = productRepository.findById(cartItem.getProduct().getId())
                     .orElseThrow(() -> new ResourceNotFoundException(
                             "Product not found: " + cartItem.getProduct().getId()));
 
-            if (product.getStock() < cartItem.getQuantity()) {
+            int currentStock = product.getStock() != null ? product.getStock() : 0;
+            if (currentStock < cartItem.getQuantity()) {
                 throw new InsufficientStockException(
-                        product.getName(), cartItem.getQuantity(), product.getStock());
+                        product.getName(), cartItem.getQuantity(), currentStock);
             }
 
             BigDecimal lineTotal = product.getPrice()
@@ -85,7 +93,7 @@ public class OrderService {
             orderItems.add(orderItem);
 
             // Decrement stock
-            product.setStock(product.getStock() - cartItem.getQuantity());
+            product.setStock(currentStock - cartItem.getQuantity());
             productRepository.save(product);
         }
 
