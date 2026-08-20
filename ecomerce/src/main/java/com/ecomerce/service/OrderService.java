@@ -5,7 +5,6 @@ import com.ecomerce.dto.OrderResponse;
 import com.ecomerce.entity.*;
 import com.ecomerce.exception.InsufficientStockException;
 import com.ecomerce.exception.ResourceNotFoundException;
-import com.ecomerce.exception.UnauthorizedException;
 import com.ecomerce.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -22,7 +21,6 @@ import java.util.stream.Collectors;
 public class OrderService {
 
     private final OrderRepository orderRepository;
-    private final CartRepository cartRepository;
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
     private final DeliveryZoneService deliveryZoneService;
@@ -32,11 +30,9 @@ public class OrderService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        Cart cart = cartRepository.findByUserId(userId)
-                .orElseThrow(() -> new IllegalArgumentException("Cart is empty. Add items before placing an order."));
-
-        if (cart.getCartItems().isEmpty()) {
-            throw new IllegalArgumentException("Cart is empty. Add items before placing an order.");
+        // Validate that items were provided
+        if (request.getItems() == null || request.getItems().isEmpty()) {
+            throw new IllegalArgumentException("Your cart is empty. Please add items to your cart before placing an order.");
         }
 
         // Validate that both delivery options are provided
@@ -53,31 +49,24 @@ public class OrderService {
         String deliveryAddress = request.getCustomDeliveryAddress().trim();
         BigDecimal deliveryFee = zone.getFee() != null ? zone.getFee() : BigDecimal.ZERO;
 
-        // Validate stock and build order items
-        if (cart.getCartItems() == null || cart.getCartItems().isEmpty()) {
-            throw new IllegalArgumentException("Your cart is empty. Please add items to your cart before placing an order.");
-        }
-
+        // Validate stock and build order items from request payload
         List<OrderItem> orderItems = new ArrayList<>();
         BigDecimal subtotal = BigDecimal.ZERO;
         BigDecimal cargoTotal = BigDecimal.ZERO;
 
-        for (CartItem cartItem : cart.getCartItems()) {
-            if (cartItem.getProduct() == null) {
-                continue;
-            }
-            Product product = productRepository.findById(cartItem.getProduct().getId())
+        for (OrderRequest.OrderItemRequest itemReq : request.getItems()) {
+            Product product = productRepository.findById(itemReq.getProductId())
                     .orElseThrow(() -> new ResourceNotFoundException(
-                            "Product not found: " + cartItem.getProduct().getId()));
+                            "Product not found: " + itemReq.getProductId()));
 
             int currentStock = product.getStock() != null ? product.getStock() : 0;
-            if (currentStock < cartItem.getQuantity()) {
+            if (currentStock < itemReq.getQuantity()) {
                 throw new InsufficientStockException(
-                        product.getName(), cartItem.getQuantity(), currentStock);
+                        product.getName(), itemReq.getQuantity(), currentStock);
             }
 
             BigDecimal lineTotal = product.getPrice()
-                    .multiply(BigDecimal.valueOf(cartItem.getQuantity()));
+                    .multiply(BigDecimal.valueOf(itemReq.getQuantity()));
             subtotal = subtotal.add(lineTotal);
             BigDecimal itemCargoPrice = BigDecimal.ZERO;
             cargoTotal = cargoTotal.add(itemCargoPrice);
@@ -87,13 +76,13 @@ public class OrderService {
                     .unitPrice(product.getPrice())
                     .cargoPrice(itemCargoPrice)
                     .productImageUrl(product.getImageUrl())
-                    .quantity(cartItem.getQuantity())
+                    .quantity(itemReq.getQuantity())
                     .product(product)
                     .build();
             orderItems.add(orderItem);
 
             // Decrement stock
-            product.setStock(currentStock - cartItem.getQuantity());
+            product.setStock(currentStock - itemReq.getQuantity());
             productRepository.save(product);
         }
 
@@ -121,10 +110,6 @@ public class OrderService {
         }
         order.setOrderItems(orderItems);
         order = orderRepository.save(order);
-
-        // Clear cart
-        cart.getCartItems().clear();
-        cartRepository.save(cart);
 
         return OrderResponse.from(order);
     }
