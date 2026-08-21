@@ -34,8 +34,12 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
         String email = oAuth2User.getAttribute("email");
         String name = oAuth2User.getAttribute("name");
-        String sub = oAuth2User.getAttribute("sub"); // Google subject ID
         String provider = determineProvider(request);
+
+        // Google uses "sub", Facebook uses "id" as the subject identifier
+        String providerId = "facebook".equals(provider)
+                ? oAuth2User.getAttribute("id")
+                : oAuth2User.getAttribute("sub");
 
         // Upsert user
         User user = userRepository.findByEmail(email).orElseGet(() -> {
@@ -43,13 +47,14 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
                     .email(email)
                     .name(name != null ? name : email)
                     .provider(provider)
-                    .providerId(sub)
+                    .providerId(providerId)
                     .role(User.Role.BUYER)
                     .build();
             return userRepository.save(newUser);
         });
 
-        String token = jwtUtil.generateToken(user.getEmail(), user.getRole().name(), user.getId());
+        // Include the user's display name in the token so the FE can use it
+        String token = jwtUtil.generateToken(user.getEmail(), user.getRole().name(), user.getId(), user.getName());
 
         // Redirect to frontend with token as query param
         String redirectUrl = frontendUrl + "/oauth2/callback?token=" + token;

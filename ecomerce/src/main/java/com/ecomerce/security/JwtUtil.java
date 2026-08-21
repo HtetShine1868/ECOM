@@ -25,10 +25,18 @@ public class JwtUtil {
     }
 
     public String generateToken(String email, String role, Long userId) {
-        return Jwts.builder()
+        return generateToken(email, role, userId, null);
+    }
+
+    public String generateToken(String email, String role, Long userId, String name) {
+        var builder = Jwts.builder()
                 .subject(email)
                 .claim("role", role)
-                .claim("userId", userId)
+                .claim("userId", userId);
+        if (name != null) {
+            builder.claim("name", name);
+        }
+        return builder
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + expirationMs))
                 .signWith(key)
