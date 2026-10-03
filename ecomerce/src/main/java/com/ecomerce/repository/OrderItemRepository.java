@@ -18,6 +18,7 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
             SELECT oi.product.id, SUM(oi.quantity) as totalSold
             FROM OrderItem oi
             WHERE oi.product IS NOT NULL
+            AND oi.order.status <> com.ecomerce.entity.Order.OrderStatus.CANCELLED
             GROUP BY oi.product.id
             ORDER BY totalSold DESC
             """)
@@ -30,6 +31,7 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
             SELECT oi.product.id, SUM(oi.quantity) as totalSold
             FROM OrderItem oi
             WHERE oi.product IS NOT NULL
+            AND oi.order.status <> com.ecomerce.entity.Order.OrderStatus.CANCELLED
             AND oi.product.category.id = :categoryId
             GROUP BY oi.product.id
             ORDER BY totalSold DESC

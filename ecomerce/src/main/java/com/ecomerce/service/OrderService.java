@@ -30,6 +30,16 @@ public class OrderService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
+        if (request.getIdempotencyKey() != null && !request.getIdempotencyKey().isBlank()) {
+            var existing = orderRepository.findByIdempotencyKey(request.getIdempotencyKey().trim());
+            if (existing.isPresent()) {
+                if (!existing.get().getUser().getId().equals(userId)) {
+                    throw new IllegalArgumentException("Something went wrong. Please try again.");
+                }
+                return OrderResponse.from(existing.get());
+            }
+        }
+
         // Validate that items were provided
         if (request.getItems() == null || request.getItems().isEmpty()) {
             throw new IllegalArgumentException("Your cart is empty. Please add items to your cart before placing an order.");
@@ -68,8 +78,10 @@ public class OrderService {
             BigDecimal lineTotal = product.getPrice()
                     .multiply(BigDecimal.valueOf(itemReq.getQuantity()));
             subtotal = subtotal.add(lineTotal);
-            BigDecimal itemCargoPrice = BigDecimal.ZERO;
-            cargoTotal = cargoTotal.add(itemCargoPrice);
+            BigDecimal itemCargoPrice = product.getCargoPrice() != null
+                    ? product.getCargoPrice()
+                    : BigDecimal.ZERO;
+            cargoTotal = cargoTotal.add(itemCargoPrice.multiply(BigDecimal.valueOf(itemReq.getQuantity())));
 
             OrderItem orderItem = OrderItem.builder()
                     .productName(product.getName())
@@ -100,6 +112,9 @@ public class OrderService {
                 .cargoTotal(cargoTotal)
                 .total(total)
                 .status(Order.OrderStatus.PENDING)
+                .idempotencyKey(request.getIdempotencyKey() == null || request.getIdempotencyKey().isBlank()
+                        ? null
+                        : request.getIdempotencyKey().trim())
                 .build();
 
         order = orderRepository.save(order);

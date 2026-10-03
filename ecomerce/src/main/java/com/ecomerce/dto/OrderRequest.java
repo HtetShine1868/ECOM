@@ -34,6 +34,9 @@ public class OrderRequest {
     @NotEmpty(message = "Order must contain at least one item")
     private List<OrderItemRequest> items;
 
+    /** Optional key that makes a repeated checkout return the original order. */
+    private String idempotencyKey;
+
     @Data
     public static class OrderItemRequest {
         @NotNull(message = "Product ID is required")

@@ -1,5 +1,6 @@
 package com.ecomerce.controller;
 
+import com.ecomerce.dto.AnalyticsResponse;
 import com.ecomerce.dto.BestSellerResponse;
 import com.ecomerce.dto.OrderStatusUpdateRequest;
 import com.ecomerce.dto.ProductRequest;
@@ -9,10 +10,12 @@ import com.ecomerce.entity.Order;
 import com.ecomerce.entity.Product;
 import com.ecomerce.repository.UserRepository;
 import com.ecomerce.service.AdminService;
+import com.ecomerce.service.AnalyticsService;
 import com.ecomerce.service.ProductService;
 import com.ecomerce.service.StorageService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -32,6 +35,7 @@ public class AdminController {
     private final ProductService productService;
     private final StorageService storageService;
     private final AdminService adminService;
+    private final AnalyticsService analyticsService;
     private final UserRepository userRepository;
 
     // ----- Product Management -----
@@ -83,7 +87,7 @@ public class AdminController {
     public ResponseEntity<List<BestSellerResponse>> getAdminBestSellers(
             @RequestParam(required = false) Long categoryId,
             @RequestParam(defaultValue = "20") int limit) {
-        return ResponseEntity.ok(productService.getBestSellers(categoryId, limit));
+        return ResponseEntity.ok(productService.getBestSellers(categoryId, limit, false));
     }
 
     // ----- Order Management (Admin) -----
@@ -103,5 +107,14 @@ public class AdminController {
                                                             @Valid @RequestBody OrderStatusUpdateRequest request) {
         OrderResponse updated = adminService.updateOrderStatus(id, request.getStatus());
         return ResponseEntity.ok(updated);
+    }
+
+    @GetMapping("/analytics")
+    public ResponseEntity<AnalyticsResponse> analytics(
+            @RequestParam(defaultValue = "last30") String range,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) java.time.LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) java.time.LocalDate to,
+            @RequestParam(defaultValue = "5") int lowStockThreshold) {
+        return ResponseEntity.ok(analyticsService.summarize(range, from, to, lowStockThreshold));
     }
 }

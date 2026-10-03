@@ -1,0 +1,18 @@
+﻿@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom globals */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Glassmorphism utility */
+@layer utilities {
+  .glass {
+    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+  }
+}

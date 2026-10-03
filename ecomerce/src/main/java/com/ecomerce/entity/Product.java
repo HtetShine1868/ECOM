@@ -3,6 +3,7 @@ package com.ecomerce.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.Formula;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
@@ -44,6 +45,17 @@ public class Product {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
     private Category category;
+
+    /**
+     * Purchase-based popularity. Units sold weigh more than order count,
+     * and sales from the last 30 days add a recency boost. Cancelled orders
+     * are excluded. Computed in the database so the frontend cannot invent it.
+     */
+    @Formula("(select coalesce(sum(oi.quantity),0) * 3 + count(distinct oi.order_id) * 2 + coalesce(sum(case when o.order_date >= (now() - interval '30 days') then oi.quantity else 0 end),0) from order_items oi join orders o on o.id = oi.order_id where oi.product_id = id and o.status <> 'CANCELLED')")
+    private Long popularityScore;
+
+    @Formula("(select coalesce(sum(oi.quantity),0) from order_items oi join orders o on o.id = oi.order_id where oi.product_id = id and o.status <> 'CANCELLED')")
+    private Long unitsSold;
 
     @CreationTimestamp
     @Column(updatable = false)

@@ -36,17 +36,23 @@ public class ProductController {
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) BigDecimal minPrice,
             @RequestParam(required = false) BigDecimal maxPrice,
+            @RequestParam(required = false) Boolean inStock,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "12") int size,
-            @RequestParam(defaultValue = "createdAt") String sortBy,
-            @RequestParam(defaultValue = "desc") String direction) {
+            @RequestParam(defaultValue = "newest") String sort) {
 
-        Sort sort = direction.equalsIgnoreCase("asc")
-                ? Sort.by(sortBy).ascending()
-                : Sort.by(sortBy).descending();
+        int safeSize = Math.min(Math.max(size, 1), 100);
+        int safePage = Math.max(page, 0);
+        PageRequest pageable = PageRequest.of(safePage, safeSize, resolveSort(sort));
+        return ResponseEntity.ok(productService.getProducts(
+                search, categoryId, minPrice, maxPrice, inStock, pageable));
+    }
 
-        PageRequest pageable = PageRequest.of(page, size, sort);
-        return ResponseEntity.ok(productService.getProducts(search, categoryId, minPrice, maxPrice, pageable));
+    @GetMapping("/{id}/related")
+    public ResponseEntity<List<ProductResponse>> getRelated(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "4") int limit) {
+        return ResponseEntity.ok(productService.getRelatedProducts(id, limit));
     }
 
     @GetMapping("/{id}")
@@ -65,6 +71,19 @@ public class ProductController {
     public ResponseEntity<List<BestSellerResponse>> getBestSellers(
             @RequestParam(required = false) Long categoryId,
             @RequestParam(defaultValue = "10") int limit) {
-        return ResponseEntity.ok(productService.getBestSellers(categoryId, limit));
+        return ResponseEntity.ok(productService.getBestSellers(categoryId, limit, true));
+    }
+
+    private Sort resolveSort(String sort) {
+        return switch (sort == null ? "newest" : sort) {
+            case "price_asc", "price-asc" -> Sort.by("price").ascending();
+            case "price_desc", "price-desc" -> Sort.by("price").descending();
+            case "name_asc", "name-asc" -> Sort.by("name").ascending();
+            case "name_desc", "name-desc" -> Sort.by("name").descending();
+            case "popular", "popularity" -> Sort.by(
+                    Sort.Order.desc("popularityScore"), Sort.Order.desc("createdAt"));
+            case "oldest" -> Sort.by("createdAt").ascending();
+            default -> Sort.by("createdAt").descending();
+        };
     }
 }

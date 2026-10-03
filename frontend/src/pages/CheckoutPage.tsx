@@ -1,0 +1,287 @@
+import { useState, useMemo, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { useCart } from "../context/CartContext";
+import { useAuth } from "../context/AuthContext";
+import { orderApi } from "../api/orders";
+import type { DeliveryZoneApi } from "../api/orders";
+import { formatMMK } from "../utils/format";
+
+
+
+export default function CheckoutPage() {
+  const { items, totalPrice, clearCart } = useCart();
+  const { isAuthenticated, user } = useAuth();
+  const navigate = useNavigate();
+
+  // Load zones from backend API
+  const [zones, setZones] = useState<DeliveryZoneApi[]>([]);
+  useEffect(() => {
+    orderApi.getActiveDeliveryZones().then((z) => {
+      if (Array.isArray(z)) setZones(z);
+    }).catch(() => {
+      // non-fatal — zones just won'"'"'t show, user can still use custom address
+    });
+  }, []);
+
+  const [customerName, setCustomerName] = useState(user?.name ?? "");
+  const [customerPhone, setCustomerPhone] = useState("");
+
+  // Delivery fields
+  const [selectedZoneId, setSelectedZoneId] = useState<number | "">("");
+  const [otherAddress, setOtherAddress] = useState("");
+
+  const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false);
+  const idempotencyKey = useRef(
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : String(Date.now())
+  );
+  const [error, setError] = useState("");
+
+  // ── Derived values ─────────────────────────────────────────────────────────
+  const selectedZone = useMemo(
+    () => zones.find((z) => z.id === selectedZoneId) ?? null,
+    [zones, selectedZoneId]
+  );
+
+  const deliveryFee = selectedZone ? selectedZone.fee : 0;
+  const cargoTotal = items.reduce(
+    (sum, item) => sum + (item.product.cargoPrice || 0) * item.quantity,
+    0
+  );
+  const grandTotal = totalPrice + cargoTotal + deliveryFee;
+
+
+
+  // ── Submit ──────────────────────────────────────────────────────────────────
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isAuthenticated) {
+      navigate("/login");
+      return;
+    }
+    if (!customerName.trim()) {
+      setError("Please enter your name");
+      return;
+    }
+    if (selectedZoneId === "") {
+      setError("Please select a delivery township");
+      return;
+    }
+    if (!otherAddress.trim()) {
+      setError("Please enter your specific delivery address (street, block, etc.)");
+      return;
+    }
+    if (submittingRef.current) return;
+    submittingRef.current = true;
+
+    setSubmitting(true);
+    setError("");
+    try {
+      const order = await orderApi.create({
+        customerName: customerName.trim(),
+        customerPhone: customerPhone.trim() || undefined,
+        deliveryZoneId: selectedZoneId as number,
+        customDeliveryAddress: otherAddress.trim(),
+        idempotencyKey: idempotencyKey.current,
+        items: items.map((i) => ({ productId: i.product.id, quantity: i.quantity })),
+      });
+      clearCart();
+      navigate("/receipt/" + order.id);
+    } catch (err: unknown) {
+      const msg =
+        err && typeof err === "object" && "message" in err
+          ? (err as { message: string }).message
+          : "Failed to place order";
+      setError(msg);
+      submittingRef.current = false;
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // ── Empty cart guard ────────────────────────────────────────────────────────
+  if (items.length === 0) {
+    return (
+      <div className="bg-surface-50 dark:bg-surface-900 min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-2">Cart is Empty</h1>
+          <p className="text-gray-400 mb-4">Add some products before checking out</p>
+          <button
+            onClick={() => navigate("/products")}
+            className="rounded-xl bg-primary-500 px-6 py-2.5 text-sm font-semibold text-white shadow-glow hover:bg-primary-600 transition-colors"
+          >
+            Browse Products
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+
+
+  // ── Render ──────────────────────────────────────────────────────────────────
+  return (
+    <div className="bg-surface-50 dark:bg-surface-900 min-h-screen p-6">
+      <div className="mx-auto max-w-3xl">
+        <h1 className="font-display text-4xl font-bold mb-8">Checkout</h1>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+
+          {/* ── Order Summary ─────────────────────────────────────────────── */}
+          <div className="rounded-2xl bg-white dark:bg-surface-800/50 p-6 shadow-lg">
+            <h2 className="font-semibold text-lg mb-4">Order Summary</h2>
+            <ul className="divide-y divide-surface-100 dark:divide-surface-800">
+              {items.map((item) => (
+                <li key={item.product.id} className="flex items-center gap-3 py-3">
+                  {item.product.imageUrl && (
+                    <img
+                      src={item.product.imageUrl}
+                      alt={item.product.name}
+                      className="h-12 w-12 rounded-lg object-cover flex-shrink-0"
+                    />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <span className="font-medium text-sm">{item.product.name}</span>
+                    <span className="ml-2 text-xs text-gray-400">× {item.quantity}</span>
+                  </div>
+                  <span className="font-medium text-sm">
+                    {formatMMK(item.product.price * item.quantity)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+
+            <div className="mt-4 border-t border-surface-100 dark:border-surface-800 pt-4 space-y-2">
+              <div className="flex justify-between text-sm text-gray-500">
+                <span>Products Subtotal</span>
+                <span>{formatMMK(totalPrice)}</span>
+              </div>
+              {cargoTotal > 0 && (
+                <div className="flex justify-between text-sm text-gray-500">
+                  <span>Cargo</span>
+                  <span>{formatMMK(cargoTotal)}</span>
+                </div>
+              )}
+
+              {/* Town delivery fee line — only visible when a zone is selected */}
+              {selectedZone && (
+                <div className="flex justify-between text-sm text-gray-500">
+                  <span className="flex items-center gap-1.5">
+                    <span>🚚</span>
+                    <span>Delivery Fee ({selectedZone.townName})</span>
+                  </span>
+                  <span className="font-medium text-primary-600">{formatMMK(deliveryFee)}</span>
+                </div>
+              )}
+
+              <div className="flex justify-between text-lg font-bold pt-2 border-t border-surface-100 dark:border-surface-800">
+                <span>Grand Total</span>
+                <span className="text-primary-600">{formatMMK(grandTotal)}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Customer Information ───────────────────────────────────────── */}
+          <div className="rounded-2xl bg-white dark:bg-surface-800/50 p-6 shadow-lg">
+            <h2 className="font-semibold text-lg mb-4">Your Information</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1.5">
+                  Full Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                  placeholder="Enter your full name"
+                  className="w-full rounded-xl border border-surface-100 dark:border-surface-800 bg-surface-50 dark:bg-surface-900 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/40 transition-shadow"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Phone Number</label>
+                <input
+                  type="tel"
+                  value={customerPhone}
+                  onChange={(e) => setCustomerPhone(e.target.value)}
+                  placeholder="e.g. 09xxxxxxxxx"
+                  className="w-full rounded-xl border border-surface-100 dark:border-surface-800 bg-surface-50 dark:bg-surface-900 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/40 transition-shadow"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* ── Delivery Location ──────────────────────────────────────────── */}
+          <div className="rounded-2xl bg-white dark:bg-surface-800/50 p-6 shadow-lg space-y-4">
+            <h2 className="font-semibold text-lg">Delivery Location</h2>
+
+            {/* Town dropdown */}
+            <div>
+              <label className="block text-sm font-medium mb-1.5">
+                Select Your Township <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={selectedZoneId === "" ? "" : String(selectedZoneId)}
+                onChange={(e) => {
+                  setSelectedZoneId(e.target.value === "" ? "" : Number(e.target.value));
+                  setError("");
+                }}
+                className="w-full rounded-xl border border-surface-100 dark:border-surface-800 bg-surface-50 dark:bg-surface-900 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/40 transition-shadow"
+              >
+                <option value="">— Choose a township —</option>
+                {zones.map((z) => (
+                  <option key={z.id} value={z.id}>
+                    {z.townName} — {formatMMK(z.fee)}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Delivery fee chip — auto-filled */}
+            {selectedZone && (
+              <div className="flex items-center gap-2 rounded-xl bg-primary-50 dark:bg-primary-900/20 px-4 py-3 text-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <span className="text-primary-700 dark:text-primary-300">
+                  Delivery fee for <strong>{selectedZone.townName}</strong>:{" "}
+                  <strong>{formatMMK(selectedZone.fee)}</strong>
+                </span>
+              </div>
+            )}
+
+            {/* Address text field — always required */}
+            <div>
+              <label className="block text-sm font-medium mb-1.5">
+                Specific Location / Street Address <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                value={otherAddress}
+                onChange={(e) => setOtherAddress(e.target.value)}
+                placeholder="e.g. No. 12, Yadanar Street, Block 4"
+                rows={3}
+                className="w-full rounded-xl border border-surface-100 dark:border-surface-800 bg-surface-50 dark:bg-surface-900 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/40 transition-shadow resize-none"
+              />
+            </div>
+          </div>
+
+          {error && (
+            <div className="rounded-xl bg-red-50 dark:bg-red-900/20 p-4 text-sm text-red-600 dark:text-red-400">
+              {error}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={submitting}
+            className="w-full rounded-xl bg-primary-500 py-3.5 text-sm font-semibold text-white shadow-glow hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {submitting ? "Placing Order..." : "Confirm Purchase"}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}

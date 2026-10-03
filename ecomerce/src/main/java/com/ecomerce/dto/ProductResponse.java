@@ -20,6 +20,7 @@ public class ProductResponse {
     private Long categoryId;
     private String categoryName;
     private String category; // alias for frontend compatibility
+    private Long unitsSold;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -36,6 +37,7 @@ public class ProductResponse {
                 .categoryId(product.getCategory() != null ? product.getCategory().getId() : null)
                 .categoryName(catName)
                 .category(catName)
+                .unitsSold(product.getUnitsSold() == null ? 0L : product.getUnitsSold())
                 .createdAt(product.getCreatedAt())
                 .updatedAt(product.getUpdatedAt())
                 .build();

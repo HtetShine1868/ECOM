@@ -59,6 +59,10 @@ public class Order {
     @Builder.Default
     private OrderStatus status = OrderStatus.PENDING;
 
+    /** Client-generated key so a double submit returns the same order. */
+    @Column(unique = true)
+    private String idempotencyKey;
+
     @CreationTimestamp
     @Column(updatable = false)
     private LocalDateTime orderDate;

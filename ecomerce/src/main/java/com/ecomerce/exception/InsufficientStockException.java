@@ -6,7 +6,8 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 @ResponseStatus(HttpStatus.BAD_REQUEST)
 public class InsufficientStockException extends RuntimeException {
     public InsufficientStockException(String productName, int requested, int available) {
-        super(String.format("Insufficient stock for '%s': requested %d, available %d",
-                productName, requested, available));
+        super(available <= 0
+                ? "This product is currently out of stock."
+                : "Only " + available + " units of " + productName + " are available.");
     }
 }
