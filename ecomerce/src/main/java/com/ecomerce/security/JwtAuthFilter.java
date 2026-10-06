@@ -1,5 +1,7 @@
 package com.ecomerce.security;
 
+import com.ecomerce.entity.User;
+import com.ecomerce.repository.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -23,6 +25,8 @@ import java.util.List;
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
+    private final AuthCookieService authCookieService;
+    private final UserRepository userRepository;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -33,18 +37,20 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         if (StringUtils.hasText(token) && jwtUtil.isTokenValid(token)) {
             String email = jwtUtil.extractEmail(token);
-            String role = jwtUtil.extractRole(token);
-
-            var authority = new SimpleGrantedAuthority("ROLE_" + role);
-            var userDetails = new org.springframework.security.core.userdetails.User(
-                    email, "", List.of(authority));
-            var authentication = new UsernamePasswordAuthenticationToken(
-                    userDetails, null, List.of(authority));
-            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+            userRepository.findByEmail(email).ifPresent(user -> authenticate(request, user));
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private void authenticate(HttpServletRequest request, User user) {
+        var authority = new SimpleGrantedAuthority("ROLE_" + user.getRole().name());
+        var userDetails = new org.springframework.security.core.userdetails.User(
+                user.getEmail(), "", List.of(authority));
+        var authentication = new UsernamePasswordAuthenticationToken(
+                userDetails, null, List.of(authority));
+        authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+        SecurityContextHolder.getContext().setAuthentication(authentication);
     }
 
     private String extractToken(HttpServletRequest request) {
@@ -52,6 +58,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         if (StringUtils.hasText(header) && header.startsWith("Bearer ")) {
             return header.substring(7);
         }
-        return null;
+        return authCookieService.readToken(request);
     }
 }

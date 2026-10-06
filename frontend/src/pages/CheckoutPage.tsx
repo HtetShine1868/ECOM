@@ -104,15 +104,15 @@ export default function CheckoutPage() {
   // ── Empty cart guard ────────────────────────────────────────────────────────
   if (items.length === 0) {
     return (
-      <div className="bg-surface-50 dark:bg-surface-900 min-h-screen flex items-center justify-center">
+      <div className="flex min-h-[50vh] items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-2">Cart is Empty</h1>
-          <p className="text-gray-400 mb-4">Add some products before checking out</p>
+          <h1 className="mb-2 font-display text-2xl font-semibold">Your bag is empty</h1>
+          <p className="mb-4 text-stone-500">Add something from the shop first.</p>
           <button
             onClick={() => navigate("/products")}
-            className="rounded-xl bg-primary-500 px-6 py-2.5 text-sm font-semibold text-white shadow-glow hover:bg-primary-600 transition-colors"
+            className="btn-primary"
           >
-            Browse Products
+            Browse the shop
           </button>
         </div>
       </div>
@@ -123,14 +123,14 @@ export default function CheckoutPage() {
 
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
-    <div className="bg-surface-50 dark:bg-surface-900 min-h-screen p-6">
+    <div className="p-4 md:p-6">
       <div className="mx-auto max-w-3xl">
-        <h1 className="font-display text-4xl font-bold mb-8">Checkout</h1>
+        <h1 className="mb-8 font-display text-3xl font-semibold md:text-4xl">Checkout</h1>
 
         <form onSubmit={handleSubmit} className="space-y-6">
 
           {/* ── Order Summary ─────────────────────────────────────────────── */}
-          <div className="rounded-2xl bg-white dark:bg-surface-800/50 p-6 shadow-lg">
+          <div className="shop-card p-6">
             <h2 className="font-semibold text-lg mb-4">Order Summary</h2>
             <ul className="divide-y divide-surface-100 dark:divide-surface-800">
               {items.map((item) => (
@@ -184,7 +184,7 @@ export default function CheckoutPage() {
           </div>
 
           {/* ── Customer Information ───────────────────────────────────────── */}
-          <div className="rounded-2xl bg-white dark:bg-surface-800/50 p-6 shadow-lg">
+          <div className="shop-card p-6">
             <h2 className="font-semibold text-lg mb-4">Your Information</h2>
             <div className="space-y-4">
               <div>
@@ -197,7 +197,7 @@ export default function CheckoutPage() {
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
                   placeholder="Enter your full name"
-                  className="w-full rounded-xl border border-surface-100 dark:border-surface-800 bg-surface-50 dark:bg-surface-900 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/40 transition-shadow"
+                  className="field"
                 />
               </div>
               <div>
@@ -207,14 +207,14 @@ export default function CheckoutPage() {
                   value={customerPhone}
                   onChange={(e) => setCustomerPhone(e.target.value)}
                   placeholder="e.g. 09xxxxxxxxx"
-                  className="w-full rounded-xl border border-surface-100 dark:border-surface-800 bg-surface-50 dark:bg-surface-900 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/40 transition-shadow"
+                  className="field"
                 />
               </div>
             </div>
           </div>
 
           {/* ── Delivery Location ──────────────────────────────────────────── */}
-          <div className="rounded-2xl bg-white dark:bg-surface-800/50 p-6 shadow-lg space-y-4">
+          <div className="shop-card space-y-4 p-6">
             <h2 className="font-semibold text-lg">Delivery Location</h2>
 
             {/* Town dropdown */}
@@ -228,7 +228,7 @@ export default function CheckoutPage() {
                   setSelectedZoneId(e.target.value === "" ? "" : Number(e.target.value));
                   setError("");
                 }}
-                className="w-full rounded-xl border border-surface-100 dark:border-surface-800 bg-surface-50 dark:bg-surface-900 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/40 transition-shadow"
+                className="field"
               >
                 <option value="">— Choose a township —</option>
                 {zones.map((z) => (
@@ -262,7 +262,7 @@ export default function CheckoutPage() {
                 onChange={(e) => setOtherAddress(e.target.value)}
                 placeholder="e.g. No. 12, Yadanar Street, Block 4"
                 rows={3}
-                className="w-full rounded-xl border border-surface-100 dark:border-surface-800 bg-surface-50 dark:bg-surface-900 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/40 transition-shadow resize-none"
+                className="field resize-none p-3"
               />
             </div>
           </div>
@@ -276,7 +276,7 @@ export default function CheckoutPage() {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full rounded-xl bg-primary-500 py-3.5 text-sm font-semibold text-white shadow-glow hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="btn-primary w-full py-3.5"
           >
             {submitting ? "Placing Order..." : "Confirm Purchase"}
           </button>

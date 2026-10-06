@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import type { Product } from "../../types";
 import { useCart } from "../../context/CartContext";
 import { formatMMK } from "../../utils/format";
+import { categoryChipClass } from "../../utils/category";
 
 interface ProductCardProps {
   product: Product;
@@ -10,90 +12,83 @@ interface ProductCardProps {
 
 export default function ProductCard({ product, isPopular }: ProductCardProps) {
   const { addItem } = useCart();
+  const [added, setAdded] = useState(false);
+  const isOutOfStock = product.stock === 0;
 
   const handleAdd = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     addItem(product, 1);
+    setAdded(true);
+    window.setTimeout(() => setAdded(false), 1400);
   };
-
-  const isOutOfStock = product.stock === 0;
 
   return (
     <Link
       to={`/products/${product.id}`}
-      className="group flex flex-col overflow-hidden rounded-2xl bg-white dark:bg-surface-800/50 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 animate-fade-in"
+      className="shop-card group flex flex-col overflow-hidden transition duration-200 hover:-translate-y-0.5 hover:border-primary-300"
     >
-      {/* Image */}
-      <div className="relative h-52 overflow-hidden bg-surface-100 dark:bg-surface-800">
+      <div className="relative aspect-[4/5] overflow-hidden bg-primary-50 dark:bg-surface-800">
         <img
-          src={product.imageUrl ?? "https://placehold.co/400x300?text=No+Image"}
+          src={product.imageUrl ?? "https://placehold.co/400x500?text=No+Image"}
           alt={product.name}
-          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+          className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
         />
-
-        {/* Overlay badges — top-left */}
-        <div className="absolute top-2 left-2 flex flex-col gap-1">
+        <div className="absolute left-2 top-2 flex flex-col gap-1">
           {isPopular && (
-            <span className="rounded-full bg-gradient-to-r from-orange-500 to-rose-500 px-2.5 py-0.5 text-xs font-bold text-white shadow-md flex items-center gap-1">
-              🔥 Popular
+            <span className="rounded-full bg-white/95 px-2.5 py-0.5 text-[11px] font-bold text-primary-800">
+              Popular
             </span>
           )}
           {product.category && (
-            <span className="rounded-full bg-primary-600/80 backdrop-blur-sm px-2.5 py-0.5 text-xs font-semibold text-white">
+            <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${categoryChipClass(product.category)}`}>
               {product.category}
             </span>
           )}
         </div>
-
-        {/* Stock overlays — top-right / full overlay */}
         {isOutOfStock && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-            <span className="rounded-full bg-red-500 px-4 py-1.5 text-sm font-bold text-white">
-              OUT OF STOCK
+          <div className="absolute inset-0 flex items-center justify-center bg-stone-900/45">
+            <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-stone-800">
+              Sold out
             </span>
           </div>
         )}
         {!isOutOfStock && product.stock <= 5 && (
-          <div className="absolute top-2 right-2">
-            <span className="rounded-full bg-orange-500 px-2 py-0.5 text-xs font-semibold text-white">
-              Only {product.stock} left
-            </span>
-          </div>
+          <span className="absolute right-2 top-2 rounded-full bg-white/95 px-2.5 py-0.5 text-[11px] font-semibold text-amber-800">
+            {product.stock} left
+          </span>
         )}
       </div>
 
-      {/* Content */}
-      <div className="flex flex-1 flex-col p-4">
-        <h3 className="mb-1 font-semibold text-gray-900 dark:text-gray-100 line-clamp-2 leading-snug">
+      <div className="flex flex-1 flex-col p-3.5">
+        <h3 className="line-clamp-2 font-semibold leading-snug text-stone-900 dark:text-stone-50">
           {product.name}
         </h3>
-        <p className="mb-3 text-xs text-gray-500 dark:text-gray-400 line-clamp-2 flex-1">
+        <p className="mt-1 line-clamp-2 flex-1 text-xs leading-relaxed text-stone-500">
           {product.description}
         </p>
-
-            {product.unitsSold != null && product.unitsSold > 0 && (
-              <p className="mb-2 text-xs font-medium text-orange-500">{product.unitsSold} sold</p>
-            )}
-
-            <div className="mt-auto space-y-3">
-          <div className="flex items-baseline justify-between">
-            <span className="text-lg font-bold text-primary-600 dark:text-primary-400">
+        {product.unitsSold != null && product.unitsSold > 0 && (
+          <p className="mt-2 text-xs text-stone-500">{product.unitsSold} sold</p>
+        )}
+        <div className="mt-3 flex items-end justify-between gap-2">
+          <div>
+            <p className="font-display text-lg font-semibold text-primary-700">
               {formatMMK(product.price)}
-            </span>
+            </p>
             {product.cargoPrice > 0 && (
-              <span className="text-xs text-gray-400">
-                +{formatMMK(product.cargoPrice)} delivery
-              </span>
+              <p className="text-[11px] text-stone-400">+{formatMMK(product.cargoPrice)} cargo</p>
             )}
           </div>
-
           <button
             onClick={handleAdd}
             disabled={isOutOfStock}
-            className="w-full rounded-xl bg-primary-500 py-2 text-sm font-semibold text-white shadow-glow hover:bg-primary-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className={`rounded-full px-3 py-1.5 text-xs font-bold transition ${
+              added
+                ? "bg-accent-500 text-white"
+                : "bg-primary-600 text-white hover:bg-primary-700"
+            } disabled:opacity-40`}
           >
-            {isOutOfStock ? "Out of Stock" : "Add to Cart"}
+            {isOutOfStock ? "Sold out" : added ? "Added" : "Add"}
           </button>
         </div>
       </div>

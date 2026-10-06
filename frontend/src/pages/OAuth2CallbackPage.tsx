@@ -1,5 +1,5 @@
 ﻿import { useEffect, useRef } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 function homeForRole(role?: string) {
@@ -7,8 +7,7 @@ function homeForRole(role?: string) {
 }
 
 export default function OAuth2CallbackPage() {
-  const [searchParams] = useSearchParams();
-  const { loginWithToken } = useAuth();
+  const { completeOAuth } = useAuth();
   const navigate = useNavigate();
   const processed = useRef(false);
 
@@ -16,15 +15,10 @@ export default function OAuth2CallbackPage() {
     if (processed.current) return;
     processed.current = true;
 
-    const token = searchParams.get("token");
-    if (!token) {
-      navigate("/login?error=oauth", { replace: true });
-      return;
-    }
-
-    const user = loginWithToken(token);
-    navigate(homeForRole(user.role), { replace: true });
-  }, [loginWithToken, navigate, searchParams]);
+    completeOAuth()
+      .then((user) => navigate(homeForRole(user.role), { replace: true }))
+      .catch(() => navigate("/login?error=oauth", { replace: true }));
+  }, [completeOAuth, navigate]);
 
   return (
     <div className="bg-surface-50 dark:bg-surface-900 min-h-screen flex items-center justify-center">

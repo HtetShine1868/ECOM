@@ -13,8 +13,6 @@ import org.springframework.security.web.authentication.SimpleUrlAuthenticationSu
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 
 @Component
 @RequiredArgsConstructor
@@ -24,6 +22,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
     private final UserRepository userRepository;
     private final JwtUtil jwtUtil;
     private final OAuthRedirectSupport redirectSupport;
+    private final AuthCookieService authCookieService;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request,
@@ -78,9 +77,8 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
             String token = jwtUtil.generateToken(
                     user.getEmail(), user.getRole().name(), user.getId(), user.getName());
-            String redirectUrl = base + "/oauth2/callback?token="
-                    + URLEncoder.encode(token, StandardCharsets.UTF_8);
-            getRedirectStrategy().sendRedirect(request, response, redirectUrl);
+            authCookieService.setTokenCookie(request, response, token);
+            getRedirectStrategy().sendRedirect(request, response, base + "/oauth2/callback");
         } catch (RuntimeException ex) {
             log.error("OAuth2 success handling failed", ex);
             getRedirectStrategy().sendRedirect(request, response, base + "/login?error=oauth");

@@ -4,4 +4,13 @@ target/
 .idea/
 .vscode/
 .env
+.env.*
+!.env.example
 *.log
+*.md
+*.pem
+*.p12
+*.jks
+*.key
+credentials.json
+application-local.properties

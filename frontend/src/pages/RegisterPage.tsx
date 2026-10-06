@@ -42,8 +42,8 @@ export default function RegisterPage() {
       setError("Passwords do not match");
       return;
     }
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters");
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters");
       return;
     }
 
@@ -63,16 +63,14 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="bg-surface-50 dark:bg-surface-900 min-h-screen flex items-center justify-center p-6">
+    <div className="flex min-h-[70vh] items-center justify-center p-6">
       <div className="w-full max-w-md animate-fade-in">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="font-display text-3xl font-bold mb-2">Create Account</h1>
-          <p className="text-gray-400">Join ShopNow today</p>
+        <div className="mb-8 text-center">
+          <h1 className="mb-2 font-display text-3xl font-semibold">Create an account</h1>
+          <p className="text-stone-500">Save orders and check out faster next time.</p>
         </div>
 
-        {/* Card */}
-        <div className="rounded-2xl bg-white dark:bg-surface-800/50 p-8 shadow-lg">
+        <div className="shop-card p-8">
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label htmlFor="name" className="block text-sm font-medium mb-1.5">
@@ -85,7 +83,7 @@ export default function RegisterPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="John Doe"
-                className="w-full rounded-xl border border-surface-100 dark:border-surface-800 bg-surface-50 dark:bg-surface-900 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/40 transition-shadow"
+                className="field"
               />
             </div>
 
@@ -100,7 +98,7 @@ export default function RegisterPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
-                className="w-full rounded-xl border border-surface-100 dark:border-surface-800 bg-surface-50 dark:bg-surface-900 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/40 transition-shadow"
+                className="field"
               />
             </div>
 
@@ -112,11 +110,12 @@ export default function RegisterPage() {
                 <input
                   id="reg-password"
                   type={showPassword ? "text" : "password"}
+                  minLength={8}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full rounded-xl border border-surface-100 dark:border-surface-800 bg-surface-50 dark:bg-surface-900 px-4 py-2.5 pr-11 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/40 transition-shadow"
+                  className="field pr-11"
                 />
                 <button
                   type="button"
@@ -141,7 +140,7 @@ export default function RegisterPage() {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full rounded-xl border border-surface-100 dark:border-surface-800 bg-surface-50 dark:bg-surface-900 px-4 py-2.5 pr-11 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/40 transition-shadow"
+                  className="field pr-11"
                 />
                 <button
                   type="button"
@@ -163,7 +162,7 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-xl bg-primary-500 py-3 text-sm font-semibold text-white shadow-glow hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="btn-primary w-full py-3"
             >
               {loading ? "Creating Account..." : "Create Account"}
             </button>
@@ -173,7 +172,7 @@ export default function RegisterPage() {
 
           <p className="mt-6 text-center text-sm text-gray-400">
             Already have an account?{" "}
-            <Link to="/login" className="text-primary-500 font-medium hover:underline">
+            <Link to="/login" className="font-semibold text-primary-700 hover:underline">
               Sign in
             </Link>
           </p>

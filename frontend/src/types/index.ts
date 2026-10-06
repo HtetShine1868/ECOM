@@ -85,12 +85,6 @@ export interface OrderRequest {
   idempotencyKey?: string;
 }
 
-export interface AuthTokens {
-  accessToken: string;
-  refreshToken?: string;
-  user: User;
-}
-
 export interface ApiError {
   message: string;
   status: number;

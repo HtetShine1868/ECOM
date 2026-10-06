@@ -68,7 +68,7 @@ function TabButton({
       onClick={onClick}
       className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
         active
-          ? "bg-primary-500 text-white shadow-glow"
+          ? "bg-primary-600 text-white"
           : "bg-surface-100 dark:bg-surface-800 text-gray-600 dark:text-gray-300 hover:bg-surface-200 dark:hover:bg-surface-700"
       }`}
     >
@@ -746,7 +746,7 @@ export default function AdminDashboardPage() {
                     <button
                       type="submit"
                       disabled={formSubmitting}
-                      className="flex-1 rounded-xl bg-primary-500 py-3 text-sm font-semibold text-white shadow-glow hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="flex-1 rounded-xl bg-primary-500 py-3 text-sm font-semibold text-white  hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
                       {formSubmitting
                         ? (editingProduct ? "Saving..." : "Creating...")
@@ -767,7 +767,7 @@ export default function AdminDashboardPage() {
                 <h2 className="font-display text-xl font-bold">Products ({products.length})</h2>
                 <button
                   onClick={openAddForm}
-                  className="flex items-center gap-2 rounded-xl bg-primary-500 px-5 py-2.5 text-sm font-semibold text-white shadow-glow hover:bg-primary-600 transition-colors"
+                  className="flex items-center gap-2 rounded-xl bg-primary-500 px-5 py-2.5 text-sm font-semibold text-white  hover:bg-primary-600 transition-colors"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -1277,7 +1277,7 @@ export default function AdminDashboardPage() {
                     <button
                       onClick={handleStatusUpdate}
                       disabled={statusUpdating || newStatus === selectedOrder.status}
-                      className="w-full rounded-xl bg-primary-500 py-2.5 text-sm font-semibold text-white shadow-glow hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="w-full rounded-xl bg-primary-500 py-2.5 text-sm font-semibold text-white  hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
                       {statusUpdating ? "Updating..." : "Update Status"}
                     </button>

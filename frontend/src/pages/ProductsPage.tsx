@@ -105,25 +105,26 @@ export default function ProductsPage() {
   const filtersActive = Boolean(search || categoryId || minPrice || maxPrice || inStock || sort !== "newest");
 
   return (
-    <div className="bg-surface-50 dark:bg-surface-900 min-h-screen p-4 md:p-6">
+    <div className="p-4 md:p-6">
       <div className="mx-auto max-w-7xl">
-        <h1 className="font-display text-4xl font-bold mb-6">All Products</h1>
+        <h1 className="font-display text-3xl font-semibold md:text-4xl">The shop</h1>
+        <p className="mt-1 mb-6 text-sm text-stone-500">Filter by aisle, price, or what’s still on the shelf.</p>
 
-        <div className="mb-6 space-y-3">
+        <div className="shop-card mb-6 space-y-4 p-4">
           <div className="flex flex-col gap-3 lg:flex-row">
             <input
               type="text"
-              placeholder="Search by name, description, or category"
+              placeholder="Search by name or aisle"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              className="flex-1 rounded-xl border border-surface-100 dark:border-surface-800 bg-white dark:bg-surface-800 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/40"
+              className="field flex-1"
             />
             <select
               value={categoryId}
               onChange={(e) => setCategoryId(e.target.value)}
-              className="rounded-xl border border-surface-100 dark:border-surface-800 bg-white dark:bg-surface-800 px-4 py-2.5 text-sm"
+              className="field lg:max-w-[12rem]"
             >
-              <option value="">All Categories</option>
+              <option value="">All aisles</option>
               {categories.map((category) => (
                 <option key={category.id} value={category.id}>{category.name}</option>
               ))}
@@ -131,7 +132,7 @@ export default function ProductsPage() {
             <select
               value={sort}
               onChange={(e) => setSort(e.target.value)}
-              className="rounded-xl border border-surface-100 dark:border-surface-800 bg-white dark:bg-surface-800 px-4 py-2.5 text-sm"
+              className="field lg:max-w-[14rem]"
             >
               {SORTS.map((option) => (
                 <option key={option.value} value={option.value}>{option.label}</option>
@@ -139,62 +140,83 @@ export default function ProductsPage() {
             </select>
           </div>
 
+          {categories.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setCategoryId("")}
+                className={`chip ${!categoryId ? "chip-active" : ""}`}
+              >
+                All
+              </button>
+              {categories.map((category) => (
+                <button
+                  key={category.id}
+                  onClick={() => setCategoryId(String(category.id))}
+                  className={`chip ${categoryId === String(category.id) ? "chip-active" : ""}`}
+                >
+                  {category.name}
+                </button>
+              ))}
+            </div>
+          )}
+
           <div className="flex flex-wrap items-center gap-3">
-            <span className="text-sm text-gray-500">Price (MMK)</span>
+            <span className="text-sm text-stone-500">Price (MMK)</span>
             <input
               type="number"
               min="0"
               value={minPrice}
               onChange={(e) => setMinPrice(e.target.value)}
               placeholder="Min"
-              className="w-28 rounded-xl border border-surface-100 dark:border-surface-800 bg-white dark:bg-surface-800 px-3 py-2 text-sm"
+              className="field w-28"
             />
-            <span className="text-gray-400">—</span>
+            <span className="text-stone-400">—</span>
             <input
               type="number"
               min="0"
               value={maxPrice}
               onChange={(e) => setMaxPrice(e.target.value)}
               placeholder="Max"
-              className="w-28 rounded-xl border border-surface-100 dark:border-surface-800 bg-white dark:bg-surface-800 px-3 py-2 text-sm"
+              className="field w-28"
             />
-            <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+            <label className="flex items-center gap-2 text-sm text-stone-600 dark:text-stone-300">
               <input
                 type="checkbox"
                 checked={inStock}
                 onChange={(e) => setInStock(e.target.checked)}
               />
-              In stock
+              In stock only
             </label>
             {filtersActive && (
-              <button onClick={clearFilters} className="text-xs text-primary-500 hover:underline">
-                Clear filters
+              <button onClick={clearFilters} className="text-sm font-semibold text-primary-700 hover:underline">
+                Clear
               </button>
             )}
           </div>
         </div>
 
         {!loading && !error && (
-          <p className="mb-4 text-sm text-gray-400">
-            {totalElements} product{totalElements === 1 ? "" : "s"} found
+          <p className="mb-4 text-sm text-stone-500">
+            {totalElements} item{totalElements === 1 ? "" : "s"}
           </p>
         )}
 
         {loading ? (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-4">
             {[...Array(8)].map((_, i) => (
-              <div key={i} className="h-72 animate-pulse rounded-xl bg-surface-100 dark:bg-surface-800" />
+              <div key={i} className="h-80 animate-pulse rounded-2xl bg-white/70 dark:bg-surface-800" />
             ))}
           </div>
         ) : error ? (
-          <p className="py-16 text-center text-sm text-red-500">{error}</p>
+          <p className="py-16 text-center text-sm text-red-600">{error}</p>
         ) : products.length === 0 ? (
-          <div className="py-20 text-center text-gray-400">
-            <p className="text-lg font-medium">No products found</p>
-            <p className="mt-1 text-sm">Try a different search or clear the filters.</p>
+          <div className="shop-card py-16 text-center">
+            <p className="font-display text-xl">Nothing matches that</p>
+            <p className="mt-1 text-sm text-stone-500">Try another word, or clear the filters.</p>
+            <button onClick={clearFilters} className="btn-primary mt-5">Clear filters</button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-4">
             {products.map((product) => (
               <ProductCard
                 key={product.id}
@@ -210,17 +232,17 @@ export default function ProductsPage() {
             <button
               disabled={page === 0}
               onClick={() => setPage((current) => Math.max(0, current - 1))}
-              className="rounded-xl bg-white dark:bg-surface-800 px-4 py-2 text-sm disabled:opacity-40"
+              className="btn-secondary disabled:opacity-40"
             >
               Previous
             </button>
-            <span className="text-sm text-gray-500">
-              Page {page + 1} of {totalPages}
+            <span className="text-sm text-stone-500">
+              {page + 1} / {totalPages}
             </span>
             <button
               disabled={page + 1 >= totalPages}
               onClick={() => setPage((current) => current + 1)}
-              className="rounded-xl bg-white dark:bg-surface-800 px-4 py-2 text-sm disabled:opacity-40"
+              className="btn-secondary disabled:opacity-40"
             >
               Next
             </button>

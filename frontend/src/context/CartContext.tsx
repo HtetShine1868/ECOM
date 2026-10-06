@@ -8,6 +8,7 @@ interface CartContextType {
   totalPrice: number;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
+  notice: string | null;
   addItem: (product: Product, quantity: number) => void;
   removeItem: (productId: number) => void;
   updateQuantity: (productId: number, quantity: number) => void;
@@ -32,6 +33,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   });
   const [isOpen, setIsOpen] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
     localStorage.setItem("cart", JSON.stringify(items));
@@ -59,7 +61,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
       if (qty <= 0) return prev;
       return [...prev, { id: Date.now(), product, quantity: qty }];
     });
-    setIsOpen(true);
+    setNotice(`${product.name} added to your bag`);
+    window.setTimeout(() => setNotice(null), 2800);
   };
 
   const removeItem = (productId: number) => {
@@ -90,6 +93,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         totalPrice,
         isOpen,
         setIsOpen,
+        notice,
         addItem,
         removeItem,
         updateQuantity,

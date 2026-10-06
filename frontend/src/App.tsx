@@ -2,9 +2,11 @@ import { BrowserRouter, Routes, Route } from "react-router-dom"
 import { AuthProvider } from "./context/AuthContext"
 import { CartProvider } from "./context/CartContext"
 import Navbar from "./components/layout/Navbar"
+import Footer from "./components/layout/Footer"
+import MobileNav from "./components/layout/MobileNav"
 import CartDrawer from "./components/cart/CartDrawer"
-import FloatingCartButton from "./components/cart/FloatingCartButton"
 import ChatWidget from "./components/chat/ChatWidget"
+import CartToast from "./components/ui/CartToast"
 import HomePage from "./pages/HomePage"
 import ProductsPage from "./pages/ProductsPage"
 import ProductDetailPage from "./pages/ProductDetailPage"
@@ -18,10 +20,11 @@ import OAuth2CallbackPage from "./pages/OAuth2CallbackPage"
 
 function AppLayout() {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="linen flex min-h-screen flex-col">
       <Navbar />
       <CartDrawer />
-      <main className="flex-1">
+      <CartToast />
+      <main className="flex-1 pb-8">
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/products" element={<ProductsPage />} />
@@ -35,11 +38,9 @@ function AppLayout() {
           <Route path="/oauth2/callback" element={<OAuth2CallbackPage />} />
         </Routes>
       </main>
-      <FloatingCartButton />
       <ChatWidget />
-      <footer className="py-8 text-center text-sm text-gray-400 border-t border-surface-100 dark:border-surface-800">
-         {new Date().getFullYear()} ShopNow. Built with 
-      </footer>
+      <Footer />
+      <MobileNav />
     </div>
   )
 }

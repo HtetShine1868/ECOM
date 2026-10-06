@@ -34,3 +34,17 @@ build/
 
 
 .env
+.env.*
+!.env.example
+target/
+.classpath
+.project
+.settings/
+.idea/
+*.iml
+*.pem
+*.p12
+*.jks
+*.key
+credentials.json
+application-local.properties

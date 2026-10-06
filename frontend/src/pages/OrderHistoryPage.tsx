@@ -24,9 +24,9 @@ export default function OrderHistoryPage() {
   }, [isAuthenticated, navigate]);
 
   return (
-    <div className="bg-surface-50 dark:bg-surface-900 min-h-screen p-6">
+    <div className="p-4 md:p-6">
       <div className="mx-auto max-w-4xl">
-        <h1 className="font-display text-4xl font-bold mb-8">My Orders</h1>
+        <h1 className="mb-8 font-display text-3xl font-semibold md:text-4xl">Your orders</h1>
 
         {loading ? (
           <div className="space-y-4">
@@ -43,7 +43,7 @@ export default function OrderHistoryPage() {
             <p className="mt-1 text-sm mb-6">Start shopping to place your first order</p>
             <Link
               to="/products"
-              className="rounded-xl bg-primary-500 px-6 py-2.5 text-sm font-semibold text-white shadow-glow hover:bg-primary-600 transition-colors"
+              className="btn-primary"
             >
               Browse Products
             </Link>

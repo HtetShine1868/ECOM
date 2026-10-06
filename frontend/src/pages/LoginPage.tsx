@@ -55,16 +55,14 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="bg-surface-50 dark:bg-surface-900 min-h-screen flex items-center justify-center p-6">
+    <div className="flex min-h-[70vh] items-center justify-center p-6">
       <div className="w-full max-w-md animate-fade-in">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="font-display text-3xl font-bold mb-2">Welcome Back</h1>
-          <p className="text-gray-400">Sign in to your account</p>
+        <div className="mb-8 text-center">
+          <h1 className="mb-2 font-display text-3xl font-semibold">Welcome back</h1>
+          <p className="text-stone-500">Sign in to check out and see your orders.</p>
         </div>
 
-        {/* Card */}
-        <div className="rounded-2xl bg-white dark:bg-surface-800/50 p-8 shadow-lg">
+        <div className="shop-card p-8">
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label htmlFor="email" className="block text-sm font-medium mb-1.5">
@@ -77,7 +75,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
-                className="w-full rounded-xl border border-surface-100 dark:border-surface-800 bg-surface-50 dark:bg-surface-900 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/40 transition-shadow"
+                className="field"
               />
             </div>
 
@@ -93,7 +91,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full rounded-xl border border-surface-100 dark:border-surface-800 bg-surface-50 dark:bg-surface-900 px-4 py-2.5 pr-11 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/40 transition-shadow"
+                  className="field pr-11"
                 />
                 <button
                   type="button"
@@ -115,7 +113,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-xl bg-primary-500 py-3 text-sm font-semibold text-white shadow-glow hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="btn-primary w-full py-3"
             >
               {loading ? "Signing in..." : "Sign In"}
             </button>
@@ -123,9 +121,9 @@ export default function LoginPage() {
 
           <OAuthButtons mode="signin" />
 
-          <p className="mt-6 text-center text-sm text-gray-400">
+          <p className="mt-6 text-center text-sm text-stone-500">
             Don&apos;t have an account?{" "}
-            <Link to="/register" className="text-primary-500 font-medium hover:underline">
+            <Link to="/register" className="font-semibold text-primary-700 hover:underline">
               Create one
             </Link>
           </p>

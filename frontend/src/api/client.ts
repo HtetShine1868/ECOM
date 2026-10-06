@@ -7,21 +7,21 @@ async function request<T>(
   options: RequestInit = {},
   retries = 1
 ): Promise<T> {
-  const token = localStorage.getItem("access_token");
-
   const isFormData = options.body instanceof FormData;
 
   const headers: HeadersInit = {
     ...(isFormData ? {} : { "Content-Type": "application/json" }),
-    ...(token ? { Authorization: "Bearer " + token } : {}),
     ...(options.headers || {}),
   };
 
   try {
-    const res = await fetch(BASE_URL + path, { ...options, headers });
+    const res = await fetch(BASE_URL + path, {
+      ...options,
+      headers,
+      credentials: "include",
+    });
 
     if (!res.ok) {
-      // If the server is waking up (503) and we have retries left, wait and retry
       if (res.status === 503 && retries > 0) {
         await delay(3000);
         return request<T>(path, options, retries - 1);
@@ -33,9 +33,7 @@ async function request<T>(
     if (res.status === 204) return undefined as T;
     return res.json();
   } catch (err: unknown) {
-    // Network-level failure (proxy error, server offline, Render cold start)
     if (retries > 0 && (err as { status?: number })?.status === undefined) {
-      // Not an HTTP error — it's a network failure, retry after delay
       await delay(3000);
       return request<T>(path, options, retries - 1);
     }
@@ -46,8 +44,11 @@ async function request<T>(
 export const api = {
   get: <T>(path: string) => request<T>(path),
 
-  post: <T>(path: string, body: unknown) =>
-    request<T>(path, { method: "POST", body: JSON.stringify(body) }),
+  post: <T>(path: string, body?: unknown) =>
+    request<T>(path, {
+      method: "POST",
+      body: body === undefined ? undefined : JSON.stringify(body),
+    }),
 
   put: <T>(path: string, body: unknown) =>
     request<T>(path, { method: "PUT", body: JSON.stringify(body) }),

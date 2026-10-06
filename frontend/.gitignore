@@ -23,6 +23,9 @@ dist-ssr
 *.sln
 *.sw?
 
-# Production env (contains real API keys — set these in Vercel dashboard instead)
+# Env files (set real values in Vercel / local .env, never commit them)
+.env
+.env.*
+!.env.example
 .env.production
 .env.*.local
