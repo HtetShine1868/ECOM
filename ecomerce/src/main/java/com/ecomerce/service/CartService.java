@@ -103,7 +103,7 @@ public class CartService {
                         .cartItemId(item.getId())
                         .productId(item.getProduct().getId())
                         .productName(item.getProduct().getName())
-                        .productImageUrl(item.getProduct().getImageUrl())
+                        .productImageUrl(ImageUrls.reachable(item.getProduct().getImageUrl()))
                         .unitPrice(item.getProduct().getPrice())
                         .cargoPrice(BigDecimal.ZERO) // ignore individual product cargo price
                         .quantity(item.getQuantity())

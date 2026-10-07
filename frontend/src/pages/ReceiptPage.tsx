@@ -2,6 +2,7 @@
 import { useParams, Link } from "react-router-dom";
 import { orderApi } from "../api/orders";
 import { formatMMK, formatDate, getOrderStatusColor } from "../utils/format";
+import { productImageSrc } from "../utils/image";
 import { downloadOrderReceipt } from "../utils/receiptPdf";
 import type { Order } from "../types";
 
@@ -126,7 +127,7 @@ export default function ReceiptPage() {
                   <div key={item.id} className="py-3 flex gap-3">
                     {item.productImageUrl && (
                       <img
-                        src={item.productImageUrl}
+                        src={productImageSrc(item.productImageUrl)}
                         alt={item.productName}
                         className="no-print h-12 w-12 rounded-lg object-cover flex-shrink-0"
                       />

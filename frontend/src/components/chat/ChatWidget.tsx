@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { chatApi, type ChatMode, type ChatProductCard } from "../../api/chat";
 import { formatMMK } from "../../utils/format";
+import { productImageSrc } from "../../utils/image";
 
 interface ChatMessage {
   id: string;
@@ -258,7 +259,7 @@ function ProductChip({
       className="flex gap-2 rounded-xl bg-white/90 p-2 text-left shadow-sm ring-1 ring-black/5 hover:bg-white dark:bg-surface-900 dark:ring-white/10"
     >
       <img
-        src={product.imageUrl || "https://placehold.co/80x80?text=Item"}
+        src={productImageSrc(product.imageUrl, "https://placehold.co/80x80?text=Item")}
         alt=""
         className="h-14 w-14 shrink-0 rounded-lg object-cover"
       />

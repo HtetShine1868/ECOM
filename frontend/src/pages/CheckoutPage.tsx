@@ -5,6 +5,7 @@ import { useAuth } from "../context/AuthContext";
 import { orderApi } from "../api/orders";
 import type { DeliveryZoneApi } from "../api/orders";
 import { formatMMK } from "../utils/format";
+import { productImageSrc } from "../utils/image";
 
 
 
@@ -137,7 +138,7 @@ export default function CheckoutPage() {
                 <li key={item.product.id} className="flex items-center gap-3 py-3">
                   {item.product.imageUrl && (
                     <img
-                      src={item.product.imageUrl}
+                      src={productImageSrc(item.product.imageUrl)}
                       alt={item.product.name}
                       className="h-12 w-12 shrink-0 rounded-lg object-cover"
                     />

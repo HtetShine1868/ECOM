@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import type { Product } from "../../types";
 import { useCart } from "../../context/CartContext";
 import { formatMMK } from "../../utils/format";
+import { productImageSrc } from "../../utils/image";
 import { categoryChipClass } from "../../utils/category";
 
 interface ProductCardProps {
@@ -30,7 +31,7 @@ export default function ProductCard({ product, isPopular }: ProductCardProps) {
     >
       <div className="relative aspect-[4/3] overflow-hidden bg-stone-100 dark:bg-surface-800">
         <img
-          src={product.imageUrl?.trim() || "https://placehold.co/640x480?text=No+Image"}
+          src={productImageSrc(product.imageUrl, "https://placehold.co/640x480?text=No+Image")}
           alt={product.name}
           className="absolute inset-0 h-full w-full object-cover object-center transition duration-500 group-hover:scale-[1.03]"
           onError={(event) => {

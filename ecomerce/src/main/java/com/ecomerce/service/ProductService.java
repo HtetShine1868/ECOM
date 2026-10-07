@@ -218,7 +218,7 @@ public class ProductService {
                 .price(product.getPrice())
                 .stock(product.getStock())
                 .cargoPrice(product.getCargoPrice())
-                .imageUrl(product.getImageUrl())
+                .imageUrl(ImageUrls.reachable(product.getImageUrl()))
                 .categoryId(product.getCategory() != null ? product.getCategory().getId() : null)
                 .categoryName(product.getCategory() != null ? product.getCategory().getName() : null)
                 .totalSold(totalSold)

@@ -6,6 +6,7 @@ import type { Category as ApiCategory } from "../api/products";
 import { orderApi } from "../api/orders";
 import type { DeliveryZoneApi } from "../api/orders";
 import { formatMMK, formatDate, getOrderStatusColor, ORDER_STATUSES } from "../utils/format";
+import { productImageSrc } from "../utils/image";
 import AdminAnalytics from "./AdminAnalytics";
 
 
@@ -767,7 +768,7 @@ export default function AdminDashboardPage() {
                       <div className="flex items-start gap-4">
                         {imagePreview && (
                           <img
-                            src={imagePreview}
+                            src={productImageSrc(imagePreview)}
                             alt="Preview"
                             className="h-20 w-20 rounded-xl object-cover border border-stone-200 dark:border-surface-700 flex-shrink-0"
                           />
@@ -887,7 +888,7 @@ export default function AdminDashboardPage() {
                             <td className="px-5 py-4">
                               <div className="flex items-center gap-3">
                                 {product.imageUrl ? (
-                                  <img src={product.imageUrl} alt={product.name} className="h-12 w-12 rounded-xl object-cover flex-shrink-0" />
+                                  <img src={productImageSrc(product.imageUrl)} alt={product.name} className="h-12 w-12 rounded-xl object-cover flex-shrink-0" />
                                 ) : (
                                   <div className="h-12 w-12 rounded-xl bg-surface-100 dark:bg-surface-800 flex items-center justify-center flex-shrink-0">
                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-stone-600 dark:text-stone-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1279,7 +1280,7 @@ export default function AdminDashboardPage() {
                     {selectedOrder.items.map((item) => (
                       <div key={item.id} className="flex items-center gap-3 py-4 sm:gap-4">
                         {item.productImageUrl ? (
-                          <img src={item.productImageUrl} alt={item.productName} className="h-14 w-14 rounded-xl object-cover flex-shrink-0" />
+                          <img src={productImageSrc(item.productImageUrl)} alt={item.productName} className="h-14 w-14 rounded-xl object-cover flex-shrink-0" />
                         ) : (
                           <div className="h-14 w-14 rounded-xl bg-surface-100 dark:bg-surface-800 flex-shrink-0 flex items-center justify-center">
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-stone-600 dark:text-stone-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">

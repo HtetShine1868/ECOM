@@ -2,6 +2,7 @@ package com.ecomerce.dto;
 
 import com.ecomerce.entity.Order;
 import com.ecomerce.entity.OrderItem;
+import com.ecomerce.service.ImageUrls;
 import lombok.Builder;
 import lombok.Data;
 
@@ -47,7 +48,7 @@ public class OrderResponse {
                         .id(item.getId())
                         .productId(item.getProduct() != null ? item.getProduct().getId() : null)
                         .productName(item.getProductName())
-                        .productImageUrl(item.getProductImageUrl())
+                        .productImageUrl(ImageUrls.reachable(item.getProductImageUrl()))
                         .unitPrice(item.getUnitPrice())
                         .cargoPrice(item.getCargoPrice() != null ? item.getCargoPrice() : BigDecimal.ZERO)
                         .quantity(item.getQuantity())

@@ -1,5 +1,6 @@
 import { useCart } from "../../context/CartContext";
 import { formatMMK } from "../../utils/format";
+import { productImageSrc } from "../../utils/image";
 import { useNavigate } from "react-router-dom";
 
 export default function CartDrawer() {
@@ -64,7 +65,7 @@ export default function CartDrawer() {
                   className="flex gap-4 rounded-xl bg-white p-3 animate-fade-in dark:bg-surface-800"
                 >
                   <img
-                    src={item.product.imageUrl ?? "https://via.placeholder.com/80"}
+                    src={productImageSrc(item.product.imageUrl, "https://placehold.co/80x80?text=Item")}
                     alt={item.product.name}
                     className="h-20 w-20 shrink-0 rounded-lg object-cover"
                   />

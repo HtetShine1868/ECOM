@@ -4,6 +4,7 @@ import { productApi } from "../api/products";
 import { useCart } from "../context/CartContext";
 import ProductCard from "../components/product/ProductCard";
 import { formatMMK } from "../utils/format";
+import { productImageSrc } from "../utils/image";
 import type { Product } from "../types";
 
 export default function ProductDetailPage() {
@@ -70,7 +71,7 @@ export default function ProductDetailPage() {
         <div className="grid gap-6 md:grid-cols-2 md:gap-8">
           <div className="shop-card relative aspect-[4/3] overflow-hidden bg-stone-100 dark:bg-surface-800 md:aspect-square">
             <img
-              src={product.imageUrl?.trim() || "https://placehold.co/800x800?text=No+Image"}
+              src={productImageSrc(product.imageUrl, "https://placehold.co/800x800?text=No+Image")}
               alt={product.name}
               className="absolute inset-0 h-full w-full object-cover object-center"
               onError={(event) => {

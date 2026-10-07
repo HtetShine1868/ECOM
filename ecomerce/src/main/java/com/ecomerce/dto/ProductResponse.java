@@ -1,6 +1,7 @@
 package com.ecomerce.dto;
 
 import com.ecomerce.entity.Product;
+import com.ecomerce.service.ImageUrls;
 import lombok.Builder;
 import lombok.Data;
 
@@ -33,7 +34,7 @@ public class ProductResponse {
                 .price(product.getPrice())
                 .stock(product.getStock())
                 .cargoPrice(product.getCargoPrice())
-                .imageUrl(product.getImageUrl())
+                .imageUrl(ImageUrls.reachable(product.getImageUrl()))
                 .categoryId(product.getCategory() != null ? product.getCategory().getId() : null)
                 .categoryName(catName)
                 .category(catName)

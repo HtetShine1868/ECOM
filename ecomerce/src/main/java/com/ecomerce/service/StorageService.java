@@ -37,7 +37,7 @@ public class StorageService {
         DetectedImage image = detectImage(file, bytes);
 
         String filename = UUID.randomUUID() + "." + image.extension();
-        String uploadUrl = supabaseUrl + "/storage/v1/object/" + bucket + "/" + filename;
+        String uploadUrl = ImageUrls.storageRoot(supabaseUrl) + "/storage/v1/object/" + bucket + "/" + filename;
 
         HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization", "Bearer " + serviceRoleKey);
@@ -59,9 +59,9 @@ public class StorageService {
             throw new IllegalArgumentException("The image could not be stored. Try a different JPEG, PNG, or WebP file.");
         }
 
-        // Return the public URL — stored in products.image_url
-        // Browser loads image directly from Supabase CDN; no auth needed (bucket is public)
-        return supabaseUrl + "/storage/v1/object/public/" + bucket + "/" + filename;
+        // Public files are served by the storage host. The project API host
+        // refuses connections from some networks, so the browser must not use it.
+        return ImageUrls.storageRoot(supabaseUrl) + "/storage/v1/object/public/" + bucket + "/" + filename;
     }
 
     // ─── Delete ──────────────────────────────────────────────────────────────
@@ -80,16 +80,15 @@ public class StorageService {
             return;
         }
 
-        // Extract the filename portion from the public URL
-        // URL pattern: {supabaseUrl}/storage/v1/object/public/{bucket}/{filename}
-        String prefix = supabaseUrl + "/storage/v1/object/public/" + bucket + "/";
-        if (!imageUrl.startsWith(prefix)) {
+        String marker = "/object/public/" + bucket + "/";
+        int markerAt = imageUrl.indexOf(marker);
+        if (markerAt < 0) {
             log.warn("Cannot delete image — URL does not match expected pattern: {}", imageUrl);
             return;
         }
 
-        String filename = imageUrl.substring(prefix.length());
-        String deleteUrl = supabaseUrl + "/storage/v1/object/" + bucket + "/" + filename;
+        String filename = imageUrl.substring(markerAt + marker.length());
+        String deleteUrl = ImageUrls.storageRoot(supabaseUrl) + "/storage/v1/object/" + bucket + "/" + filename;
 
         HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization", "Bearer " + serviceRoleKey);
