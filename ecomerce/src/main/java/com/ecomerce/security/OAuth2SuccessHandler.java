@@ -78,10 +78,10 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             String token = jwtUtil.generateToken(
                     user.getEmail(), user.getRole().name(), user.getId(), user.getName());
             authCookieService.setTokenCookie(request, response, token);
-            getRedirectStrategy().sendRedirect(request, response, base + "/oauth2/callback");
+            redirectSupport.sendBrowser(response, base + "/oauth2/callback");
         } catch (RuntimeException ex) {
             log.error("OAuth2 success handling failed", ex);
-            getRedirectStrategy().sendRedirect(request, response, base + "/login?error=oauth");
+            redirectSupport.sendBrowser(response, base + "/login?error=oauth");
         }
     }
 

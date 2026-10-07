@@ -2,7 +2,7 @@ const BACKEND_URL =
   import.meta.env.VITE_BACKEND_URL ||
   (import.meta.env.DEV
     ? "http://localhost:8080"
-    : "https://ecommercebe-xhhj.onrender.com");
+    : "https://ecom-d3vm.onrender.com");
 
 interface OAuthButtonsProps {
   /** Text variant: "sign in" vs "sign up" */

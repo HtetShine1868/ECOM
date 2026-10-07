@@ -1,5 +1,6 @@
 package com.ecomerce.config;
 
+import com.ecomerce.security.BackendLoginRedirectFilter;
 import com.ecomerce.security.CookieOAuth2AuthorizationRequestRepository;
 import com.ecomerce.security.JwtAuthFilter;
 import com.ecomerce.security.OAuth2LoginFailureHandler;
@@ -23,6 +24,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.context.SecurityContextHolderFilter;
 import org.springframework.web.cors.CorsConfigurationSource;
 
 @Configuration
@@ -55,7 +57,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/delivery-zones").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/chat").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
-                .requestMatchers("/login/oauth2/**", "/oauth2/**").permitAll()
+                .requestMatchers("/login", "/login/", "/login/oauth2/**", "/oauth2/**").permitAll()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/cart/**").hasAnyRole("BUYER", "ADMIN")
                 .requestMatchers("/api/orders/**").hasAnyRole("BUYER", "ADMIN")
@@ -77,6 +79,8 @@ public class SecurityConfig {
                 .successHandler(oAuth2SuccessHandler)
                 .failureHandler(oAuth2LoginFailureHandler)
             )
+            .addFilterBefore(new BackendLoginRedirectFilter(oauthRedirectSupport),
+                    SecurityContextHolderFilter.class)
             .addFilterBefore(new OAuthRedirectCaptureFilter(oauthRedirectSupport),
                     OAuth2AuthorizationRequestRedirectFilter.class)
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)

@@ -31,24 +31,24 @@ const emptyForm: ProductFormState = {
   category: "",
 };
 
-// โ”€โ”€โ”€ Analytics helpers โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
+// ─── Analytics helpers ────────────────────────────────────────────────────────
 function StatCard({
   label,
   value,
-  color,
   icon,
 }: {
   label: string;
   value: number | string;
-  color: string;
   icon: React.ReactNode;
 }) {
   return (
-    <div className={`rounded-2xl p-5 shadow-lg flex items-center gap-4 ${color}`}>
-      <div className="rounded-xl bg-white/20 p-3">{icon}</div>
+    <div className="shop-card flex items-center gap-4 p-5 shadow-shop">
+      <div className="rounded-xl bg-primary-100 p-3 text-primary-700 dark:bg-primary-900/50 dark:text-primary-200">
+        {icon}
+      </div>
       <div>
-        <p className="text-xs font-medium opacity-80 uppercase tracking-wide">{label}</p>
-        <p className="text-3xl font-bold">{value}</p>
+        <p className="text-xs font-semibold uppercase tracking-wide text-stone-600 dark:text-stone-300">{label}</p>
+        <p className="text-3xl font-bold text-stone-900 dark:text-stone-50">{value}</p>
       </div>
     </div>
   );
@@ -68,8 +68,8 @@ function TabButton({
       onClick={onClick}
       className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
         active
-          ? "bg-primary-600 text-white"
-          : "bg-surface-100 dark:bg-surface-800 text-gray-600 dark:text-gray-300 hover:bg-surface-200 dark:hover:bg-surface-700"
+          ? "bg-primary-600 text-white shadow-shop"
+          : "border border-stone-200 bg-white text-stone-800 hover:border-primary-400 hover:text-primary-700 dark:border-surface-700 dark:bg-surface-800 dark:text-stone-100 dark:hover:text-primary-200"
       }`}
     >
       {children}
@@ -77,7 +77,7 @@ function TabButton({
   );
 }
 
-// โ”€โ”€โ”€ Main Component โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
+// ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function AdminDashboardPage() {
   const { isAdmin, loading: authLoading } = useAuth();
@@ -111,20 +111,20 @@ export default function AdminDashboardPage() {
   // Delete confirm
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
 
-  // โ”€โ”€ Category Manager state โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
+  // ── Category Manager state ─────────────────────────────────────────────────
   const [categories, setCategories] = useState<ApiCategory[]>([]);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [catError, setCatError] = useState("");
 
-  // โ”€โ”€ Delivery Zone state โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
+  // ── Delivery Zone state ────────────────────────────────────────────────────
   const [zones, setZones] = useState<DeliveryZoneApi[]>([]);
   const [newZoneTown, setNewZoneTown] = useState("");
   const [newZoneFee, setNewZoneFee] = useState("");
   const [editingZone, setEditingZone] = useState<DeliveryZoneApi | null>(null);
   const [zoneError, setZoneError] = useState("");
 
-  // โ”€โ”€ Analytics state โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
-  // โ”€โ”€ Auth guard โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
+  // ── Analytics state ────────────────────────────────────────────────────────
+  // ── Auth guard ─────────────────────────────────────────────────────────────
 
   useEffect(() => {
     if (!authLoading && !isAdmin) {
@@ -132,11 +132,11 @@ export default function AdminDashboardPage() {
     }
   }, [isAdmin, authLoading, navigate]);
 
-  // โ”€โ”€ Load localStorage data โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
+  // ── Load localStorage data ──────────────────────────────────────────────────
 
 
 
-  // โ”€โ”€ Data loading โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
+  // ── Data loading ───────────────────────────────────────────────────────────
 
   const loadProducts = useCallback(() => {
     setProductsLoading(true);
@@ -178,7 +178,7 @@ export default function AdminDashboardPage() {
     loadZones();
   }, [isAdmin, loadProducts, loadOrders, loadCategories, loadZones]);
 
-  // โ”€โ”€ Computed stats โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
+  // ── Computed stats ─────────────────────────────────────────────────────────
 
   const stats = {
     totalProducts: products.length,
@@ -189,10 +189,10 @@ export default function AdminDashboardPage() {
     cancelled: orders.filter((o) => o.status === "CANCELLED").length,
   };
 
-  // โ”€โ”€ Analytics computation โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
+  // ── Analytics computation ──────────────────────────────────────────────────
 
 
-  // โ”€โ”€ Category Manager helpers โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
+  // ── Category Manager helpers ────────────────────────────────────────────────
 
   async function addCategory() {
     const name = newCategoryName.trim();
@@ -219,7 +219,7 @@ export default function AdminDashboardPage() {
     }
   }
 
-  // โ”€โ”€ Delivery Zone helpers โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
+  // ── Delivery Zone helpers ───────────────────────────────────────────────────
 
   async function addZone() {
     const town = newZoneTown.trim();
@@ -268,7 +268,7 @@ export default function AdminDashboardPage() {
     }
   }
 
-  // โ”€โ”€ Product form helpers โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
+  // ── Product form helpers ───────────────────────────────────────────────────
 
   function openAddForm() {
     setEditingProduct(null);
@@ -384,7 +384,7 @@ export default function AdminDashboardPage() {
     }
   }
 
-  // โ”€โ”€ Order detail helpers โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
+  // ── Order detail helpers ───────────────────────────────────────────────────
 
   function openOrderDetail(order: Order) {
     setSelectedOrder(order);
@@ -406,66 +406,65 @@ export default function AdminDashboardPage() {
     }
   }
 
-  // โ”€โ”€ Guard rendering โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
+  // ── Guard rendering ────────────────────────────────────────────────────────
 
   if (authLoading) {
     return (
-      <div className="bg-surface-50 dark:bg-surface-900 min-h-screen flex items-center justify-center">
-        <div className="animate-pulse text-gray-400">Loading...</div>
+      <div className="flex min-h-screen items-center justify-center bg-surface-50 text-stone-900 dark:bg-surface-900 dark:text-stone-50">
+        <div className="animate-pulse text-stone-600 dark:text-stone-300">Loading...</div>
       </div>
     );
   }
 
   if (!isAdmin) return null;
 
-  // โ”€โ”€ Render โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
+  // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="bg-surface-50 dark:bg-surface-900 min-h-screen p-4 md:p-6">
+    <div className="min-h-screen bg-surface-50 p-4 text-stone-900 dark:bg-surface-900 dark:text-stone-50 md:p-6">
       <div className="mx-auto max-w-7xl">
 
         {/* Page header */}
         <div className="mb-6 flex items-center justify-between">
           <div>
-            <h1 className="font-display text-3xl md:text-4xl font-bold">Admin Panel</h1>
-            <p className="text-sm text-gray-400 mt-1">Manage your store</p>
+            <h1 className="font-display text-3xl font-bold text-stone-900 dark:text-stone-50 md:text-4xl">Admin Panel</h1>
+            <p className="text-sm text-stone-600 dark:text-stone-300 mt-1">Manage your store</p>
           </div>
         </div>
 
         {/* Tabs */}
         <div className="flex gap-2 flex-wrap mb-8">
           <TabButton active={tab === "dashboard"} onClick={() => setTab("dashboard")}>
-            ๐“ Dashboard
+            Dashboard
           </TabButton>
           <TabButton active={tab === "products"} onClick={() => { setTab("products"); closeForm(); }}>
-            ๐“ฆ Products
+            Products
           </TabButton>
           <TabButton active={tab === "orders"} onClick={() => setTab("orders")}>
-            ๐’ Orders
+            Orders
           </TabButton>
           <TabButton active={tab === "analytics"} onClick={() => setTab("analytics")}>
-            ๐“ Analytics
+            Analytics
           </TabButton>
           <TabButton active={tab === "settings"} onClick={() => setTab("settings")}>
-            โ๏ธ Settings
+            Settings
           </TabButton>
           {tab === "order-detail" && selectedOrder && (
             <TabButton active={true} onClick={() => {}}>
-              ๐“ Order #{selectedOrder.id}
+              Order #{selectedOrder.id}
             </TabButton>
           )}
         </div>
 
-        {/* โ”€โ”€ DASHBOARD TAB โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€ */}
+        {/* ── DASHBOARD TAB ─────────────────────────────────────────────────── */}
         {tab === "dashboard" && (
           <div className="animate-fade-in space-y-8">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <StatCard
                 label="Total Products"
                 value={stats.totalProducts}
-                color="bg-gradient-to-br from-primary-500 to-primary-600 text-white"
                 icon={
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                   </svg>
                 }
@@ -473,9 +472,8 @@ export default function AdminDashboardPage() {
               <StatCard
                 label="Total Orders"
                 value={stats.totalOrders}
-                color="bg-gradient-to-br from-accent-500 to-accent-600 text-white"
                 icon={
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                   </svg>
                 }
@@ -483,9 +481,8 @@ export default function AdminDashboardPage() {
               <StatCard
                 label="Pending Orders"
                 value={stats.pending}
-                color="bg-gradient-to-br from-yellow-500 to-yellow-600 text-white"
                 icon={
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 }
@@ -493,9 +490,8 @@ export default function AdminDashboardPage() {
               <StatCard
                 label="Processing"
                 value={stats.processing}
-                color="bg-gradient-to-br from-purple-500 to-purple-600 text-white"
                 icon={
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                   </svg>
                 }
@@ -503,9 +499,8 @@ export default function AdminDashboardPage() {
               <StatCard
                 label="Delivered"
                 value={stats.delivered}
-                color="bg-gradient-to-br from-green-500 to-green-600 text-white"
                 icon={
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 }
@@ -513,9 +508,8 @@ export default function AdminDashboardPage() {
               <StatCard
                 label="Cancelled"
                 value={stats.cancelled}
-                color="bg-gradient-to-br from-red-500 to-red-600 text-white"
                 icon={
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 }
@@ -523,14 +517,14 @@ export default function AdminDashboardPage() {
             </div>
 
             {/* Recent orders snapshot */}
-            <div className="rounded-2xl bg-white dark:bg-surface-800/50 p-6 shadow-lg">
+            <div className="shop-card p-6 shadow-lg">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="font-semibold text-lg">Recent Orders</h2>
+                <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-50">Recent Orders</h2>
                 <button
                   onClick={() => setTab("orders")}
-                  className="text-sm text-primary-500 hover:underline"
+                  className="text-sm font-semibold text-primary-700 hover:underline dark:text-primary-300"
                 >
-                  View all โ’
+                  View all →
                 </button>
               </div>
               {ordersLoading ? (
@@ -540,19 +534,19 @@ export default function AdminDashboardPage() {
                   ))}
                 </div>
               ) : orders.length === 0 ? (
-                <p className="text-gray-400 text-sm text-center py-8">No orders yet.</p>
+                <p className="text-stone-600 dark:text-stone-300 text-sm text-center py-8">No orders yet.</p>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="text-left text-xs text-gray-400 border-b border-surface-100 dark:border-surface-800">
+                      <tr className="text-left text-xs text-stone-600 dark:text-stone-300 border-b border-stone-200 dark:border-surface-700">
                         <th className="pb-2 pr-4">Order</th>
                         <th className="pb-2 pr-4">Customer</th>
                         <th className="pb-2 pr-4">Total</th>
                         <th className="pb-2">Status</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-surface-100 dark:divide-surface-800">
+                    <tbody className="divide-y divide-stone-200 dark:divide-surface-700">
                       {orders.slice(0, 8).map((order) => (
                         <tr
                           key={order.id}
@@ -560,7 +554,7 @@ export default function AdminDashboardPage() {
                           onClick={() => openOrderDetail(order)}
                         >
                           <td className="py-2.5 pr-4 font-medium">#{order.id}</td>
-                          <td className="py-2.5 pr-4 text-gray-600 dark:text-gray-300">{order.customerName}</td>
+                          <td className="py-2.5 pr-4 text-stone-700 dark:text-stone-200">{order.customerName}</td>
                           <td className="py-2.5 pr-4 font-semibold">{formatMMK(order.total)}</td>
                           <td className="py-2.5">
                             <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${getOrderStatusColor(order.status)}`}>
@@ -577,20 +571,20 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-        {/* โ”€โ”€ PRODUCTS TAB โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€ */}
+        {/* ── PRODUCTS TAB ─────────────────────────────────────────────────── */}
         {tab === "products" && (
           <div className="animate-fade-in space-y-6">
 
             {/* Add Product Form */}
             {showForm ? (
-              <div className="rounded-2xl bg-white dark:bg-surface-800/50 p-6 shadow-lg animate-fade-in">
+              <div className="shop-card p-6 shadow-lg animate-fade-in">
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="font-display text-xl font-bold">
+                  <h2 className="font-display text-xl font-bold text-stone-900 dark:text-stone-50">
                     {editingProduct ? "Edit Product" : "Add New Product"}
                   </h2>
                   <button
                     onClick={closeForm}
-                    className="rounded-full p-2 hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors text-gray-400"
+                    className="rounded-full p-2 hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors text-stone-600 dark:text-stone-300"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -603,7 +597,7 @@ export default function AdminDashboardPage() {
                     {/* Name */}
                     <div className="md:col-span-2">
                       <label className="block text-sm font-medium mb-1.5">
-                        Product Name <span className="text-red-500">*</span>
+                        Product Name <span className="text-red-700 dark:text-red-300">*</span>
                       </label>
                       <input
                         type="text"
@@ -611,7 +605,7 @@ export default function AdminDashboardPage() {
                         value={form.name}
                         onChange={(e) => setForm({ ...form, name: e.target.value })}
                         placeholder="e.g. Wireless Headphones"
-                        className="w-full rounded-xl border border-surface-100 dark:border-surface-800 bg-surface-50 dark:bg-surface-900 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/40 transition-shadow"
+                        className="w-full rounded-xl border border-stone-200 dark:border-surface-700 bg-white text-stone-900 placeholder:text-stone-500 dark:bg-surface-900 dark:text-stone-50 dark:placeholder:text-stone-400 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/40 transition-shadow"
                       />
                     </div>
 
@@ -623,7 +617,7 @@ export default function AdminDashboardPage() {
                         onChange={(e) => setForm({ ...form, description: e.target.value })}
                         placeholder="Describe the product..."
                         rows={3}
-                        className="w-full rounded-xl border border-surface-100 dark:border-surface-800 bg-surface-50 dark:bg-surface-900 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/40 transition-shadow resize-none"
+                        className="w-full rounded-xl border border-stone-200 dark:border-surface-700 bg-white text-stone-900 placeholder:text-stone-500 dark:bg-surface-900 dark:text-stone-50 dark:placeholder:text-stone-400 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/40 transition-shadow resize-none"
                       />
                     </div>
 
@@ -631,14 +625,14 @@ export default function AdminDashboardPage() {
                     <div className="md:col-span-2">
                       <label className="block text-sm font-medium mb-1.5">
                         Category
-                        <span className="ml-2 text-xs text-gray-400">(manage in โ๏ธ Settings)</span>
+                        <span className="ml-2 text-xs text-stone-600 dark:text-stone-300">(manage in Settings)</span>
                       </label>
                       <select
                         value={form.category}
                         onChange={(e) => setForm({ ...form, category: e.target.value })}
-                        className="w-full rounded-xl border border-surface-100 dark:border-surface-800 bg-surface-50 dark:bg-surface-900 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/40 transition-shadow"
+                        className="w-full rounded-xl border border-stone-200 dark:border-surface-700 bg-white text-stone-900 placeholder:text-stone-500 dark:bg-surface-900 dark:text-stone-50 dark:placeholder:text-stone-400 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/40 transition-shadow"
                       >
-                        <option value="">โ€” No Category โ€”</option>
+                        <option value="">— No Category —</option>
                         {categories.map((c) => (
                           <option key={c.id} value={c.name}>{c.name}</option>
                         ))}
@@ -648,7 +642,7 @@ export default function AdminDashboardPage() {
                     {/* Price */}
                     <div>
                       <label className="block text-sm font-medium mb-1.5">
-                        Price (MMK) <span className="text-red-500">*</span>
+                        Price (MMK) <span className="text-red-700 dark:text-red-300">*</span>
                       </label>
                       <input
                         type="number"
@@ -658,14 +652,14 @@ export default function AdminDashboardPage() {
                         value={form.price}
                         onChange={(e) => setForm({ ...form, price: e.target.value })}
                         placeholder="50000"
-                        className="w-full rounded-xl border border-surface-100 dark:border-surface-800 bg-surface-50 dark:bg-surface-900 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/40 transition-shadow"
+                        className="w-full rounded-xl border border-stone-200 dark:border-surface-700 bg-white text-stone-900 placeholder:text-stone-500 dark:bg-surface-900 dark:text-stone-50 dark:placeholder:text-stone-400 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/40 transition-shadow"
                       />
                     </div>
 
                     {/* Stock */}
                     <div>
                       <label className="block text-sm font-medium mb-1.5">
-                        Stock <span className="text-red-500">*</span>
+                        Stock <span className="text-red-700 dark:text-red-300">*</span>
                       </label>
                       <input
                         type="number"
@@ -675,7 +669,7 @@ export default function AdminDashboardPage() {
                         value={form.stock}
                         onChange={(e) => setForm({ ...form, stock: e.target.value })}
                         placeholder="10"
-                        className="w-full rounded-xl border border-surface-100 dark:border-surface-800 bg-surface-50 dark:bg-surface-900 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/40 transition-shadow"
+                        className="w-full rounded-xl border border-stone-200 dark:border-surface-700 bg-white text-stone-900 placeholder:text-stone-500 dark:bg-surface-900 dark:text-stone-50 dark:placeholder:text-stone-400 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/40 transition-shadow"
                       />
                     </div>
 
@@ -685,14 +679,14 @@ export default function AdminDashboardPage() {
                     <div>
                       <label className="block text-sm font-medium mb-1.5">
                         Product Image
-                        {editingProduct && <span className="ml-1 text-xs text-gray-400">(leave blank to keep existing)</span>}
+                        {editingProduct && <span className="ml-1 text-xs text-stone-600 dark:text-stone-300">(leave blank to keep existing)</span>}
                       </label>
                       <div className="flex items-start gap-4">
                         {imagePreview && (
                           <img
                             src={imagePreview}
                             alt="Preview"
-                            className="h-20 w-20 rounded-xl object-cover border border-surface-200 dark:border-surface-700 flex-shrink-0"
+                            className="h-20 w-20 rounded-xl object-cover border border-stone-200 dark:border-surface-700 flex-shrink-0"
                           />
                         )}
                         <div className="flex-1">
@@ -706,7 +700,7 @@ export default function AdminDashboardPage() {
                           />
                           <label
                             htmlFor="product-image-input"
-                            className="cursor-pointer flex items-center gap-2 rounded-xl border-2 border-dashed border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-900 px-4 py-3 text-sm text-gray-500 hover:border-primary-400 hover:text-primary-500 transition-colors"
+                            className="flex cursor-pointer items-center gap-2 rounded-xl border-2 border-dashed border-stone-300 bg-surface-50 px-4 py-3 text-sm text-stone-700 transition-colors hover:border-primary-400 hover:text-primary-700 dark:border-surface-700 dark:bg-surface-900 dark:text-stone-200 dark:hover:text-primary-200"
                           >
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -721,7 +715,7 @@ export default function AdminDashboardPage() {
                                 setImagePreview(editingProduct?.imageUrl ?? "");
                                 if (fileInputRef.current) fileInputRef.current.value = "";
                               }}
-                              className="mt-1 text-xs text-red-400 hover:text-red-600"
+                              className="mt-1 text-xs text-red-700 hover:text-red-800 dark:text-red-300 dark:hover:text-red-200"
                             >
                               Remove selected image
                             </button>
@@ -737,7 +731,7 @@ export default function AdminDashboardPage() {
                     </div>
                   )}
                   {formSuccess && (
-                    <div className="rounded-xl bg-green-50 dark:bg-green-900/20 p-3 text-sm text-green-600 dark:text-green-400">
+                    <div className="rounded-xl bg-green-50 dark:bg-green-900/20 p-3 text-sm text-green-700 dark:text-green-300 dark:text-green-400">
                       {formSuccess}
                     </div>
                   )}
@@ -746,7 +740,7 @@ export default function AdminDashboardPage() {
                     <button
                       type="submit"
                       disabled={formSubmitting}
-                      className="flex-1 rounded-xl bg-primary-500 py-3 text-sm font-semibold text-white  hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="flex-1 rounded-xl bg-primary-600 py-3 text-sm font-semibold text-white  hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
                       {formSubmitting
                         ? (editingProduct ? "Saving..." : "Creating...")
@@ -755,7 +749,7 @@ export default function AdminDashboardPage() {
                     <button
                       type="button"
                       onClick={closeForm}
-                      className="rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-6 py-3 text-sm font-semibold hover:bg-surface-50 dark:hover:bg-surface-700 transition-colors"
+                      className="rounded-xl border border-stone-200 bg-white text-stone-800 dark:border-surface-700 dark:bg-surface-800 dark:text-stone-100 px-6 py-3 text-sm font-semibold hover:bg-surface-50 dark:hover:bg-surface-700 transition-colors"
                     >
                       Cancel
                     </button>
@@ -764,10 +758,10 @@ export default function AdminDashboardPage() {
               </div>
             ) : (
               <div className="flex items-center justify-between">
-                <h2 className="font-display text-xl font-bold">Products ({products.length})</h2>
+                <h2 className="font-display text-xl font-bold text-stone-900 dark:text-stone-50">Products ({products.length})</h2>
                 <button
                   onClick={openAddForm}
-                  className="flex items-center gap-2 rounded-xl bg-primary-500 px-5 py-2.5 text-sm font-semibold text-white  hover:bg-primary-600 transition-colors"
+                  className="flex items-center gap-2 rounded-xl bg-primary-600 px-5 py-2.5 text-sm font-semibold text-white  hover:bg-primary-700 transition-colors"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -786,16 +780,16 @@ export default function AdminDashboardPage() {
                   ))}
                 </div>
               ) : products.length === 0 ? (
-                <div className="text-center py-20 text-gray-400">
+                <div className="text-center py-20 text-stone-600 dark:text-stone-300">
                   <p className="text-lg font-medium">No products yet.</p>
                   <p className="text-sm mt-1">Click "Add Product" to get started.</p>
                 </div>
               ) : (
-                <div className="rounded-2xl bg-white dark:bg-surface-800/50 shadow-lg overflow-hidden">
+                <div className="shop-card shadow-lg overflow-hidden">
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
-                      <thead className="bg-surface-50 dark:bg-surface-900">
-                        <tr className="text-left text-xs text-gray-400 uppercase tracking-wide">
+                      <thead className="bg-surface-100 text-stone-700 dark:bg-surface-950 dark:text-stone-200">
+                        <tr className="text-left text-xs text-stone-600 dark:text-stone-300 uppercase tracking-wide">
                           <th className="px-5 py-3">Product</th>
                           <th className="px-5 py-3">Category</th>
                           <th className="px-5 py-3">Price</th>
@@ -804,7 +798,7 @@ export default function AdminDashboardPage() {
                           <th className="px-5 py-3 text-right">Actions</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-surface-100 dark:divide-surface-800">
+                      <tbody className="divide-y divide-stone-200 dark:divide-surface-700">
                         {products.map((product) => (
                           <tr key={product.id} className="hover:bg-surface-50 dark:hover:bg-surface-800/60 transition-colors">
                             <td className="px-5 py-4">
@@ -813,14 +807,14 @@ export default function AdminDashboardPage() {
                                   <img src={product.imageUrl} alt={product.name} className="h-12 w-12 rounded-xl object-cover flex-shrink-0" />
                                 ) : (
                                   <div className="h-12 w-12 rounded-xl bg-surface-100 dark:bg-surface-800 flex items-center justify-center flex-shrink-0">
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-stone-600 dark:text-stone-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                     </svg>
                                   </div>
                                 )}
                                 <div>
-                                  <p className="font-semibold text-gray-900 dark:text-gray-100">{product.name}</p>
-                                  <p className="text-xs text-gray-400 line-clamp-1">{product.description}</p>
+                                  <p className="font-semibold text-stone-900 dark:text-stone-50">{product.name}</p>
+                                  <p className="text-xs text-stone-600 dark:text-stone-300 line-clamp-1">{product.description}</p>
                                 </div>
                               </div>
                             </td>
@@ -830,12 +824,12 @@ export default function AdminDashboardPage() {
                                   {product.category}
                                 </span>
                               ) : (
-                                <span className="text-xs text-gray-400">โ€”</span>
+                                <span className="text-xs text-stone-600 dark:text-stone-300">—</span>
                               )}
                             </td>
-                            <td className="px-5 py-4 font-semibold text-primary-600">{formatMMK(product.price)}</td>
+                            <td className="px-5 py-4 font-semibold text-primary-700 dark:text-primary-300">{formatMMK(product.price)}</td>
                             <td className="px-5 py-4">
-                              <span className={`font-semibold ${product.stock === 0 ? "text-red-500" : product.stock <= 5 ? "text-orange-500" : "text-green-600"}`}>
+                              <span className={`font-semibold ${product.stock === 0 ? "text-red-700 dark:text-red-300" : product.stock <= 5 ? "text-orange-700 dark:text-orange-300" : "text-green-700 dark:text-green-300"}`}>
                                 {product.stock === 0 ? "Out of stock" : product.stock}
                               </span>
                             </td>
@@ -844,7 +838,7 @@ export default function AdminDashboardPage() {
                               <div className="flex items-center justify-end gap-2">
                                 <button
                                   onClick={() => openEditForm(product)}
-                                  className="rounded-lg bg-surface-100 dark:bg-surface-800 px-3 py-1.5 text-xs font-semibold hover:bg-primary-100 dark:hover:bg-primary-900/30 hover:text-primary-600 transition-colors"
+                                  className="rounded-lg bg-surface-100 px-3 py-1.5 text-xs font-semibold text-stone-800 dark:bg-surface-800 dark:text-stone-100 hover:bg-primary-100 dark:hover:bg-primary-900/30 hover:text-primary-700 dark:hover:text-primary-200 transition-colors"
                                 >
                                   Edit
                                 </button>
@@ -852,13 +846,13 @@ export default function AdminDashboardPage() {
                                   <div className="flex items-center gap-1">
                                     <button
                                       onClick={() => handleDelete(product.id)}
-                                      className="rounded-lg bg-red-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-600 transition-colors"
+                                      className="rounded-lg bg-red-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-800 transition-colors"
                                     >
                                       Confirm
                                     </button>
                                     <button
                                       onClick={() => setDeleteConfirm(null)}
-                                      className="rounded-lg bg-surface-100 dark:bg-surface-800 px-3 py-1.5 text-xs font-semibold hover:bg-surface-200 dark:hover:bg-surface-700 transition-colors"
+                                      className="rounded-lg bg-surface-100 px-3 py-1.5 text-xs font-semibold text-stone-800 dark:bg-surface-800 dark:text-stone-100 hover:bg-surface-200 dark:hover:bg-surface-700 transition-colors"
                                     >
                                       Cancel
                                     </button>
@@ -866,7 +860,7 @@ export default function AdminDashboardPage() {
                                 ) : (
                                   <button
                                     onClick={() => setDeleteConfirm(product.id)}
-                                    className="rounded-lg bg-surface-100 dark:bg-surface-800 px-3 py-1.5 text-xs font-semibold hover:bg-red-100 dark:hover:bg-red-900/30 hover:text-red-600 transition-colors"
+                                    className="rounded-lg bg-surface-100 px-3 py-1.5 text-xs font-semibold text-stone-800 dark:bg-surface-800 dark:text-stone-100 hover:bg-red-100 dark:hover:bg-red-900/30 hover:text-red-700 dark:hover:text-red-300 transition-colors"
                                   >
                                     Delete
                                   </button>
@@ -884,14 +878,14 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-        {/* โ”€โ”€ ORDERS TAB โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€ */}
+        {/* ── ORDERS TAB ───────────────────────────────────────────────────── */}
         {tab === "orders" && (
           <div className="animate-fade-in space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="font-display text-xl font-bold">All Orders ({orders.length})</h2>
+              <h2 className="font-display text-xl font-bold text-stone-900 dark:text-stone-50">All Orders ({orders.length})</h2>
               <button
                 onClick={loadOrders}
-                className="flex items-center gap-2 rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 px-4 py-2 text-sm font-medium hover:bg-surface-50 dark:hover:bg-surface-700 transition-colors"
+                className="flex items-center gap-2 rounded-xl border border-stone-200 bg-white text-stone-800 dark:border-surface-700 dark:bg-surface-800 dark:text-stone-100 px-4 py-2 text-sm font-medium hover:bg-surface-50 dark:hover:bg-surface-700 transition-colors"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -907,15 +901,15 @@ export default function AdminDashboardPage() {
                 ))}
               </div>
             ) : orders.length === 0 ? (
-              <div className="text-center py-20 text-gray-400">
+              <div className="text-center py-20 text-stone-600 dark:text-stone-300">
                 <p className="text-lg font-medium">No orders yet.</p>
               </div>
             ) : (
-              <div className="rounded-2xl bg-white dark:bg-surface-800/50 shadow-lg overflow-hidden">
+              <div className="shop-card shadow-lg overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
-                    <thead className="bg-surface-50 dark:bg-surface-900">
-                      <tr className="text-left text-xs text-gray-400 uppercase tracking-wide">
+                    <thead className="bg-surface-100 text-stone-700 dark:bg-surface-950 dark:text-stone-200">
+                      <tr className="text-left text-xs text-stone-600 dark:text-stone-300 uppercase tracking-wide">
                         <th className="px-5 py-3">Order</th>
                         <th className="px-5 py-3">Customer</th>
                         <th className="px-5 py-3">Date</th>
@@ -925,17 +919,17 @@ export default function AdminDashboardPage() {
                         <th className="px-5 py-3 text-right">Action</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-surface-100 dark:divide-surface-800">
+                    <tbody className="divide-y divide-stone-200 dark:divide-surface-700">
                       {orders.map((order) => (
                         <tr key={order.id} className="hover:bg-surface-50 dark:hover:bg-surface-800/60 transition-colors">
                           <td className="px-5 py-4 font-semibold">#{order.id}</td>
                           <td className="px-5 py-4">
-                            <p className="font-medium text-gray-900 dark:text-gray-100">{order.customerName}</p>
-                            <p className="text-xs text-gray-400">{order.customerEmail}</p>
+                            <p className="font-medium text-stone-900 dark:text-stone-50">{order.customerName}</p>
+                            <p className="text-xs text-stone-600 dark:text-stone-300">{order.customerEmail}</p>
                           </td>
-                          <td className="px-5 py-4 text-gray-500 text-xs">{formatDate(order.orderDate)}</td>
-                          <td className="px-5 py-4 text-gray-500">{order.items.length} item{order.items.length !== 1 ? "s" : ""}</td>
-                          <td className="px-5 py-4 font-semibold text-primary-600">{formatMMK(order.total)}</td>
+                          <td className="px-5 py-4 text-stone-600 dark:text-stone-300 text-xs">{formatDate(order.orderDate)}</td>
+                          <td className="px-5 py-4 text-stone-600 dark:text-stone-300">{order.items.length} item{order.items.length !== 1 ? "s" : ""}</td>
+                          <td className="px-5 py-4 font-semibold text-primary-700 dark:text-primary-300">{formatMMK(order.total)}</td>
                           <td className="px-5 py-4">
                             <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${getOrderStatusColor(order.status)}`}>
                               {order.status}
@@ -959,18 +953,18 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-        {/* โ”€โ”€ ANALYTICS TAB โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€ */}
+        {/* ── ANALYTICS TAB ─────────────────────────────────────────────────── */}
         {tab === "analytics" && <AdminAnalytics />}
 
         {tab === "settings" && (
           <div className="animate-fade-in space-y-8">
-            <h2 className="font-display text-xl font-bold">โ๏ธ Store Settings</h2>
+            <h2 className="font-display text-xl font-bold text-stone-900 dark:text-stone-50">Store Settings</h2>
 
-            {/* โ”€โ”€ Category Manager โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€ */}
-            <div className="rounded-2xl bg-white dark:bg-surface-800/50 p-6 shadow-lg space-y-5">
+            {/* ── Category Manager ──────────────────────────────── */}
+            <div className="shop-card p-6 shadow-lg space-y-5">
               <div>
-                <h3 className="font-semibold text-lg mb-1">๐ท๏ธ Product Categories</h3>
-                <p className="text-sm text-gray-400">Define categories used when creating products</p>
+                <h3 className="mb-1 text-lg font-semibold text-stone-900 dark:text-stone-50">Product Categories</h3>
+                <p className="text-sm text-stone-600 dark:text-stone-300">Define categories used when creating products</p>
               </div>
 
               {/* Add new category */}
@@ -981,11 +975,11 @@ export default function AdminDashboardPage() {
                   onChange={(e) => setNewCategoryName(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addCategory())}
                   placeholder="e.g. Kitchen, Kids, Electronics..."
-                  className="flex-1 rounded-xl border border-surface-100 dark:border-surface-800 bg-surface-50 dark:bg-surface-900 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/40"
+                  className="flex-1 rounded-xl border border-stone-200 dark:border-surface-700 bg-white text-stone-900 placeholder:text-stone-500 dark:bg-surface-900 dark:text-stone-50 dark:placeholder:text-stone-400 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/40"
                 />
                 <button
                   onClick={addCategory}
-                  className="rounded-xl bg-primary-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-600 transition-colors flex items-center gap-2"
+                  className="rounded-xl bg-primary-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-700 transition-colors flex items-center gap-2"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -993,19 +987,19 @@ export default function AdminDashboardPage() {
                   Add
                 </button>
               </div>
-              {catError && <p className="text-sm text-red-500">{catError}</p>}
+              {catError && <p className="text-sm text-red-700 dark:text-red-300">{catError}</p>}
 
               {/* List */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                 {categories.map((cat) => (
                   <div
                     key={cat.id}
-                    className="flex items-center justify-between rounded-xl bg-surface-50 dark:bg-surface-900 border border-surface-100 dark:border-surface-800 px-4 py-2.5"
+                    className="flex items-center justify-between rounded-xl border border-stone-200 bg-surface-100 px-4 py-2.5 text-stone-800 dark:border-surface-700 dark:bg-surface-900 dark:text-stone-100"
                   >
                     <span className="text-sm font-medium">{cat.name}</span>
                     <button
                       onClick={() => deleteCategory(cat.id)}
-                      className="ml-2 text-gray-400 hover:text-red-500 transition-colors"
+                      className="ml-2 text-stone-600 transition-colors hover:text-red-700 dark:text-stone-300 dark:hover:text-red-300"
                       title="Delete category"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1017,15 +1011,15 @@ export default function AdminDashboardPage() {
               </div>
 
               {categories.length === 0 && (
-                <p className="text-sm text-gray-400 text-center py-4">No categories yet. Add one above.</p>
+                <p className="text-sm text-stone-600 dark:text-stone-300 text-center py-4">No categories yet. Add one above.</p>
               )}
             </div>
 
-            {/* โ”€โ”€ Delivery Zone Manager โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€ */}
-            <div className="rounded-2xl bg-white dark:bg-surface-800/50 p-6 shadow-lg space-y-5">
+            {/* ── Delivery Zone Manager ──────────────────────────── */}
+            <div className="shop-card p-6 shadow-lg space-y-5">
               <div>
-                <h3 className="font-semibold text-lg mb-1">๐ Delivery Zones & Fees</h3>
-                <p className="text-sm text-gray-400">Predefine delivery fees by location. Users will select their town at checkout.</p>
+                <h3 className="mb-1 text-lg font-semibold text-stone-900 dark:text-stone-50">Delivery Zones & Fees</h3>
+                <p className="text-sm text-stone-600 dark:text-stone-300">Predefine delivery fees by location. Users will select their town at checkout.</p>
               </div>
 
               {/* Add new zone */}
@@ -1035,7 +1029,7 @@ export default function AdminDashboardPage() {
                   value={newZoneTown}
                   onChange={(e) => setNewZoneTown(e.target.value)}
                   placeholder="Town (e.g. Hlaing)"
-                  className="flex-1 rounded-xl border border-surface-100 dark:border-surface-800 bg-surface-50 dark:bg-surface-900 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/40"
+                  className="flex-1 rounded-xl border border-stone-200 dark:border-surface-700 bg-white text-stone-900 placeholder:text-stone-500 dark:bg-surface-900 dark:text-stone-50 dark:placeholder:text-stone-400 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/40"
                 />
                 <input
                   type="number"
@@ -1043,11 +1037,11 @@ export default function AdminDashboardPage() {
                   onChange={(e) => setNewZoneFee(e.target.value)}
                   placeholder="Fee (MMK)"
                   min="0"
-                  className="w-36 rounded-xl border border-surface-100 dark:border-surface-800 bg-surface-50 dark:bg-surface-900 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/40"
+                  className="w-36 rounded-xl border border-stone-200 dark:border-surface-700 bg-white text-stone-900 placeholder:text-stone-500 dark:bg-surface-900 dark:text-stone-50 dark:placeholder:text-stone-400 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/40"
                 />
                 <button
                   onClick={addZone}
-                  className="rounded-xl bg-primary-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-600 transition-colors flex items-center gap-2"
+                  className="rounded-xl bg-primary-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-700 transition-colors flex items-center gap-2"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -1055,19 +1049,19 @@ export default function AdminDashboardPage() {
                   Add
                 </button>
               </div>
-              {zoneError && <p className="text-sm text-red-500">{zoneError}</p>}
+              {zoneError && <p className="text-sm text-red-700 dark:text-red-300">{zoneError}</p>}
 
               {/* Zone list */}
-              <div className="rounded-xl border border-surface-100 dark:border-surface-800 overflow-hidden">
+              <div className="rounded-xl border border-stone-200 dark:border-surface-700 overflow-hidden">
                 <table className="w-full text-sm">
-                  <thead className="bg-surface-50 dark:bg-surface-900">
-                    <tr className="text-left text-xs text-gray-400 uppercase tracking-wide">
+                  <thead className="bg-surface-100 text-stone-700 dark:bg-surface-950 dark:text-stone-200">
+                    <tr className="text-left text-xs text-stone-600 dark:text-stone-300 uppercase tracking-wide">
                       <th className="px-4 py-3">Town / Location</th>
                       <th className="px-4 py-3">Delivery Fee</th>
                       <th className="px-4 py-3 text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-surface-100 dark:divide-surface-800">
+                  <tbody className="divide-y divide-stone-200 dark:divide-surface-700">
                     {zones.map((zone) => (
                       <tr key={zone.id} className="hover:bg-surface-50 dark:hover:bg-surface-800/60 transition-colors">
                         <td className="px-4 py-3">
@@ -1075,7 +1069,7 @@ export default function AdminDashboardPage() {
                             <input
                               value={editingZone.townName}
                               onChange={(e) => editingZone && setEditingZone({ ...editingZone, townName: e.target.value })}
-                              className="rounded-lg border border-primary-300 bg-white dark:bg-surface-900 px-2 py-1 text-sm w-36 focus:outline-none focus:ring-2 focus:ring-primary-500/40"
+                              className="w-36 rounded-lg border border-primary-300 bg-white px-2 py-1 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-primary-500/40 dark:bg-surface-900 dark:text-stone-50"
                             />
                           ) : (
                             <span className="font-medium">{zone.townName}</span>
@@ -1087,10 +1081,10 @@ export default function AdminDashboardPage() {
                               type="number"
                               value={editingZone.fee}
                               onChange={(e) => setEditingZone({ ...editingZone, fee: parseFloat(e.target.value) || 0 })}
-                              className="rounded-lg border border-primary-300 bg-white dark:bg-surface-900 px-2 py-1 text-sm w-28 focus:outline-none focus:ring-2 focus:ring-primary-500/40"
+                              className="w-28 rounded-lg border border-primary-300 bg-white px-2 py-1 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-primary-500/40 dark:bg-surface-900 dark:text-stone-50"
                             />
                           ) : (
-                            <span className="font-semibold text-primary-600">{formatMMK(zone.fee)}</span>
+                            <span className="font-semibold text-primary-700 dark:text-primary-300">{formatMMK(zone.fee)}</span>
                           )}
                         </td>
                         <td className="px-4 py-3 text-right">
@@ -1098,13 +1092,13 @@ export default function AdminDashboardPage() {
                             <div className="flex items-center justify-end gap-2">
                               <button
                                 onClick={saveEditZone}
-                                className="rounded-lg bg-green-500 px-3 py-1 text-xs font-semibold text-white hover:bg-green-600 transition-colors"
+                                className="rounded-lg bg-emerald-700 px-3 py-1 text-xs font-semibold text-white hover:bg-emerald-800 transition-colors"
                               >
                                 Save
                               </button>
                               <button
                                 onClick={() => setEditingZone(null)}
-                                className="rounded-lg bg-surface-100 dark:bg-surface-800 px-3 py-1 text-xs font-semibold hover:bg-surface-200 transition-colors"
+                                className="rounded-lg bg-surface-100 px-3 py-1 text-xs font-semibold text-stone-800 dark:bg-surface-800 dark:text-stone-100 hover:bg-surface-200 dark:hover:bg-surface-700 transition-colors"
                               >
                                 Cancel
                               </button>
@@ -1113,13 +1107,13 @@ export default function AdminDashboardPage() {
                             <div className="flex items-center justify-end gap-2">
                               <button
                                 onClick={() => startEditZone(zone)}
-                                className="rounded-lg bg-surface-100 dark:bg-surface-800 px-3 py-1 text-xs font-semibold hover:bg-primary-100 dark:hover:bg-primary-900/30 hover:text-primary-600 transition-colors"
+                                className="rounded-lg bg-surface-100 px-3 py-1 text-xs font-semibold text-stone-800 dark:bg-surface-800 dark:text-stone-100 hover:bg-primary-100 dark:hover:bg-primary-900/30 hover:text-primary-700 dark:hover:text-primary-200 transition-colors"
                               >
                                 Edit
                               </button>
                               <button
                                 onClick={() => deleteZone(zone.id)}
-                                className="rounded-lg bg-surface-100 dark:bg-surface-800 px-3 py-1 text-xs font-semibold hover:bg-red-100 dark:hover:bg-red-900/30 hover:text-red-600 transition-colors"
+                                className="rounded-lg bg-surface-100 px-3 py-1 text-xs font-semibold text-stone-800 dark:bg-surface-800 dark:text-stone-100 hover:bg-red-100 dark:hover:bg-red-900/30 hover:text-red-700 dark:hover:text-red-300 transition-colors"
                               >
                                 Delete
                               </button>
@@ -1131,20 +1125,20 @@ export default function AdminDashboardPage() {
                   </tbody>
                 </table>
                 {zones.length === 0 && (
-                  <p className="text-sm text-gray-400 text-center py-6">No delivery zones yet.</p>
+                  <p className="text-sm text-stone-600 dark:text-stone-300 text-center py-6">No delivery zones yet.</p>
                 )}
               </div>
             </div>
           </div>
         )}
 
-        {/* โ”€โ”€ ORDER DETAIL TAB โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€ */}
+        {/* ── ORDER DETAIL TAB ─────────────────────────────────────────────── */}
         {tab === "order-detail" && selectedOrder && (
           <div className="animate-fade-in space-y-6">
             {/* Back button */}
             <button
               onClick={() => setTab("orders")}
-              className="flex items-center gap-2 text-sm text-gray-500 hover:text-primary-500 transition-colors"
+              className="flex items-center gap-2 text-sm text-stone-700 transition-colors hover:text-primary-700 dark:text-stone-200 dark:hover:text-primary-200"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -1157,11 +1151,11 @@ export default function AdminDashboardPage() {
               <div className="lg:col-span-2 space-y-5">
 
                 {/* Header */}
-                <div className="rounded-2xl bg-white dark:bg-surface-800/50 p-6 shadow-lg">
+                <div className="shop-card p-6 shadow-lg">
                   <div className="flex items-start justify-between mb-4">
                     <div>
-                      <h2 className="font-display text-2xl font-bold">Order #{selectedOrder.id}</h2>
-                      <p className="text-sm text-gray-400 mt-1">{formatDate(selectedOrder.orderDate)}</p>
+                      <h2 className="font-display text-2xl font-bold text-stone-900 dark:text-stone-50">Order #{selectedOrder.id}</h2>
+                      <p className="text-sm text-stone-600 dark:text-stone-300 mt-1">{formatDate(selectedOrder.orderDate)}</p>
                     </div>
                     <span className={`rounded-full px-3 py-1.5 text-sm font-semibold ${getOrderStatusColor(selectedOrder.status)}`}>
                       {selectedOrder.status}
@@ -1169,25 +1163,25 @@ export default function AdminDashboardPage() {
                   </div>
 
                   {/* Customer info */}
-                  <div className="bg-surface-50 dark:bg-surface-900 rounded-xl p-4 space-y-2 text-sm">
-                    <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-2">Customer Information</h3>
+                  <div className="space-y-2 rounded-xl bg-surface-100 p-4 text-sm text-stone-800 dark:bg-surface-950 dark:text-stone-100">
+                    <h3 className="font-semibold text-stone-800 dark:text-stone-100 mb-2">Customer Information</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <div>
-                        <span className="text-gray-400">Name: </span>
+                        <span className="text-stone-600 dark:text-stone-300">Name: </span>
                         <span className="font-medium">{selectedOrder.customerName}</span>
                       </div>
                       <div>
-                        <span className="text-gray-400">Email: </span>
+                        <span className="text-stone-600 dark:text-stone-300">Email: </span>
                         <span className="font-medium">{selectedOrder.customerEmail}</span>
                       </div>
                       {selectedOrder.customerPhone && (
                         <div>
-                          <span className="text-gray-400">Phone: </span>
+                          <span className="text-stone-600 dark:text-stone-300">Phone: </span>
                           <span className="font-medium">{selectedOrder.customerPhone}</span>
                         </div>
                       )}
                       <div className="sm:col-span-2">
-                        <span className="text-gray-400">Delivery Address: </span>
+                        <span className="text-stone-600 dark:text-stone-300">Delivery Address: </span>
                         <span className="font-medium">{selectedOrder.deliveryAddress}</span>
                       </div>
                     </div>
@@ -1195,23 +1189,23 @@ export default function AdminDashboardPage() {
                 </div>
 
                 {/* Order items */}
-                <div className="rounded-2xl bg-white dark:bg-surface-800/50 p-6 shadow-lg">
-                  <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-4">Ordered Items</h3>
-                  <div className="divide-y divide-surface-100 dark:divide-surface-800">
+                <div className="shop-card p-6 shadow-lg">
+                  <h3 className="font-semibold text-stone-800 dark:text-stone-100 mb-4">Ordered Items</h3>
+                  <div className="divide-y divide-stone-200 dark:divide-surface-700">
                     {selectedOrder.items.map((item) => (
                       <div key={item.id} className="py-4 flex items-center gap-4">
                         {item.productImageUrl ? (
                           <img src={item.productImageUrl} alt={item.productName} className="h-14 w-14 rounded-xl object-cover flex-shrink-0" />
                         ) : (
                           <div className="h-14 w-14 rounded-xl bg-surface-100 dark:bg-surface-800 flex-shrink-0 flex items-center justify-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-stone-600 dark:text-stone-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                             </svg>
                           </div>
                         )}
                         <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-sm text-gray-900 dark:text-gray-100">{item.productName}</p>
-                          <p className="text-xs text-gray-400 mt-0.5">{formatMMK(item.unitPrice)} ร— {item.quantity}</p>
+                          <p className="font-semibold text-sm text-stone-900 dark:text-stone-50">{item.productName}</p>
+                          <p className="text-xs text-stone-600 dark:text-stone-300 mt-0.5">{formatMMK(item.unitPrice)} × {item.quantity}</p>
                         </div>
                         <p className="font-bold text-sm">{formatMMK(item.lineTotal)}</p>
                       </div>
@@ -1219,18 +1213,18 @@ export default function AdminDashboardPage() {
                   </div>
 
                   {/* Totals */}
-                  <div className="mt-4 border-t-2 border-dashed border-surface-200 dark:border-surface-700 pt-4 space-y-2 text-sm">
-                    <div className="flex justify-between text-gray-500">
+                  <div className="mt-4 border-t-2 border-dashed border-stone-200 dark:border-surface-700 pt-4 space-y-2 text-sm">
+                    <div className="flex justify-between text-stone-600 dark:text-stone-300">
                       <span>Products Subtotal</span>
                       <span>{formatMMK(selectedOrder.subtotal)}</span>
                     </div>
-                    <div className="flex justify-between text-gray-500">
+                    <div className="flex justify-between text-stone-600 dark:text-stone-300">
                       <span>Delivery / Cargo</span>
                       <span>{formatMMK(selectedOrder.cargoTotal)}</span>
                     </div>
-                    <div className="flex justify-between text-lg font-bold pt-2 border-t border-surface-200 dark:border-surface-700">
+                    <div className="flex justify-between text-lg font-bold pt-2 border-t border-stone-200 dark:border-surface-700">
                       <span>TOTAL</span>
-                      <span className="text-primary-600">{formatMMK(selectedOrder.total)}</span>
+                      <span className="text-primary-700 dark:text-primary-300">{formatMMK(selectedOrder.total)}</span>
                     </div>
                   </div>
                 </div>
@@ -1238,8 +1232,8 @@ export default function AdminDashboardPage() {
 
               {/* Status update panel */}
               <div className="space-y-5">
-                <div className="rounded-2xl bg-white dark:bg-surface-800/50 p-6 shadow-lg">
-                  <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-4">Update Order Status</h3>
+                <div className="shop-card p-6 shadow-lg">
+                  <h3 className="font-semibold text-stone-800 dark:text-stone-100 mb-4">Update Order Status</h3>
 
                   {/* Status flow visualization */}
                   <div className="mb-5 space-y-2">
@@ -1248,8 +1242,8 @@ export default function AdminDashboardPage() {
                       const isDone = idx <= currentIdx;
                       return (
                         <div key={s} className="flex items-center gap-3">
-                          <div className={`h-3 w-3 rounded-full flex-shrink-0 ${isDone ? "bg-primary-500" : "bg-surface-200 dark:bg-surface-700"}`} />
-                          <span className={`text-xs font-medium ${isDone ? "text-primary-600 dark:text-primary-400" : "text-gray-400"}`}>
+                          <div className={`h-3 w-3 rounded-full flex-shrink-0 ${isDone ? "bg-primary-600" : "bg-surface-200 dark:bg-surface-700"}`} />
+                          <span className={`text-xs font-medium ${isDone ? "text-primary-700 dark:text-primary-200" : "text-stone-600 dark:text-stone-300"}`}>
                             {s.charAt(0) + s.slice(1).toLowerCase()}
                           </span>
                         </div>
@@ -1257,7 +1251,7 @@ export default function AdminDashboardPage() {
                     })}
                     <div className="flex items-center gap-3">
                       <div className={`h-3 w-3 rounded-full flex-shrink-0 ${selectedOrder.status === "CANCELLED" ? "bg-red-500" : "bg-surface-200 dark:bg-surface-700"}`} />
-                      <span className={`text-xs font-medium ${selectedOrder.status === "CANCELLED" ? "text-red-500" : "text-gray-400"}`}>
+                      <span className={`text-xs font-medium ${selectedOrder.status === "CANCELLED" ? "text-red-700 dark:text-red-300" : "text-stone-600 dark:text-stone-300"}`}>
                         Cancelled
                       </span>
                     </div>
@@ -1268,7 +1262,7 @@ export default function AdminDashboardPage() {
                     <select
                       value={newStatus}
                       onChange={(e) => setNewStatus(e.target.value)}
-                      className="w-full rounded-xl border border-surface-100 dark:border-surface-800 bg-surface-50 dark:bg-surface-900 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/40 transition-shadow"
+                      className="w-full rounded-xl border border-stone-200 dark:border-surface-700 bg-white text-stone-900 placeholder:text-stone-500 dark:bg-surface-900 dark:text-stone-50 dark:placeholder:text-stone-400 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/40 transition-shadow"
                     >
                       {ORDER_STATUSES.map((s) => (
                         <option key={s} value={s}>{s.charAt(0) + s.slice(1).toLowerCase()}</option>
@@ -1277,7 +1271,7 @@ export default function AdminDashboardPage() {
                     <button
                       onClick={handleStatusUpdate}
                       disabled={statusUpdating || newStatus === selectedOrder.status}
-                      className="w-full rounded-xl bg-primary-500 py-2.5 text-sm font-semibold text-white  hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="w-full rounded-xl bg-primary-600 py-2.5 text-sm font-semibold text-white  hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
                       {statusUpdating ? "Updating..." : "Update Status"}
                     </button>

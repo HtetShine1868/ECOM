@@ -23,6 +23,6 @@ public class OAuth2LoginFailureHandler extends SimpleUrlAuthenticationFailureHan
                                         AuthenticationException exception) throws IOException {
         log.warn("OAuth2 login failed: {}", exception.getMessage());
         String base = redirectSupport.resolveBase(request, response);
-        getRedirectStrategy().sendRedirect(request, response, base + "/login?error=oauth");
+        redirectSupport.sendBrowser(response, base + "/login?error=oauth");
     }
 }

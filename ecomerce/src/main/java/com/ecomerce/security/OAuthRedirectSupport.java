@@ -7,6 +7,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Arrays;
@@ -53,7 +54,53 @@ public class OAuthRedirectSupport {
     public String resolveBase(HttpServletRequest request, HttpServletResponse response) {
         String fromCookie = sanitize(readCookie(request));
         response.addHeader(HttpHeaders.SET_COOKIE, cookie(request, "", Duration.ZERO).toString());
-        return fromCookie != null ? fromCookie : frontendUrl;
+        String base = fromCookie != null ? fromCookie : frontendUrl;
+        if (base.isBlank() || sameHost(base, request.getServerName())) {
+            return frontendUrl;
+        }
+        return base;
+    }
+
+    public String frontendLogin() {
+        return frontendUrl + "/login";
+    }
+
+    /**
+     * Facebook appends #_=_ to the callback. A 302 keeps that fragment, so the
+     * browser stays on the API /login page. A script navigation replaces it.
+     */
+    public void sendBrowser(HttpServletResponse response, String target) throws IOException {
+        response.setStatus(HttpServletResponse.SC_OK);
+        response.setCharacterEncoding("UTF-8");
+        response.setContentType("text/html;charset=UTF-8");
+        response.setHeader(HttpHeaders.CACHE_CONTROL, "no-store");
+        response.getWriter().write("""
+                <!DOCTYPE html>
+                <html><head><meta charset="utf-8"><title>Redirecting</title></head>
+                <body><script>location.replace(%s);</script></body></html>
+                """.formatted(jsString(target)));
+    }
+
+    private static boolean sameHost(String url, String host) {
+        if (host == null || host.isBlank()) return false;
+        String originHost = hostOf(url);
+        return originHost != null && originHost.equalsIgnoreCase(host);
+    }
+
+    private static String hostOf(String value) {
+        try {
+            return URI.create(value).getHost();
+        } catch (IllegalArgumentException ex) {
+            return null;
+        }
+    }
+
+    private static String jsString(String value) {
+        return "\"" + value
+                .replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\r", "")
+                .replace("\n", "") + "\"";
     }
 
     private String readCookie(HttpServletRequest request) {

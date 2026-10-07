@@ -13,15 +13,15 @@ export function formatDate(dateStr: string): string {
 
 export function getOrderStatusColor(status: string): string {
   const map: Record<string, string> = {
-    PENDING:    "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
-    CONFIRMED:  "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-    PROCESSING: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
-    SHIPPED:    "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400",
-    DELIVERING: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400",
-    DELIVERED:  "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
-    CANCELLED:  "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+    PENDING:    "bg-amber-100 text-amber-950 dark:bg-amber-400/15 dark:text-amber-100",
+    CONFIRMED:  "bg-primary-100 text-primary-900 dark:bg-primary-400/15 dark:text-primary-100",
+    PROCESSING: "bg-orange-100 text-orange-950 dark:bg-orange-400/15 dark:text-orange-100",
+    SHIPPED:    "bg-stone-200 text-stone-900 dark:bg-stone-500/20 dark:text-stone-100",
+    DELIVERING: "bg-accent-100 text-accent-600 dark:bg-accent-400/20 dark:text-emerald-100",
+    DELIVERED:  "bg-emerald-100 text-emerald-950 dark:bg-emerald-400/15 dark:text-emerald-100",
+    CANCELLED:  "bg-red-100 text-red-950 dark:bg-red-400/15 dark:text-red-100",
   };
-  return map[status] || "bg-gray-100 text-gray-700";
+  return map[status] || "bg-stone-200 text-stone-900 dark:bg-stone-500/20 dark:text-stone-100";
 }
 
 export const ORDER_STATUSES = [

@@ -15,6 +15,10 @@ export default function OAuth2CallbackPage() {
     if (processed.current) return;
     processed.current = true;
 
+    if (window.location.hash === "#_=_") {
+      window.history.replaceState(null, "", window.location.pathname + window.location.search);
+    }
+
     completeOAuth()
       .then((user) => navigate(homeForRole(user.role), { replace: true }))
       .catch(() => navigate("/login?error=oauth", { replace: true }));
