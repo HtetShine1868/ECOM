@@ -1,7 +1,9 @@
 import { useState } from "react";
-import { Link, Navigate, useNavigate } from "react-router-dom";
+import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import OAuthButtons from "../components/auth/OAuthButtons";
+import AuthShell from "../components/auth/AuthShell";
+import { safeNextPath } from "../components/auth/RequireAuth";
 
 function EyeIcon({ open }: { open: boolean }) {
   return open ? (
@@ -21,6 +23,9 @@ function EyeIcon({ open }: { open: boolean }) {
 export default function RegisterPage() {
   const { register, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const next = safeNextPath(searchParams.get("next"));
+  const loginTo = next === "/" ? "/login" : `/login?next=${encodeURIComponent(next)}`;
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -31,7 +36,7 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
 
   if (isAuthenticated) {
-    return <Navigate to="/" replace />;
+    return <Navigate to={next} replace />;
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -50,7 +55,7 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       await register(name, email, password);
-      navigate("/");
+      navigate(next);
     } catch (err: unknown) {
       const msg =
         err && typeof err === "object" && "message" in err
@@ -63,7 +68,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="flex min-h-[70vh] items-center justify-center p-6">
+    <AuthShell>
       <div className="w-full max-w-md animate-fade-in">
         <div className="mb-8 text-center">
           <h1 className="mb-2 font-display text-3xl font-semibold">Create an account</h1>
@@ -172,12 +177,12 @@ export default function RegisterPage() {
 
           <p className="mt-6 text-center text-sm text-gray-400">
             Already have an account?{" "}
-            <Link to="/login" className="font-semibold text-primary-700 hover:underline">
+            <Link to={loginTo} className="font-semibold text-primary-700 hover:underline">
               Sign in
             </Link>
           </p>
         </div>
       </div>
-    </div>
+    </AuthShell>
   );
 }

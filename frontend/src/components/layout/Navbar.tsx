@@ -35,43 +35,47 @@ export default function Navbar() {
           </span>
         </Link>
 
-        <ul className="hidden items-center gap-5 md:flex">
-          {navLinks.map((link) => (
-            <li key={link.to}>
-              <Link
-                to={link.to}
-                className={`text-sm font-semibold ${
-                  location.pathname === link.to
-                    ? "text-primary-700"
-                    : "text-stone-600 hover:text-primary-700 dark:text-stone-300"
-                }`}
-              >
-                {link.label}
-              </Link>
-            </li>
-          ))}
-          {isAdmin && (
-            <li>
-              <Link
-                to="/admin"
-                className={`text-sm font-semibold ${
-                  location.pathname === "/admin" ? "text-primary-700" : "text-stone-600 hover:text-primary-700"
-                }`}
-              >
-                Admin
-              </Link>
-            </li>
-          )}
-        </ul>
+        {isAuthenticated && (
+          <>
+            <ul className="hidden items-center gap-5 md:flex">
+              {navLinks.map((link) => (
+                <li key={link.to}>
+                  <Link
+                    to={link.to}
+                    className={`text-sm font-semibold ${
+                      location.pathname === link.to
+                        ? "text-primary-700"
+                        : "text-stone-600 hover:text-primary-700 dark:text-stone-300"
+                    }`}
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+              {isAdmin && (
+                <li>
+                  <Link
+                    to="/admin"
+                    className={`text-sm font-semibold ${
+                      location.pathname === "/admin" ? "text-primary-700" : "text-stone-600 hover:text-primary-700"
+                    }`}
+                  >
+                    Admin
+                  </Link>
+                </li>
+              )}
+            </ul>
 
-        <form onSubmit={search} className="hidden min-w-0 flex-1 md:flex">
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search kitchen, kids, daily..."
-            className="field"
-          />
-        </form>
+            <form onSubmit={search} className="hidden min-w-0 flex-1 md:flex">
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search kitchen, kids, daily..."
+                className="field"
+              />
+            </form>
+          </>
+        )}
 
         <div className="ml-auto flex items-center gap-1.5">
           <button
@@ -90,40 +94,44 @@ export default function Navbar() {
             )}
           </button>
 
-          <button
-            onClick={() => setIsOpen(true)}
-            className="relative hidden rounded-full p-2 text-stone-600 hover:bg-white md:inline-flex dark:text-stone-300 dark:hover:bg-surface-800"
-            aria-label="Open bag"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M6 8h12l-1 12H7L6 8zm3 0V6a3 3 0 016 0v2" />
-            </svg>
-            {totalItems > 0 && (
-              <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary-600 px-1 text-[10px] font-bold text-white animate-pop">
-                {totalItems}
-              </span>
-            )}
-          </button>
-
           {isAuthenticated ? (
-            <div className="hidden items-center gap-2 sm:flex">
-              <span className="max-w-[8rem] truncate text-sm font-medium text-stone-700 dark:text-stone-200">
-                {user?.name}
-              </span>
+            <>
               <button
-                onClick={() => {
-                  logout();
-                  clearCart();
-                }}
-                className="btn-secondary px-3 py-1.5"
+                onClick={() => setIsOpen(true)}
+                className="relative hidden rounded-full p-2 text-stone-600 hover:bg-white md:inline-flex dark:text-stone-300 dark:hover:bg-surface-800"
+                aria-label="Open bag"
               >
-                Log out
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M6 8h12l-1 12H7L6 8zm3 0V6a3 3 0 016 0v2" />
+                </svg>
+                {totalItems > 0 && (
+                  <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary-600 px-1 text-[10px] font-bold text-white animate-pop">
+                    {totalItems}
+                  </span>
+                )}
               </button>
-            </div>
+              <div className="hidden items-center gap-2 sm:flex">
+                <span className="max-w-[8rem] truncate text-sm font-medium text-stone-700 dark:text-stone-200">
+                  {user?.name}
+                </span>
+                <button
+                  onClick={() => {
+                    logout();
+                    clearCart();
+                    navigate("/");
+                  }}
+                  className="btn-secondary px-3 py-1.5"
+                >
+                  Log out
+                </button>
+              </div>
+            </>
           ) : (
-            <Link to="/login" className="btn-primary hidden px-4 py-1.5 sm:inline-flex">
-              Sign in
-            </Link>
+            location.pathname !== "/login" && (
+              <Link to="/login" className="btn-primary px-5 py-2">
+                Sign in
+              </Link>
+            )
           )}
         </div>
       </nav>

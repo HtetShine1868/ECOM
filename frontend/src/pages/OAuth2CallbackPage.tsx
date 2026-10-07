@@ -21,10 +21,10 @@ export default function OAuth2CallbackPage() {
   }, [completeOAuth, navigate]);
 
   return (
-    <div className="bg-surface-50 dark:bg-surface-900 min-h-screen flex items-center justify-center">
+    <div className="linen flex min-h-dvh items-center justify-center">
       <div className="text-center animate-fade-in">
-        <div className="inline-block w-10 h-10 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mb-4" />
-        <p className="text-gray-400 text-sm">Completing sign-in...</p>
+        <div className="mb-4 inline-block h-10 w-10 animate-spin rounded-full border-4 border-primary-500 border-t-transparent" />
+        <p className="text-sm text-stone-500">Opening the shop...</p>
       </div>
     </div>
   );

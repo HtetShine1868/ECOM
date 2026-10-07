@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import OAuthButtons from "../components/auth/OAuthButtons";
+import AuthShell from "../components/auth/AuthShell";
+import { safeNextPath } from "../components/auth/RequireAuth";
 
 function EyeIcon({ open }: { open: boolean }) {
   return open ? (
@@ -32,8 +34,10 @@ export default function LoginPage() {
   );
   const [loading, setLoading] = useState(false);
 
+  const next = safeNextPath(searchParams.get("next"));
+
   if (isAuthenticated) {
-    return <Navigate to={isAdmin ? "/admin" : "/"} replace />;
+    return <Navigate to={isAdmin ? "/admin" : next} replace />;
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -42,7 +46,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const user = await login(email, password);
-      navigate(user.role === "ADMIN" ? "/admin" : "/");
+      navigate(user.role === "ADMIN" ? "/admin" : next);
     } catch (err: unknown) {
       const msg =
         err && typeof err === "object" && "message" in err
@@ -54,12 +58,14 @@ export default function LoginPage() {
     }
   };
 
+  const registerTo = next === "/" ? "/register" : `/register?next=${encodeURIComponent(next)}`;
+
   return (
-    <div className="flex min-h-[70vh] items-center justify-center p-6">
+    <AuthShell>
       <div className="w-full max-w-md animate-fade-in">
         <div className="mb-8 text-center">
           <h1 className="mb-2 font-display text-3xl font-semibold">Welcome back</h1>
-          <p className="text-stone-500">Sign in to check out and see your orders.</p>
+          <p className="text-stone-500">Sign in to open the shop, check stock, and order.</p>
         </div>
 
         <div className="shop-card p-8">
@@ -123,12 +129,12 @@ export default function LoginPage() {
 
           <p className="mt-6 text-center text-sm text-stone-500">
             Don&apos;t have an account?{" "}
-            <Link to="/register" className="font-semibold text-primary-700 hover:underline">
+            <Link to={registerTo} className="font-semibold text-primary-700 hover:underline">
               Create one
             </Link>
           </p>
         </div>
       </div>
-    </div>
+    </AuthShell>
   );
 }
