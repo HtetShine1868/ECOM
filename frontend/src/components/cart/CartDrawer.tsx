@@ -25,7 +25,7 @@ export default function CartDrawer() {
       />
 
       {/* Drawer */}
-      <div className="fixed right-0 top-0 z-50 flex h-full w-full max-w-md flex-col bg-surface-50 shadow-shop animate-slide-in dark:bg-surface-900">
+      <div className="fixed inset-y-0 right-0 z-50 flex h-full w-full max-w-md flex-col bg-surface-50 shadow-shop animate-slide-in dark:bg-surface-900">
         <div className="flex items-center justify-between border-b border-stone-200 px-6 py-4 dark:border-surface-800">
           <h2 className="font-display text-xl font-semibold">
             Your bag
@@ -66,7 +66,7 @@ export default function CartDrawer() {
                   <img
                     src={item.product.imageUrl ?? "https://via.placeholder.com/80"}
                     alt={item.product.name}
-                    className="h-20 w-20 rounded-lg object-cover"
+                    className="h-20 w-20 shrink-0 rounded-lg object-cover"
                   />
                   <div className="flex-1 min-w-0">
                     <h3 className="text-sm font-semibold truncate">
@@ -116,7 +116,7 @@ export default function CartDrawer() {
 
         {/* Footer */}
         {items.length > 0 && (
-          <div className="space-y-3 border-t border-stone-200 px-6 py-4 dark:border-surface-800">
+          <div className="space-y-3 border-t border-stone-200 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 dark:border-surface-800 sm:px-6">
             <div className="flex justify-between text-lg font-semibold">
               <span>Total</span>
               <span className="text-primary-700">{formatMMK(totalPrice)}</span>

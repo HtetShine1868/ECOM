@@ -68,7 +68,7 @@ export default function LoginPage() {
           <p className="text-stone-500">Sign in to open the shop, check stock, and order.</p>
         </div>
 
-        <div className="shop-card p-8">
+        <div className="shop-card p-5 sm:p-8">
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label htmlFor="email" className="block text-sm font-medium mb-1.5">

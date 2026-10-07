@@ -48,7 +48,7 @@ export default function ProductDetailPage() {
       <div className="flex min-h-[50vh] items-center justify-center">
         <div className="text-center">
           <h1 className="font-display text-2xl font-semibold mb-2">We don’t have that item</h1>
-          <Link to="/products" className="font-semibold text-primary-700 hover:underline">
+          <Link to="/products" className="font-semibold text-primary-700 hover:underline dark:text-primary-300">
             Back to the shop
           </Link>
         </div>
@@ -59,30 +59,30 @@ export default function ProductDetailPage() {
   return (
     <div className="p-4 md:p-6">
       <div className="mx-auto max-w-5xl">
-        <nav className="mb-6 text-sm text-stone-400">
-          <Link to="/" className="hover:text-primary-700">Home</Link>
-          <span className="mx-2">/</span>
-          <Link to="/products" className="hover:text-primary-700">Shop</Link>
-          <span className="mx-2">/</span>
-          <span className="text-stone-700 dark:text-stone-200">{product.name}</span>
+        <nav className="mb-6 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-stone-500 dark:text-stone-400">
+          <Link to="/" className="hover:text-primary-700 dark:hover:text-primary-300">Home</Link>
+          <span>/</span>
+          <Link to="/products" className="hover:text-primary-700 dark:hover:text-primary-300">Shop</Link>
+          <span>/</span>
+          <span className="min-w-0 break-words text-stone-700 dark:text-stone-200">{product.name}</span>
         </nav>
 
-        <div className="grid gap-8 md:grid-cols-2">
+        <div className="grid gap-6 md:grid-cols-2 md:gap-8">
           <div className="shop-card overflow-hidden bg-primary-50">
             <img
               src={product.imageUrl ?? "https://placehold.co/600x700?text=No+Image"}
               alt={product.name}
-              className="h-full w-full object-cover"
+              className="aspect-[4/5] w-full object-cover md:aspect-square"
             />
           </div>
 
           <div className="flex flex-col">
             {product.category && (
-              <span className="mb-2 inline-block w-fit rounded-full bg-primary-100 px-3 py-1 text-xs font-semibold text-primary-800">
+              <span className="mb-2 inline-block w-fit rounded-full bg-primary-100 px-3 py-1 text-xs font-semibold text-primary-800 dark:bg-primary-900/40 dark:text-primary-100">
                 {product.category}
               </span>
             )}
-            <h1 className="font-display text-3xl font-semibold mb-3">
+            <h1 className="mb-3 break-words font-display text-3xl font-semibold">
               {product.name}
             </h1>
             <p className="mb-6 leading-relaxed text-stone-600 dark:text-stone-300">
@@ -90,24 +90,24 @@ export default function ProductDetailPage() {
             </p>
 
             <div className="mb-4">
-              <span className="font-display text-3xl font-semibold text-primary-700">
+              <span className="font-display text-3xl font-semibold text-primary-700 dark:text-primary-300">
                 {formatMMK(product.price)}
               </span>
               {product.cargoPrice > 0 && (
-                <span className="ml-3 text-sm text-stone-400">
+                <span className="ml-3 text-sm text-stone-500 dark:text-stone-400">
                   + {formatMMK(product.cargoPrice)} cargo
                 </span>
               )}
             </div>
 
-            <p className={`text-sm font-medium ${product.stock > 0 ? "text-accent-600" : "text-red-600"} ${product.unitsSold ? "mb-2" : "mb-6"}`}>
+            <p className={`text-sm font-medium ${product.stock > 0 ? "text-accent-700 dark:text-accent-300" : "text-red-700 dark:text-red-300"} ${product.unitsSold ? "mb-2" : "mb-6"}`}>
               {product.stock > 0 ? `${product.stock} in stock` : "Sold out"}
             </p>
             {product.unitsSold != null && product.unitsSold > 0 && (
-              <p className="mb-6 text-sm text-stone-500">{product.unitsSold} sold</p>
+              <p className="mb-6 text-sm text-stone-600 dark:text-stone-300">{product.unitsSold} sold</p>
             )}
 
-            <div className="mt-auto flex items-center gap-3">
+            <div className="mt-auto flex flex-col gap-3 sm:flex-row sm:items-center">
               <div className="flex items-center rounded-full border border-stone-200 bg-white dark:border-surface-800 dark:bg-surface-800">
                 <button
                   onClick={() => setQuantity((q) => Math.max(1, q - 1))}
@@ -126,7 +126,7 @@ export default function ProductDetailPage() {
               <button
                 disabled={product.stock === 0}
                 onClick={() => addItem(product, quantity)}
-                className="btn-primary flex-1 py-3"
+                className="btn-primary w-full flex-1 py-3"
               >
                 Add to bag
               </button>
@@ -137,7 +137,7 @@ export default function ProductDetailPage() {
         {related.length > 0 && (
           <section className="mt-12">
             <h2 className="mb-4 font-display text-2xl font-semibold">Goes well with</h2>
-            <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
               {related.map((item) => (
                 <ProductCard key={item.id} product={item} />
               ))}

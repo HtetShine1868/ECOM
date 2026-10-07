@@ -8,12 +8,12 @@ export default function Footer() {
   return (
     <footer
       className={`mt-auto border-t border-stone-200 bg-white pt-10 dark:border-surface-800 dark:bg-surface-900 ${
-        isAuthenticated ? "pb-24 md:pb-12" : "pb-10"
+        isAuthenticated ? "pb-[calc(6.5rem+env(safe-area-inset-bottom))] md:pb-12" : "pb-10"
       }`}
     >
       <div className="mx-auto max-w-7xl px-4 md:px-6">
         {isAuthenticated ? (
-          <div className="grid gap-10 md:grid-cols-4">
+          <div className="grid gap-8 sm:grid-cols-2 sm:gap-10 md:grid-cols-4">
             <div className="md:col-span-2">
               <Brand />
               <p className="mt-3 max-w-md text-sm leading-relaxed text-stone-600 dark:text-stone-300">
@@ -39,7 +39,7 @@ export default function Footer() {
         ) : (
           <Brand />
         )}
-        <p className="mt-8 text-xs text-stone-400">
+        <p className="mt-8 text-xs text-stone-500 dark:text-stone-400">
           {new Date().getFullYear()} ShopNow. Kitchen, kids, and everyday things.
         </p>
       </div>

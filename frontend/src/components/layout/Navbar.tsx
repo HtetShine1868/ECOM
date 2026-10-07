@@ -27,10 +27,10 @@ export default function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-stone-200/80 bg-surface-50/90 backdrop-blur-md dark:border-surface-800 dark:bg-surface-900/90">
-      <nav className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 md:px-6">
-        <Link to="/" className="flex shrink-0 items-center gap-2">
-          <ShopMark className="h-9 w-9" />
-          <span className="font-display text-xl font-semibold tracking-tight text-stone-900 dark:text-stone-50">
+      <nav className="mx-auto flex max-w-7xl items-center gap-2 px-4 py-3 sm:gap-4 md:px-6">
+        <Link to="/" className="flex min-w-0 shrink items-center gap-2">
+          <ShopMark className="h-9 w-9 shrink-0" />
+          <span className="truncate font-display text-lg font-semibold tracking-tight text-stone-900 sm:text-xl dark:text-stone-50">
             ShopNow
           </span>
         </Link>
@@ -44,8 +44,8 @@ export default function Navbar() {
                     to={link.to}
                     className={`text-sm font-semibold ${
                       location.pathname === link.to
-                        ? "text-primary-700"
-                        : "text-stone-600 hover:text-primary-700 dark:text-stone-300"
+                        ? "text-primary-700 dark:text-primary-300"
+                        : "text-stone-600 hover:text-primary-700 dark:text-stone-300 dark:hover:text-primary-200"
                     }`}
                   >
                     {link.label}
@@ -57,7 +57,9 @@ export default function Navbar() {
                   <Link
                     to="/admin"
                     className={`text-sm font-semibold ${
-                      location.pathname === "/admin" ? "text-primary-700" : "text-stone-600 hover:text-primary-700"
+                      location.pathname === "/admin"
+                        ? "text-primary-700 dark:text-primary-300"
+                        : "text-stone-600 hover:text-primary-700 dark:text-stone-300 dark:hover:text-primary-200"
                     }`}
                   >
                     Admin
@@ -77,10 +79,10 @@ export default function Navbar() {
           </>
         )}
 
-        <div className="ml-auto flex items-center gap-1.5">
+        <div className="ml-auto flex shrink-0 items-center gap-1.5">
           <button
             onClick={toggle}
-            className="rounded-full p-2 text-stone-500 hover:bg-white dark:hover:bg-surface-800"
+            className="rounded-full p-2 text-stone-600 hover:bg-white dark:text-stone-200 dark:hover:bg-surface-800"
             aria-label="Toggle theme"
           >
             {isDark ? (

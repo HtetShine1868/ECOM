@@ -69,8 +69,8 @@ export default function OrderHistoryPage() {
           <div className="mt-8 space-y-4">
             {orders.map((order) => (
               <article key={order.id} className="shop-card p-5">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0">
                     <Link
                       to={"/receipt/" + order.id}
                       className="font-display text-xl font-semibold hover:text-primary-700"
@@ -79,7 +79,7 @@ export default function OrderHistoryPage() {
                     </Link>
                     <p className="mt-0.5 text-sm text-stone-500">{formatDate(order.orderDate)}</p>
                   </div>
-                  <span className={`rounded-full px-3 py-1 text-xs font-semibold ${getOrderStatusColor(order.status)}`}>
+                  <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${getOrderStatusColor(order.status)}`}>
                     {formatStatus(order.status)}
                   </span>
                 </div>
@@ -96,21 +96,21 @@ export default function OrderHistoryPage() {
                   )}
                 </ul>
 
-                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-stone-100 pt-4 dark:border-surface-700">
+                <div className="mt-4 flex flex-col gap-3 border-t border-stone-100 pt-4 sm:flex-row sm:items-center sm:justify-between dark:border-surface-700">
                   <div className="min-w-0">
-                    <p className="truncate text-xs text-stone-500">{order.deliveryAddress}</p>
-                    <p className="font-display text-lg font-semibold text-primary-700">{formatMMK(order.total)}</p>
+                    <p className="break-words text-xs text-stone-500">{order.deliveryAddress}</p>
+                    <p className="font-display text-lg font-semibold text-primary-700 dark:text-primary-300">{formatMMK(order.total)}</p>
                   </div>
                   <div className="flex gap-2">
                     <button
                       type="button"
                       onClick={() => download(order)}
                       disabled={downloadingId === order.id}
-                      className="btn-primary"
+                      className="btn-primary flex-1 sm:flex-none"
                     >
                       {downloadingId === order.id ? "Preparing…" : "Download"}
                     </button>
-                    <Link to={"/receipt/" + order.id} className="btn-secondary">
+                    <Link to={"/receipt/" + order.id} className="btn-secondary flex-1 text-center sm:flex-none">
                       View
                     </Link>
                   </div>

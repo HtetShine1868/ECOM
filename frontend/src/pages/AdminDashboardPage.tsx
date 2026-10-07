@@ -66,7 +66,7 @@ function TabButton({
   return (
     <button
       onClick={onClick}
-      className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+      className={`shrink-0 whitespace-nowrap rounded-xl px-5 py-2.5 text-sm font-semibold transition-all ${
         active
           ? "bg-primary-600 text-white shadow-shop"
           : "border border-stone-200 bg-white text-stone-800 hover:border-primary-400 hover:text-primary-700 dark:border-surface-700 dark:bg-surface-800 dark:text-stone-100 dark:hover:text-primary-200"
@@ -432,11 +432,11 @@ export default function AdminDashboardPage() {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-surface-50 p-4 text-stone-900 dark:bg-surface-900 dark:text-stone-50 md:p-6">
+    <div className="min-h-screen min-w-0 overflow-x-clip bg-surface-50 p-4 text-stone-900 dark:bg-surface-900 dark:text-stone-50 md:p-6">
       <div className="mx-auto max-w-7xl">
 
         {/* Page header */}
-        <div className="mb-6 flex items-center justify-between">
+        <div className="mb-6">
           <div>
             <h1 className="font-display text-3xl font-bold text-stone-900 dark:text-stone-50 md:text-4xl">Admin Panel</h1>
             <p className="text-sm text-stone-600 dark:text-stone-300 mt-1">Manage your store</p>
@@ -444,7 +444,7 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-2 flex-wrap mb-8">
+        <div className="-mx-4 mb-8 flex gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:flex-wrap md:overflow-visible md:px-0">
           <TabButton active={tab === "dashboard"} onClick={() => setTab("dashboard")}>
             Dashboard
           </TabButton>
@@ -529,7 +529,7 @@ export default function AdminDashboardPage() {
 
             {/* Recent orders snapshot */}
             <div className="shop-card p-6 shadow-lg">
-              <div className="flex items-center justify-between mb-4">
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                 <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-50">Recent Orders</h2>
                 <button
                   onClick={() => setTab("orders")}
@@ -548,7 +548,7 @@ export default function AdminDashboardPage() {
                 <p className="text-stone-600 dark:text-stone-300 text-sm text-center py-8">No orders yet.</p>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
+                  <table className="w-full min-w-[36rem] text-sm">
                     <thead>
                       <tr className="text-left text-xs text-stone-600 dark:text-stone-300 border-b border-stone-200 dark:border-surface-700">
                         <th className="pb-2 pr-4">Order</th>
@@ -747,7 +747,7 @@ export default function AdminDashboardPage() {
                     </div>
                   )}
 
-                  <div className="flex gap-3 pt-2">
+                  <div className="flex flex-col gap-3 pt-2 sm:flex-row">
                     <button
                       type="submit"
                       disabled={formSubmitting}
@@ -768,7 +768,7 @@ export default function AdminDashboardPage() {
                 </form>
               </div>
             ) : (
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <h2 className="font-display text-xl font-bold text-stone-900 dark:text-stone-50">Products ({products.length})</h2>
                 <button
                   onClick={openAddForm}
@@ -798,7 +798,7 @@ export default function AdminDashboardPage() {
               ) : (
                 <div className="shop-card shadow-lg overflow-hidden">
                   <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
+                    <table className="w-full min-w-[44rem] text-sm">
                       <thead className="bg-surface-100 text-stone-700 dark:bg-surface-950 dark:text-stone-200">
                         <tr className="text-left text-xs text-stone-600 dark:text-stone-300 uppercase tracking-wide">
                           <th className="px-5 py-3">Product</th>
@@ -892,7 +892,7 @@ export default function AdminDashboardPage() {
         {/* ── ORDERS TAB ───────────────────────────────────────────────────── */}
         {tab === "orders" && (
           <div className="animate-fade-in space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <h2 className="font-display text-xl font-bold text-stone-900 dark:text-stone-50">All Orders ({orders.length})</h2>
               <button
                 onClick={loadOrders}
@@ -918,7 +918,7 @@ export default function AdminDashboardPage() {
             ) : (
               <div className="shop-card shadow-lg overflow-hidden">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
+                  <table className="w-full min-w-[52rem] text-sm">
                     <thead className="bg-surface-100 text-stone-700 dark:bg-surface-950 dark:text-stone-200">
                       <tr className="text-left text-xs text-stone-600 dark:text-stone-300 uppercase tracking-wide">
                         <th className="px-5 py-3">Order</th>
@@ -979,7 +979,7 @@ export default function AdminDashboardPage() {
               </div>
 
               {/* Add new category */}
-              <div className="flex gap-3">
+              <div className="flex flex-col gap-3 sm:flex-row">
                 <input
                   type="text"
                   value={newCategoryName}
@@ -1007,7 +1007,7 @@ export default function AdminDashboardPage() {
                     key={cat.id}
                     className="flex items-center justify-between rounded-xl border border-stone-200 bg-surface-100 px-4 py-2.5 text-stone-800 dark:border-surface-700 dark:bg-surface-900 dark:text-stone-100"
                   >
-                    <span className="text-sm font-medium">{cat.name}</span>
+                    <span className="min-w-0 truncate text-sm font-medium">{cat.name}</span>
                     <button
                       onClick={() => deleteCategory(cat.id)}
                       className="ml-2 text-stone-600 transition-colors hover:text-red-700 dark:text-stone-300 dark:hover:text-red-300"
@@ -1034,7 +1034,7 @@ export default function AdminDashboardPage() {
               </div>
 
               {/* Add new zone */}
-              <div className="flex gap-3">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                 <input
                   type="text"
                   value={newZoneTown}
@@ -1048,7 +1048,7 @@ export default function AdminDashboardPage() {
                   onChange={(e) => setNewZoneFee(e.target.value)}
                   placeholder="Fee (MMK)"
                   min="0"
-                  className="w-36 rounded-xl border border-stone-200 dark:border-surface-700 bg-white text-stone-900 placeholder:text-stone-500 dark:bg-surface-900 dark:text-stone-50 dark:placeholder:text-stone-400 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/40"
+                  className="w-full rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-base text-stone-900 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-primary-500/40 dark:border-surface-700 dark:bg-surface-900 dark:text-stone-50 dark:placeholder:text-stone-400 sm:w-36 sm:text-sm"
                 />
                 <button
                   onClick={addZone}
@@ -1063,8 +1063,8 @@ export default function AdminDashboardPage() {
               {zoneError && <p className="text-sm text-red-700 dark:text-red-300">{zoneError}</p>}
 
               {/* Zone list */}
-              <div className="rounded-xl border border-stone-200 dark:border-surface-700 overflow-hidden">
-                <table className="w-full text-sm">
+              <div className="overflow-x-auto rounded-xl border border-stone-200 dark:border-surface-700">
+                <table className="w-full min-w-[32rem] text-sm">
                   <thead className="bg-surface-100 text-stone-700 dark:bg-surface-950 dark:text-stone-200">
                     <tr className="text-left text-xs text-stone-600 dark:text-stone-300 uppercase tracking-wide">
                       <th className="px-4 py-3">Town / Location</th>
@@ -1163,12 +1163,12 @@ export default function AdminDashboardPage() {
 
                 {/* Header */}
                 <div className="shop-card p-6 shadow-lg">
-                  <div className="flex items-start justify-between mb-4">
+                  <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                       <h2 className="font-display text-2xl font-bold text-stone-900 dark:text-stone-50">Order #{selectedOrder.id}</h2>
                       <p className="text-sm text-stone-600 dark:text-stone-300 mt-1">{formatDate(selectedOrder.orderDate)}</p>
                     </div>
-                    <span className={`rounded-full px-3 py-1.5 text-sm font-semibold ${getOrderStatusColor(selectedOrder.status)}`}>
+                    <span className={`w-fit shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold ${getOrderStatusColor(selectedOrder.status)}`}>
                       {selectedOrder.status}
                     </span>
                   </div>
@@ -1204,7 +1204,7 @@ export default function AdminDashboardPage() {
                   <h3 className="font-semibold text-stone-800 dark:text-stone-100 mb-4">Ordered Items</h3>
                   <div className="divide-y divide-stone-200 dark:divide-surface-700">
                     {selectedOrder.items.map((item) => (
-                      <div key={item.id} className="py-4 flex items-center gap-4">
+                      <div key={item.id} className="flex items-center gap-3 py-4 sm:gap-4">
                         {item.productImageUrl ? (
                           <img src={item.productImageUrl} alt={item.productName} className="h-14 w-14 rounded-xl object-cover flex-shrink-0" />
                         ) : (
@@ -1215,10 +1215,10 @@ export default function AdminDashboardPage() {
                           </div>
                         )}
                         <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-sm text-stone-900 dark:text-stone-50">{item.productName}</p>
+                          <p className="truncate text-sm font-semibold text-stone-900 dark:text-stone-50">{item.productName}</p>
                           <p className="text-xs text-stone-600 dark:text-stone-300 mt-0.5">{formatMMK(item.unitPrice)} × {item.quantity}</p>
                         </div>
-                        <p className="font-bold text-sm">{formatMMK(item.lineTotal)}</p>
+                        <p className="shrink-0 text-sm font-bold">{formatMMK(item.lineTotal)}</p>
                       </div>
                     ))}
                   </div>

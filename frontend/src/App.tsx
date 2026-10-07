@@ -45,11 +45,11 @@ function AppLayout() {
   }
 
   return (
-    <div className="linen flex min-h-screen flex-col">
+    <div className="linen flex min-h-screen min-w-0 flex-col">
       <Navbar />
       <CartDrawer />
       <CartToast />
-      <main className="flex-1 pb-8">
+      <main className="min-w-0 flex-1 pb-8">
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/login" element={<Navigate to="/" replace />} />

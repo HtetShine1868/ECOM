@@ -133,10 +133,10 @@ export default function AdminAnalytics() {
             </select>
           </div>
           {range === "custom" && (
-            <div className="flex flex-wrap items-center gap-2">
-              <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} aria-label="From" className="field w-auto" />
+            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+              <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} aria-label="From" className="field sm:w-auto" />
               <span className="text-sm text-stone-400">to</span>
-              <input type="date" value={to} onChange={(e) => setTo(e.target.value)} aria-label="To" className="field w-auto" />
+              <input type="date" value={to} onChange={(e) => setTo(e.target.value)} aria-label="To" className="field sm:w-auto" />
             </div>
           )}
         </div>
@@ -228,8 +228,8 @@ export default function AdminAnalytics() {
                     return (
                       <li key={row.category}>
                         <div className="mb-1 flex items-baseline justify-between gap-3 text-sm">
-                          <span className="font-medium">{row.category}</span>
-                          <span className="tabular-nums text-stone-600 dark:text-stone-300">{formatMMK(row.revenue)}</span>
+                          <span className="min-w-0 truncate font-medium">{row.category}</span>
+                          <span className="shrink-0 tabular-nums text-stone-600 dark:text-stone-300">{formatMMK(row.revenue)}</span>
                         </div>
                         <ShareBar percent={pct} wide />
                       </li>
@@ -309,8 +309,8 @@ export default function AdminAnalytics() {
                   {data.lowStock.length === 0 && <li className="text-stone-500">None</li>}
                   {data.lowStock.map((item) => (
                     <li key={item.id} className="flex justify-between gap-3">
-                      <span>{item.name}</span>
-                      <span className="tabular-nums text-amber-700 dark:text-amber-200">{item.stock}</span>
+                      <span className="min-w-0 truncate">{item.name}</span>
+                      <span className="shrink-0 tabular-nums text-amber-700 dark:text-amber-200">{item.stock}</span>
                     </li>
                   ))}
                 </ul>
@@ -334,8 +334,8 @@ export default function AdminAnalytics() {
                   <ul className="mt-4 space-y-1 border-t border-stone-100 pt-3 text-sm dark:border-surface-700">
                     {data.frequentlyCancelledProducts.map((product) => (
                       <li key={product.name} className="flex justify-between gap-3">
-                        <span>{product.name}</span>
-                        <span className="text-stone-500">{product.unitsSold} units</span>
+                        <span className="min-w-0 truncate">{product.name}</span>
+                        <span className="shrink-0 text-stone-500">{product.unitsSold} units</span>
                       </li>
                     ))}
                   </ul>
@@ -378,7 +378,7 @@ function Metric({
       <p className={`text-xs font-semibold uppercase tracking-wide ${featured ? "text-primary-100" : "text-stone-500"}`}>
         {label}
       </p>
-      <p className={`mt-1 font-display text-2xl font-semibold leading-tight ${featured ? "" : "text-stone-900 dark:text-stone-50"}`}>
+      <p className={`mt-1 break-words font-display text-xl font-semibold leading-tight sm:text-2xl ${featured ? "" : "text-stone-900 dark:text-stone-50"}`}>
         {value}
       </p>
       <p className={`mt-2 text-xs leading-relaxed ${featured ? "text-primary-100" : "text-stone-500"}`}>{hint}</p>

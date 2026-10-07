@@ -130,7 +130,7 @@ export default function CheckoutPage() {
         <form onSubmit={handleSubmit} className="space-y-6">
 
           {/* ── Order Summary ─────────────────────────────────────────────── */}
-          <div className="shop-card p-6">
+          <div className="shop-card p-4 sm:p-6">
             <h2 className="font-semibold text-lg mb-4">Order Summary</h2>
             <ul className="divide-y divide-surface-100 dark:divide-surface-800">
               {items.map((item) => (
@@ -139,14 +139,14 @@ export default function CheckoutPage() {
                     <img
                       src={item.product.imageUrl}
                       alt={item.product.name}
-                      className="h-12 w-12 rounded-lg object-cover flex-shrink-0"
+                      className="h-12 w-12 shrink-0 rounded-lg object-cover"
                     />
                   )}
-                  <div className="flex-1 min-w-0">
-                    <span className="font-medium text-sm">{item.product.name}</span>
-                    <span className="ml-2 text-xs text-gray-400">× {item.quantity}</span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">{item.product.name}</p>
+                    <p className="text-xs text-gray-400">× {item.quantity}</p>
                   </div>
-                  <span className="font-medium text-sm">
+                  <span className="shrink-0 text-sm font-medium">
                     {formatMMK(item.product.price * item.quantity)}
                   </span>
                 </li>
@@ -167,16 +167,13 @@ export default function CheckoutPage() {
 
               {/* Town delivery fee line — only visible when a zone is selected */}
               {selectedZone && (
-                <div className="flex justify-between text-sm text-gray-500">
-                  <span className="flex items-center gap-1.5">
-                    <span>🚚</span>
-                    <span>Delivery Fee ({selectedZone.townName})</span>
-                  </span>
-                  <span className="font-medium text-primary-600">{formatMMK(deliveryFee)}</span>
+                <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 text-sm text-gray-500">
+                  <span className="min-w-0">Delivery Fee ({selectedZone.townName})</span>
+                  <span className="shrink-0 font-medium text-primary-600">{formatMMK(deliveryFee)}</span>
                 </div>
               )}
 
-              <div className="flex justify-between text-lg font-bold pt-2 border-t border-surface-100 dark:border-surface-800">
+              <div className="flex flex-wrap items-baseline justify-between gap-2 border-t border-surface-100 pt-2 text-lg font-bold dark:border-surface-800">
                 <span>Grand Total</span>
                 <span className="text-primary-600">{formatMMK(grandTotal)}</span>
               </div>
@@ -184,7 +181,7 @@ export default function CheckoutPage() {
           </div>
 
           {/* ── Customer Information ───────────────────────────────────────── */}
-          <div className="shop-card p-6">
+          <div className="shop-card p-4 sm:p-6">
             <h2 className="font-semibold text-lg mb-4">Your Information</h2>
             <div className="space-y-4">
               <div>
@@ -214,7 +211,7 @@ export default function CheckoutPage() {
           </div>
 
           {/* ── Delivery Location ──────────────────────────────────────────── */}
-          <div className="shop-card space-y-4 p-6">
+          <div className="shop-card space-y-4 p-4 sm:p-6">
             <h2 className="font-semibold text-lg">Delivery Location</h2>
 
             {/* Town dropdown */}

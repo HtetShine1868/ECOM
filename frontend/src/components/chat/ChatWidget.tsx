@@ -106,7 +106,7 @@ export default function ChatWidget() {
     <>
       {open && (
         <section
-          className="fixed z-40 flex flex-col overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-shop dark:border-surface-800 dark:bg-surface-900 inset-x-3 bottom-20 top-16 md:inset-auto md:bottom-6 md:right-6 md:top-auto md:h-[min(36rem,calc(100dvh-5rem))] md:w-[380px]"
+          className="fixed z-40 flex flex-col overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-shop inset-x-3 bottom-[calc(5rem+env(safe-area-inset-bottom))] top-[max(4rem,env(safe-area-inset-top))] dark:border-surface-800 dark:bg-surface-900 md:inset-auto md:bottom-6 md:right-6 md:top-auto md:h-[min(36rem,calc(100dvh-5rem))] md:w-[min(380px,calc(100vw-2rem))]"
           aria-label="ShopNow chat"
         >
           <header className="border-b border-surface-100 px-4 py-3 dark:border-surface-800">
@@ -167,7 +167,7 @@ export default function ChatWidget() {
                       : "bg-surface-50 text-gray-800 dark:bg-surface-800 dark:text-gray-100"
                   }`}
                 >
-                  <p className="whitespace-pre-wrap">{message.text}</p>
+                  <p className="whitespace-pre-wrap break-words">{message.text}</p>
                   {message.products && message.products.length > 0 && (
                     <ul className="mt-3 space-y-2">
                       {message.products.map((product) => (
@@ -232,7 +232,7 @@ export default function ChatWidget() {
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="fixed bottom-24 right-4 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-primary-700 text-white shadow-shop transition hover:bg-primary-800 md:bottom-6 md:right-6 md:h-14 md:w-14"
+          className="fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] right-4 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-primary-700 text-white shadow-shop transition hover:bg-primary-800 md:bottom-6 md:right-6 md:h-14 md:w-14"
           aria-label="Open chat support"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -260,7 +260,7 @@ function ProductChip({
       <img
         src={product.imageUrl || "https://placehold.co/80x80?text=Item"}
         alt=""
-        className="h-14 w-14 rounded-lg object-cover"
+        className="h-14 w-14 shrink-0 rounded-lg object-cover"
       />
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100">

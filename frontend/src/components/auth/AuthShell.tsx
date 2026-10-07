@@ -17,7 +17,7 @@ export default function AuthShell({ children }: { children: ReactNode }) {
         </div>
       </aside>
       <div className="linen flex flex-col">
-        <div className="flex items-center px-6 py-5">
+        <div className="flex items-center px-4 py-5 sm:px-6">
           <Link to="/" className="flex items-center gap-2">
             <ShopMark className="h-9 w-9" />
             <span className="font-display text-xl font-semibold text-stone-900 dark:text-stone-50">
@@ -25,7 +25,7 @@ export default function AuthShell({ children }: { children: ReactNode }) {
             </span>
           </Link>
         </div>
-        <div className="flex flex-1 items-center justify-center px-6 pb-12">{children}</div>
+        <div className="flex flex-1 items-center justify-center px-4 pb-12 sm:px-6">{children}</div>
       </div>
     </div>
   );

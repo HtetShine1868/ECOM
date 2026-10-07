@@ -71,7 +71,7 @@ export default function ReceiptPage() {
         }
       `}</style>
 
-      <div className="bg-surface-50 dark:bg-surface-900 min-h-screen p-6">
+      <div className="min-h-screen bg-surface-50 p-4 dark:bg-surface-900 sm:p-6">
         <div className="mx-auto max-w-2xl">
 
           {/* Success banner – no-print */}
@@ -81,23 +81,23 @@ export default function ReceiptPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h1 className="font-display text-3xl font-bold mb-1">Order Confirmed!</h1>
+            <h1 className="mb-1 font-display text-2xl font-bold sm:text-3xl">Order Confirmed!</h1>
             <p className="text-gray-400">Your order has been placed successfully.</p>
           </div>
 
           {/* Receipt Card */}
           <div
             id="receipt-printable"
-            className="rounded-2xl bg-white dark:bg-surface-800/50 p-8 shadow-lg animate-fade-in"
+            className="animate-fade-in rounded-2xl bg-white p-4 shadow-lg dark:bg-surface-800/50 sm:p-8"
           >
             {/* Store header */}
             <div className="text-center mb-6 pb-4 border-b-2 border-dashed border-surface-200 dark:border-surface-700">
-              <h2 className="font-display text-3xl font-bold text-primary-600 mb-1">{STORE_NAME}</h2>
+              <h2 className="mb-1 font-display text-2xl font-bold text-primary-600 sm:text-3xl">{STORE_NAME}</h2>
               <p className="text-sm text-gray-400">Official Receipt</p>
             </div>
 
             {/* Order meta */}
-            <div className="flex justify-between items-start mb-6 text-sm">
+            <div className="mb-6 flex flex-wrap items-start justify-between gap-3 text-sm">
               <div>
                 <p className="font-semibold text-gray-700 dark:text-gray-200">Order #{order.id}</p>
                 <p className="text-gray-400">{formatDate(order.orderDate)}</p>
@@ -108,7 +108,7 @@ export default function ReceiptPage() {
             </div>
 
             {/* Customer info */}
-            <div className="mb-6 rounded-xl bg-surface-50 dark:bg-surface-900 p-4 space-y-1 text-sm">
+            <div className="mb-6 space-y-1 break-words rounded-xl bg-surface-50 p-4 text-sm dark:bg-surface-900">
               <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-2">Customer Information</h3>
               <p><span className="text-gray-400">Name: </span>{order.customerName}</p>
               {order.customerPhone && (
@@ -131,10 +131,10 @@ export default function ReceiptPage() {
                         className="no-print h-12 w-12 rounded-lg object-cover flex-shrink-0"
                       />
                     )}
-                    <div className="flex-1">
-                      <div className="flex justify-between">
-                        <span className="font-medium text-sm">{item.productName}</span>
-                        <span className="font-medium text-sm">{formatMMK(item.lineTotal)}</span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                        <span className="min-w-0 break-words text-sm font-medium">{item.productName}</span>
+                        <span className="shrink-0 text-sm font-medium">{formatMMK(item.lineTotal)}</span>
                       </div>
                       <div className="text-xs text-gray-400 mt-0.5">
                         {formatMMK(item.unitPrice)} × {item.quantity}
@@ -155,7 +155,7 @@ export default function ReceiptPage() {
                 <span>Delivery / Cargo</span>
                 <span>{formatMMK(order.cargoTotal)}</span>
               </div>
-              <div className="flex justify-between text-xl font-bold pt-2 border-t border-surface-200 dark:border-surface-700">
+              <div className="flex flex-wrap items-baseline justify-between gap-2 border-t border-surface-200 pt-2 text-xl font-bold dark:border-surface-700">
                 <span>TOTAL</span>
                 <span className="text-primary-600">{formatMMK(order.total)}</span>
               </div>

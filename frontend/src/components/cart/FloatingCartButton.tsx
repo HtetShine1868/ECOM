@@ -8,7 +8,7 @@ export default function FloatingCartButton() {
   return (
     <button
       onClick={() => setIsOpen(true)}
-      className="fixed bottom-24 right-6 z-40 flex items-center gap-2 rounded-full bg-primary-500 px-5 py-3 text-white shadow-glow hover:bg-primary-600 transition-all hover:scale-105 animate-scale-in"
+      className="fixed bottom-24 right-6 z-40 flex items-center gap-2 rounded-full bg-primary-600 px-5 py-3 text-white shadow-glow transition-all hover:scale-105 hover:bg-primary-700 animate-scale-in"
       aria-label="Open cart"
     >
       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

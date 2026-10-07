@@ -31,11 +31,11 @@ export function categoryLabel(kind: string) {
 export function categoryChipClass(name?: string | null) {
   switch (categoryKind(name)) {
     case "kids":
-      return "bg-apricot-100 text-amber-900";
+      return "bg-apricot-100 text-amber-900 dark:bg-amber-400/20 dark:text-amber-100";
     case "kitchen":
-      return "bg-primary-100 text-primary-800";
+      return "bg-primary-100 text-primary-800 dark:bg-primary-400/20 dark:text-primary-100";
     case "food":
-      return "bg-accent-100 text-accent-700";
+      return "bg-accent-100 text-accent-700 dark:bg-accent-400/20 dark:text-emerald-100";
     default:
       return "bg-stone-100 text-stone-700 dark:bg-surface-800 dark:text-stone-200";
   }

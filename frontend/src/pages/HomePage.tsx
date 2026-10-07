@@ -46,8 +46,8 @@ export default function HomePage() {
   return (
     <div className="mx-auto max-w-7xl px-4 pb-10 pt-6 md:px-6 md:pt-10">
       <section className="max-w-2xl">
-        <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary-700">For the house</p>
-        <h1 className="mt-2 font-display text-4xl font-semibold leading-[1.08] text-stone-900 dark:text-stone-50 md:text-5xl">
+        <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary-700 dark:text-primary-300">For the house</p>
+        <h1 className="mt-2 font-display text-3xl font-semibold leading-[1.08] text-stone-900 sm:text-4xl md:text-5xl dark:text-stone-50">
           What do you need today?
         </h1>
         <p className="mt-3 text-base leading-relaxed text-stone-600 dark:text-stone-300">
@@ -71,7 +71,7 @@ export default function HomePage() {
           </div>
         </form>
 
-        <ul className="mt-5 flex flex-wrap gap-x-5 gap-y-1 text-sm text-stone-500">
+        <ul className="mt-5 flex flex-wrap gap-x-5 gap-y-1 text-sm text-stone-600 dark:text-stone-300">
           <li>Live stock</li>
           <li>Fee shown before you pay</li>
           <li>One bag for the house</li>
@@ -82,7 +82,7 @@ export default function HomePage() {
         <section className="mt-10">
           <div className="mb-3 flex items-end justify-between gap-3">
             <h2 className="font-display text-2xl font-semibold">Aisles</h2>
-            <button onClick={() => navigate("/products")} className="text-sm font-semibold text-primary-700 hover:underline">
+            <button onClick={() => navigate("/products")} className="text-sm font-semibold text-primary-700 hover:underline dark:text-primary-300">
               All products
             </button>
           </div>
@@ -99,7 +99,7 @@ export default function HomePage() {
       )}
 
       {loading ? (
-        <div className="mt-10 grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <div className="mt-10 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
           {[...Array(4)].map((_, i) => (
             <div key={i} className="h-80 animate-pulse rounded-2xl bg-white/70 dark:bg-surface-800" />
           ))}
@@ -118,7 +118,7 @@ export default function HomePage() {
             {featured.length === 0 ? (
               <EmptyShelf message="Products show up here once the shop has something on the shelf." />
             ) : (
-              <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+              <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
                 {featured.map((product) => (
                   <ProductCard key={product.id} product={product} isPopular={popular.length > 0} />
                 ))}
@@ -134,7 +134,7 @@ export default function HomePage() {
                 action="Browse shop"
                 onAction={() => navigate("/products")}
               />
-              <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+              <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
                 {fresh.map((product) => (
                   <ProductCard key={product.id} product={product} />
                 ))}
@@ -159,12 +159,12 @@ function SectionHead({
   onAction: () => void;
 }) {
   return (
-    <div className="mb-4 flex items-end justify-between gap-3">
-      <div>
+    <div className="mb-4 flex flex-col items-start gap-1 sm:flex-row sm:items-end sm:justify-between sm:gap-3">
+      <div className="min-w-0">
         <h2 className="font-display text-2xl font-semibold">{title}</h2>
-        <p className="mt-1 text-sm text-stone-500">{hint}</p>
+        <p className="mt-1 text-sm text-stone-600 dark:text-stone-300">{hint}</p>
       </div>
-      <button onClick={onAction} className="shrink-0 text-sm font-semibold text-primary-700 hover:underline">
+      <button onClick={onAction} className="shrink-0 text-sm font-semibold text-primary-700 hover:underline dark:text-primary-300">
         {action}
       </button>
     </div>
@@ -173,7 +173,7 @@ function SectionHead({
 
 function EmptyShelf({ message }: { message: string }) {
   return (
-    <p className="rounded-2xl border border-dashed border-stone-300 px-4 py-8 text-center text-sm text-stone-500 dark:border-surface-700">
+    <p className="rounded-2xl border border-dashed border-stone-300 px-4 py-8 text-center text-sm text-stone-600 dark:border-surface-700 dark:text-stone-300">
       {message}
     </p>
   );
@@ -191,7 +191,7 @@ function Aisle({ name, onClick }: { name: string; onClick: () => void }) {
       </span>
       <span>
         <span className="block text-sm font-semibold text-stone-900 dark:text-stone-50">{name}</span>
-        <span className="block text-xs text-stone-500">{categoryLabel(kind)}</span>
+        <span className="block text-xs text-stone-600 dark:text-stone-300">{categoryLabel(kind)}</span>
       </span>
     </button>
   );

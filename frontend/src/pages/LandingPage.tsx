@@ -19,7 +19,7 @@ export default function LandingPage() {
       <div className="absolute inset-0 bg-gradient-to-t from-[#1c120d]/80 via-transparent to-[#1c120d]/35" />
       <div className="landing-grain pointer-events-none absolute inset-0" />
 
-      <header className="relative z-20 flex items-center justify-between px-5 py-5 md:px-10">
+      <header className="relative z-20 flex items-center justify-between gap-3 px-4 py-5 sm:px-5 md:px-10">
         <span className="flex items-center gap-2.5">
           <ShopMark className="h-10 w-10" />
           <span className="font-display text-2xl font-semibold tracking-tight">ShopNow</span>
@@ -32,12 +32,12 @@ export default function LandingPage() {
         </Link>
       </header>
 
-      <main className="relative z-10 mx-auto grid min-h-[calc(100dvh-5.5rem)] max-w-7xl items-center gap-10 px-5 pb-10 pt-4 md:px-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-6 lg:pb-16">
+      <main className="relative z-10 mx-auto grid min-h-[calc(100dvh-5.5rem)] max-w-7xl items-center gap-10 px-4 pb-10 pt-4 sm:px-5 md:px-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-6 lg:pb-16">
         <div className="max-w-xl animate-fade-in">
           <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-apricot-500">
             Neighborhood shop, online
           </p>
-          <h1 className="mt-5 font-display text-[2.7rem] font-semibold leading-[1.05] text-white sm:text-5xl lg:text-[3.55rem]">
+          <h1 className="mt-5 font-display text-4xl font-semibold leading-[1.05] text-white sm:text-5xl lg:text-[3.55rem]">
             Come in for kitchen, kids, and the daily bits.
           </h1>
           <p className="mt-5 max-w-md text-base leading-relaxed text-stone-200/90 sm:text-lg">
@@ -61,7 +61,7 @@ export default function LandingPage() {
           </ul>
         </div>
 
-        <div className="relative mx-auto h-[22rem] w-full max-w-[28rem] sm:h-[30rem] sm:max-w-[34rem] lg:h-[36rem] lg:max-w-none">
+        <div className="relative mx-auto h-[18rem] w-full max-w-[28rem] min-[380px]:h-[22rem] sm:h-[30rem] sm:max-w-[34rem] lg:h-[36rem] lg:max-w-none">
           <Polaroid
             src={kitchen}
             alt="Kitchen bowls, fruit, and wooden spoons"

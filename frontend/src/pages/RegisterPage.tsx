@@ -75,7 +75,7 @@ export default function RegisterPage() {
           <p className="text-stone-500">Save orders and check out faster next time.</p>
         </div>
 
-        <div className="shop-card p-8">
+        <div className="shop-card p-5 sm:p-8">
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label htmlFor="name" className="block text-sm font-medium mb-1.5">

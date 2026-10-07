@@ -108,7 +108,7 @@ export default function ProductsPage() {
     <div className="p-4 md:p-6">
       <div className="mx-auto max-w-7xl">
         <h1 className="font-display text-3xl font-semibold md:text-4xl">The shop</h1>
-        <p className="mt-1 mb-6 text-sm text-stone-500">Filter by aisle, price, or what’s still on the shelf.</p>
+        <p className="mb-6 mt-1 text-sm text-stone-600 dark:text-stone-300">Filter by aisle, price, or what’s still on the shelf.</p>
 
         <div className="shop-card mb-6 space-y-4 p-4">
           <div className="flex flex-col gap-3 lg:flex-row">
@@ -160,25 +160,27 @@ export default function ProductsPage() {
             </div>
           )}
 
-          <div className="flex flex-wrap items-center gap-3">
-            <span className="text-sm text-stone-500">Price (MMK)</span>
-            <input
-              type="number"
-              min="0"
-              value={minPrice}
-              onChange={(e) => setMinPrice(e.target.value)}
-              placeholder="Min"
-              className="field w-28"
-            />
-            <span className="text-stone-400">—</span>
-            <input
-              type="number"
-              min="0"
-              value={maxPrice}
-              onChange={(e) => setMaxPrice(e.target.value)}
-              placeholder="Max"
-              className="field w-28"
-            />
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+            <span className="text-sm text-stone-600 dark:text-stone-300">Price (MMK)</span>
+            <div className="flex min-w-0 items-center gap-2">
+              <input
+                type="number"
+                min="0"
+                value={minPrice}
+                onChange={(e) => setMinPrice(e.target.value)}
+                placeholder="Min"
+                className="field w-full sm:w-28"
+              />
+              <span className="text-stone-500 dark:text-stone-400">—</span>
+              <input
+                type="number"
+                min="0"
+                value={maxPrice}
+                onChange={(e) => setMaxPrice(e.target.value)}
+                placeholder="Max"
+                className="field w-full sm:w-28"
+              />
+            </div>
             <label className="flex items-center gap-2 text-sm text-stone-600 dark:text-stone-300">
               <input
                 type="checkbox"
@@ -188,7 +190,7 @@ export default function ProductsPage() {
               In stock only
             </label>
             {filtersActive && (
-              <button onClick={clearFilters} className="text-sm font-semibold text-primary-700 hover:underline">
+              <button onClick={clearFilters} className="text-sm font-semibold text-primary-700 hover:underline dark:text-primary-300">
                 Clear
               </button>
             )}
@@ -196,13 +198,13 @@ export default function ProductsPage() {
         </div>
 
         {!loading && !error && (
-          <p className="mb-4 text-sm text-stone-500">
+          <p className="mb-4 text-sm text-stone-600 dark:text-stone-300">
             {totalElements} item{totalElements === 1 ? "" : "s"}
           </p>
         )}
 
         {loading ? (
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-4">
             {[...Array(8)].map((_, i) => (
               <div key={i} className="h-80 animate-pulse rounded-2xl bg-white/70 dark:bg-surface-800" />
             ))}
@@ -212,11 +214,11 @@ export default function ProductsPage() {
         ) : products.length === 0 ? (
           <div className="shop-card py-16 text-center">
             <p className="font-display text-xl">Nothing matches that</p>
-            <p className="mt-1 text-sm text-stone-500">Try another word, or clear the filters.</p>
+            <p className="mt-1 text-sm text-stone-600 dark:text-stone-300">Try another word, or clear the filters.</p>
             <button onClick={clearFilters} className="btn-primary mt-5">Clear filters</button>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-4">
             {products.map((product) => (
               <ProductCard
                 key={product.id}
@@ -228,7 +230,7 @@ export default function ProductsPage() {
         )}
 
         {totalPages > 1 && (
-          <div className="mt-8 flex items-center justify-center gap-2">
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-2">
             <button
               disabled={page === 0}
               onClick={() => setPage((current) => Math.max(0, current - 1))}
@@ -236,7 +238,7 @@ export default function ProductsPage() {
             >
               Previous
             </button>
-            <span className="text-sm text-stone-500">
+            <span className="text-sm text-stone-600 dark:text-stone-300">
               {page + 1} / {totalPages}
             </span>
             <button
