@@ -13,6 +13,11 @@ export interface ChatProductCard {
   categoryName?: string;
 }
 
+export interface ChatTurn {
+  role: "user" | "assistant";
+  text: string;
+}
+
 export interface ChatResponse {
   reply: string;
   mode: ChatMode;
@@ -20,6 +25,6 @@ export interface ChatResponse {
 }
 
 export const chatApi = {
-  send: (message: string, mode: ChatMode) =>
-    api.post<ChatResponse>("/chat", { message, mode }),
+  send: (message: string, mode: ChatMode, history: ChatTurn[] = []) =>
+    api.post<ChatResponse>("/chat", { message, mode, history }),
 };

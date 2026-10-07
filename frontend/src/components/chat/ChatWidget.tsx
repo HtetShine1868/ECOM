@@ -11,9 +11,9 @@ interface ChatMessage {
 }
 
 const SUPPORT_WELCOME =
-  "Hi! I can explain how ShopNow works — accounts, cart, checkout, delivery, and orders. Ask a question or pick a suggestion below.";
+  "Hi! Ask me about ShopNow in your own words — accounts, cart, checkout, delivery, or orders. You don't need a special phrase.";
 const PRODUCT_WELCOME =
-  "Ask whether a product is still available, its price, or what's in stock. I check the live catalog.";
+  "Ask about products however you'd say it — stock, price, something cheap, or a name. I check the live catalog.";
 
 const SUGGESTIONS: Record<ChatMode, string[]> = {
   SUPPORT: [
@@ -71,7 +71,14 @@ export default function ChatWidget() {
     setLoading(true);
 
     try {
-      const response = await chatApi.send(message, mode);
+      const history = messages
+        .filter((entry) => entry.id !== "welcome")
+        .slice(-6)
+        .map((entry) => ({
+          role: entry.role,
+          text: entry.text.slice(0, 400),
+        }));
+      const response = await chatApi.send(message, mode, history);
       setMessages((prev) => [
         ...prev,
         {
@@ -107,7 +114,7 @@ export default function ChatWidget() {
               <div>
                 <h2 className="font-display text-base font-semibold">Need a hand?</h2>
                 <p className="text-xs text-stone-500">
-                  Ask about the shop, or if something is still in stock.
+                  Ask in your own words. I'll figure out what you mean.
                 </p>
               </div>
               <button
@@ -206,7 +213,7 @@ export default function ChatWidget() {
                 value={input}
                 onChange={(event) => setInput(event.target.value)}
                 maxLength={400}
-                placeholder={mode === "SUPPORT" ? "Ask how ShopNow works…" : "Is this product still available?"}
+                placeholder={mode === "SUPPORT" ? "Ask in your own words…" : "Ask if something is in stock…"}
                 className="w-full rounded-xl border border-surface-100 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/40 dark:border-surface-800 dark:bg-surface-800"
               />
               <button

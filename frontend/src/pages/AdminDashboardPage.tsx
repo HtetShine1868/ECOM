@@ -310,8 +310,9 @@ export default function AdminDashboardPage() {
   function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      setFormError("Please select a valid image file.");
+    const allowed = ["image/jpeg", "image/png", "image/webp"];
+    if (!allowed.includes(file.type)) {
+      setFormError("Use a JPEG, PNG, or WebP image.");
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
@@ -357,7 +358,17 @@ export default function AdminDashboardPage() {
       if (imageFile) {
         const fd = new FormData();
         fd.append("file", imageFile);
-        await productApi.uploadImage(savedProduct.id, fd);
+        try {
+          await productApi.uploadImage(savedProduct.id, fd);
+        } catch (err: unknown) {
+          const msg =
+            err && typeof err === "object" && "message" in err
+              ? String((err as { message: unknown }).message)
+              : "The image was rejected.";
+          setFormError(`The product was saved, but the image was not uploaded. ${msg}`);
+          loadProducts();
+          return;
+        }
       }
 
       setFormSuccess(editingProduct ? "Product updated successfully!" : "Product created successfully!");
@@ -693,7 +704,7 @@ export default function AdminDashboardPage() {
                           <input
                             ref={fileInputRef}
                             type="file"
-                            accept="image/*"
+                            accept="image/jpeg,image/png,image/webp"
                             onChange={handleImageChange}
                             className="hidden"
                             id="product-image-input"

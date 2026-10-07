@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -45,12 +46,17 @@ public class StorageService {
 
         HttpEntity<byte[]> entity = new HttpEntity<>(bytes, headers);
 
-        ResponseEntity<String> response = restTemplate.exchange(
-                uploadUrl, HttpMethod.POST, entity, String.class);
+        ResponseEntity<String> response;
+        try {
+            response = restTemplate.exchange(
+                    uploadUrl, HttpMethod.POST, entity, String.class);
+        } catch (RestClientResponseException ex) {
+            log.error("Supabase image upload failed: {} {}", ex.getStatusCode(), ex.getResponseBodyAsString());
+            throw new IllegalArgumentException("The image could not be stored. Try a different JPEG, PNG, or WebP file.");
+        }
 
         if (!response.getStatusCode().is2xxSuccessful()) {
-            throw new RuntimeException(
-                    "Failed to upload image to Supabase Storage. Status: " + response.getStatusCode());
+            throw new IllegalArgumentException("The image could not be stored. Try a different JPEG, PNG, or WebP file.");
         }
 
         // Return the public URL — stored in products.image_url

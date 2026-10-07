@@ -1,8 +1,4 @@
-const BACKEND_URL =
-  import.meta.env.VITE_BACKEND_URL ||
-  (import.meta.env.DEV
-    ? "http://localhost:8080"
-    : "https://ecom-d3vm.onrender.com");
+import { BACKEND_URL } from "../../api/config";
 
 interface OAuthButtonsProps {
   /** Text variant: "sign in" vs "sign up" */
