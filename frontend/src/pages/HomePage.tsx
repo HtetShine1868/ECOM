@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { productApi, bestSellerToProduct } from "../api/products";
 import type { Category } from "../api/products";
-import type { Product } from "../types";
+import type { Product, PageResponse } from "../types";
 import ProductCard from "../components/product/ProductCard";
+import PopularShowcase from "../components/product/PopularShowcase";
 import { categoryKind, categoryLabel } from "../utils/category";
 
 export default function HomePage() {
@@ -17,14 +18,20 @@ export default function HomePage() {
 
   useEffect(() => {
     setLoading(true);
+    const emptyPage: PageResponse<Product> = { content: [], totalElements: 0, totalPages: 0, size: 0, number: 0 };
     Promise.all([
-      productApi.getBestSellers(4).catch(() => []),
+      productApi.getBestSellers(8).catch(() => []),
+      productApi.getPage({ sort: "popular", page: 0, size: 8 }).catch(() => emptyPage),
       productApi.getPage({ sort: "newest", page: 0, size: 8 }),
       productApi.getCategories().catch(() => []),
     ])
-      .then(([sellers, page, cats]) => {
-        setPopular((Array.isArray(sellers) ? sellers : []).map(bestSellerToProduct));
-        setRecent(page.content ?? []);
+      .then(([sellers, ranked, newestPage, cats]) => {
+        const fromSales = (Array.isArray(sellers) ? sellers : []).map(bestSellerToProduct);
+        const fromRank = ranked.content ?? [];
+        const newest = newestPage.content ?? [];
+        const picks = fromSales.length > 0 ? fromSales : fromRank.length > 0 ? fromRank : newest;
+        setPopular(picks.slice(0, 8));
+        setRecent(newest);
         setCategories(Array.isArray(cats) ? cats : []);
       })
       .catch(() => {
@@ -39,9 +46,9 @@ export default function HomePage() {
     navigate(query ? `/products?search=${encodeURIComponent(query)}` : "/products");
   };
 
-  const featured = popular.length > 0 ? popular : recent.slice(0, 4);
+  const loved = popular.some((product) => (product.unitsSold ?? 0) > 0);
   const popularIds = new Set(popular.map((product) => product.id));
-  const fresh = popular.length > 0 ? recent.filter((product) => !popularIds.has(product.id)).slice(0, 4) : [];
+  const fresh = recent.filter((product) => !popularIds.has(product.id)).slice(0, 4);
 
   return (
     <div className="mx-auto max-w-7xl px-4 pb-10 pt-6 md:px-6 md:pt-10">
@@ -78,6 +85,32 @@ export default function HomePage() {
         </ul>
       </section>
 
+      {loading ? (
+        <div className="mt-10 overflow-hidden rounded-[1.75rem] bg-[#2a1812] px-5 py-6 sm:px-7">
+          <div className="h-4 w-28 animate-pulse rounded-full bg-white/10" />
+          <div className="mt-3 h-8 w-52 animate-pulse rounded-full bg-white/10" />
+          <div className="mt-6 flex gap-3">
+            <div className="h-64 w-[86%] shrink-0 animate-pulse rounded-2xl bg-white/10 sm:w-[28rem]" />
+            <div className="hidden h-64 w-64 shrink-0 animate-pulse rounded-2xl bg-white/10 sm:block" />
+            <div className="hidden h-64 w-64 shrink-0 animate-pulse rounded-2xl bg-white/10 lg:block" />
+          </div>
+        </div>
+      ) : error ? (
+        <p className="mt-12 text-center text-sm text-red-600">{error}</p>
+      ) : popular.length > 0 ? (
+        <div className="mt-10">
+          <PopularShowcase
+            products={popular}
+            loved={loved}
+            onSeeAll={() => navigate(loved ? "/products?sort=popular" : "/products")}
+          />
+        </div>
+      ) : (
+        <div className="mt-10">
+          <EmptyShelf message="Products show up here once the shop has something on the shelf." />
+        </div>
+      )}
+
       {categories.length > 0 && (
         <section className="mt-10">
           <div className="mb-3 flex items-end justify-between gap-3">
@@ -98,50 +131,20 @@ export default function HomePage() {
         </section>
       )}
 
-      {loading ? (
-        <div className="mt-10 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="aspect-[4/3] animate-pulse rounded-2xl bg-white/70 dark:bg-surface-800" />
-          ))}
-        </div>
-      ) : error ? (
-        <p className="mt-12 text-center text-sm text-red-600">{error}</p>
-      ) : (
-        <div className="mt-12 space-y-12">
-          <section>
-            <SectionHead
-              title={popular.length > 0 ? "Selling well" : "On the shelf"}
-              hint={popular.length > 0 ? "The ones that leave the shelf first." : "Start here, or search for something specific."}
-              action={popular.length > 0 ? "See popular" : "Browse shop"}
-              onAction={() => navigate(popular.length > 0 ? "/products?sort=popular" : "/products")}
-            />
-            {featured.length === 0 ? (
-              <EmptyShelf message="Products show up here once the shop has something on the shelf." />
-            ) : (
-              <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-                {featured.map((product) => (
-                  <ProductCard key={product.id} product={product} isPopular={popular.length > 0} />
-                ))}
-              </div>
-            )}
-          </section>
-
-          {fresh.length > 0 && (
-            <section>
-              <SectionHead
-                title="Just arrived"
-                hint="Newest on the shelf."
-                action="Browse shop"
-                onAction={() => navigate("/products")}
-              />
-              <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-                {fresh.map((product) => (
-                  <ProductCard key={product.id} product={product} />
-                ))}
-              </div>
-            </section>
-          )}
-        </div>
+      {!loading && !error && fresh.length > 0 && (
+        <section className="mt-12">
+          <SectionHead
+            title="Just arrived"
+            hint="Newest on the shelf."
+            action="Browse shop"
+            onAction={() => navigate("/products")}
+          />
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+            {fresh.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        </section>
       )}
     </div>
   );

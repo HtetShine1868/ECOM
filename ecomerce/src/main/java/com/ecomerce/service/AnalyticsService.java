@@ -10,9 +10,11 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.sql.Date;
 import java.sql.Timestamp;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -363,6 +365,7 @@ public class AnalyticsService {
         return switch (key) {
             case "today" -> new Window(key, "Today", today, today);
             case "yesterday" -> new Window(key, "Yesterday", today.minusDays(1), today.minusDays(1));
+            case "this_week" -> new Window(key, "This Week", today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)), today);
             case "last7" -> new Window(key, "Last 7 Days", today.minusDays(6), today);
             case "this_month" -> new Window(key, "This Month", today.withDayOfMonth(1), today);
             case "last_month" -> {

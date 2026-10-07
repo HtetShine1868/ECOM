@@ -5,11 +5,14 @@ import { formatMMK, formatStatus } from "../utils/format";
 
 const QUICK_RANGES = [
   { value: "today", label: "Today" },
+  { value: "this_week", label: "This week" },
   { value: "last7", label: "7 days" },
   { value: "last30", label: "30 days" },
   { value: "this_month", label: "This month" },
   { value: "all", label: "All time" },
 ];
+
+type AnalyticsView = "sales" | "store";
 
 const MORE_RANGES = [
   { value: "yesterday", label: "Yesterday" },
@@ -53,6 +56,7 @@ function share(part: number, total: number) {
 
 export default function AdminAnalytics() {
   const [range, setRange] = useState("last30");
+  const [view, setView] = useState<AnalyticsView>("sales");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [data, setData] = useState<StoreAnalytics | null>(null);
@@ -113,9 +117,9 @@ export default function AdminAnalytics() {
     <div className="animate-fade-in space-y-5">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h2 className="font-display text-2xl font-semibold text-stone-900 dark:text-stone-50">Sales</h2>
+          <h2 className="font-display text-2xl font-semibold text-stone-900 dark:text-stone-50">Analytics</h2>
           <p className="mt-1 text-sm text-stone-500">
-            {data ? `${data.rangeLabel} · ${data.from} to ${data.to}` : "Pick a period to load sales."}
+            {data ? `Total revenue for ${data.rangeLabel.toLowerCase()} · ${data.from} to ${data.to}` : "Pick today, this week, or another period."}
             {updatedAt ? ` · live, updated ${updatedAt.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}` : ""}
           </p>
         </div>
@@ -162,28 +166,54 @@ export default function AdminAnalytics() {
         </div>
       </div>
 
+      <div className="flex gap-2" role="tablist" aria-label="Analytics sections">
+        {([
+          ["sales", "Sales"],
+          ["store", "Store"],
+        ] as const).map(([id, label]) => (
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            aria-selected={view === id}
+            onClick={() => setView(id)}
+            className={`rounded-xl px-4 py-2 text-sm font-semibold ${
+              view === id
+                ? "bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900"
+                : "bg-white text-stone-700 ring-1 ring-stone-200 hover:text-primary-700 dark:bg-surface-800 dark:text-stone-200 dark:ring-surface-700"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
       {error && <p className="text-sm text-red-700 dark:text-red-300">{error}</p>}
       {range === "custom" && (!from || !to) && !error && (
         <p className="text-sm text-stone-500">Choose a start and end date to see that period.</p>
       )}
       {loading && <div className="h-36 animate-pulse rounded-2xl bg-white dark:bg-surface-800" />}
 
-      {data && !loading && (
+      {data && !loading && view === "sales" && (
         <>
-          <section className="grid gap-3 lg:grid-cols-2 xl:grid-cols-4">
+          <section className="grid gap-3 lg:grid-cols-4">
+            <article className="rounded-2xl border border-primary-800 bg-primary-700 p-5 text-white lg:col-span-2">
+              <p className="text-xs font-semibold uppercase tracking-wide text-primary-100">
+                Total revenue · {data.rangeLabel}
+              </p>
+              <p className="mt-2 break-words font-display text-3xl font-semibold leading-tight sm:text-4xl">
+                {formatMMK(revenue)}
+              </p>
+              <p className="mt-2 text-sm text-primary-100">
+                {data.from} to {data.to}. Confirmed through delivered orders.
+              </p>
+            </article>
             <Metric
               label="Orders placed"
               value={String(data.ordersPlaced ?? 0)}
-              hint="Every checkout in this period, including ones still waiting on you."
-              featured
+              hint={`${data.totalOrders} counted in revenue · avg ${formatMMK(data.averageOrderValue)}`}
             />
-            <Metric label="Waiting on you" value={String(data.pendingOrders)} hint="New orders that still need a status change." />
-            <Metric
-              label="Sales revenue"
-              value={formatMMK(revenue)}
-              hint="Confirmed through delivered. A new checkout moves this after you confirm it."
-            />
-            <Metric label="Units sold" value={String(data.unitsSold)} hint={`${data.totalOrders} confirmed orders · avg ${formatMMK(data.averageOrderValue)}`} />
+            <Metric label="Units sold" value={String(data.unitsSold)} hint="Units on confirmed through delivered orders." />
           </section>
 
           <section className="shop-card p-5">
@@ -263,6 +293,16 @@ export default function AdminAnalytics() {
               )}
             </section>
           </div>
+        </>
+      )}
+
+      {data && !loading && view === "store" && (
+        <>
+          <section className="grid gap-3 sm:grid-cols-3">
+            <Metric label="Waiting on you" value={String(data.pendingOrders)} hint="New orders in this period that still need a status change." />
+            <Metric label="Delivered" value={String(data.deliveredOrders)} hint="Orders marked delivered in this period." />
+            <Metric label="Cancelled" value={String(data.cancelledOrders)} hint={`${data.cancellationRate}% of orders placed · ${formatMMK(data.cancelledRevenue)} not in revenue.`} />
+          </section>
 
           <section className="shop-card p-5">
             <div className="mb-3 flex flex-wrap items-end justify-between gap-2">

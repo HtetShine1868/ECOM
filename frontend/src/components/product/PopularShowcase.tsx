@@ -1,0 +1,292 @@
+import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
+import type { Product } from "../../types";
+import { useCart } from "../../context/CartContext";
+import { formatMMK } from "../../utils/format";
+import { productImageSrc } from "../../utils/image";
+import { categoryKind } from "../../utils/category";
+
+const FALLBACK = "https://placehold.co/800x600?text=No+Image";
+
+interface PopularShowcaseProps {
+  products: Product[];
+  loved: boolean;
+  onSeeAll: () => void;
+}
+
+export default function PopularShowcase({ products, loved, onSeeAll }: PopularShowcaseProps) {
+  const scroller = useRef<HTMLDivElement>(null);
+  const drag = useRef({ active: false, startX: 0, scrollLeft: 0, moved: false });
+  const suppressClick = useRef(false);
+  const [canPrev, setCanPrev] = useState(false);
+  const [canNext, setCanNext] = useState(false);
+
+  useEffect(() => {
+    const el = scroller.current;
+    if (!el) return;
+
+    const update = () => {
+      setCanPrev(el.scrollLeft > 8);
+      setCanNext(el.scrollLeft + el.clientWidth < el.scrollWidth - 8);
+    };
+
+    update();
+    el.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    return () => {
+      el.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+    };
+  }, [products]);
+
+  const scrollByDir = (dir: number) => {
+    const el = scroller.current;
+    if (!el) return;
+    const amount = Math.max(260, Math.round(el.clientWidth * 0.78));
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    el.scrollBy({ left: dir * amount, behavior: reduce ? "auto" : "smooth" });
+  };
+
+  const onPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (event.pointerType === "touch") return;
+    const el = scroller.current;
+    if (!el) return;
+    drag.current = { active: true, startX: event.clientX, scrollLeft: el.scrollLeft, moved: false };
+  };
+
+  const onPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!drag.current.active) return;
+    const el = scroller.current;
+    if (!el) return;
+    const dx = event.clientX - drag.current.startX;
+    if (!drag.current.moved && Math.abs(dx) > 6) {
+      drag.current.moved = true;
+      el.classList.add("is-dragging");
+      el.setPointerCapture(event.pointerId);
+    }
+    if (drag.current.moved) el.scrollLeft = drag.current.scrollLeft - dx;
+  };
+
+  const endDrag = (event: React.PointerEvent<HTMLDivElement>) => {
+    const el = scroller.current;
+    if (!el || !drag.current.active) return;
+    if (drag.current.moved) suppressClick.current = true;
+    drag.current.active = false;
+    drag.current.moved = false;
+    el.classList.remove("is-dragging");
+    if (el.hasPointerCapture(event.pointerId)) el.releasePointerCapture(event.pointerId);
+  };
+
+  const onClickCapture = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (!suppressClick.current) return;
+    suppressClick.current = false;
+    event.preventDefault();
+    event.stopPropagation();
+  };
+
+  return (
+    <section className="relative overflow-hidden rounded-[1.75rem] bg-[#2a1812] text-white shadow-shop">
+      <div className="pointer-events-none absolute -right-20 -top-24 h-64 w-64 rounded-full bg-primary-500/35 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-24 left-10 h-48 w-48 rounded-full bg-apricot-500/20 blur-3xl" />
+
+      <div className="relative flex flex-wrap items-end justify-between gap-3 px-5 pt-6 sm:px-7">
+        <div className="min-w-0">
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-apricot-500">
+            {loved ? "Loved nearby" : "On the shelf"}
+          </p>
+          <h2 id="popular-heading" className="mt-2 font-display text-2xl font-semibold sm:text-3xl">
+            {loved ? "Popular right now" : "Start with these"}
+          </h2>
+          <p className="mt-1 max-w-md text-sm text-stone-300">
+            {loved
+              ? "The ones people keep adding to their bag."
+              : "A few things worth opening first."}
+          </p>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          {products.length > 1 && (
+            <div className="flex items-center gap-1.5">
+              <RailButton label="Previous popular products" disabled={!canPrev} onClick={() => scrollByDir(-1)}>
+                <Chevron dir="left" />
+              </RailButton>
+              <RailButton label="Next popular products" disabled={!canNext} onClick={() => scrollByDir(1)}>
+                <Chevron dir="right" />
+              </RailButton>
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={onSeeAll}
+            className="rounded-full bg-white px-3.5 py-2 text-xs font-bold text-stone-900 transition hover:bg-apricot-100 sm:px-4 sm:text-sm"
+          >
+            See all
+          </button>
+        </div>
+      </div>
+
+      <div className="relative mt-5">
+        <div
+          className={`pointer-events-none absolute inset-y-0 left-0 z-10 w-8 bg-gradient-to-r from-[#2a1812] to-transparent transition-opacity ${
+            canPrev ? "opacity-100" : "opacity-0"
+          }`}
+        />
+        <div
+          className={`pointer-events-none absolute inset-y-0 right-0 z-10 w-10 bg-gradient-to-l from-[#2a1812] to-transparent transition-opacity ${
+            canNext ? "opacity-100" : "opacity-0"
+          }`}
+        />
+        <div
+          ref={scroller}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={endDrag}
+          onPointerCancel={endDrag}
+          onClickCapture={onClickCapture}
+          role="region"
+          aria-labelledby="popular-heading"
+          className="rail-scroll flex cursor-grab gap-3 overflow-x-auto overscroll-x-contain px-5 pb-6 sm:px-7"
+        >
+          {products.map((product, index) => (
+            <PopularCard key={product.id} product={product} rank={index + 1} lead={index === 0 && loved} />
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function PopularCard({ product, rank, lead }: { product: Product; rank: number; lead: boolean }) {
+  const { addItem } = useCart();
+  const [added, setAdded] = useState(false);
+  const soldOut = product.stock === 0;
+  const sold = product.unitsSold ?? 0;
+
+  const handleAdd = (event: React.MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (soldOut) return;
+    addItem(product, 1);
+    setAdded(true);
+    window.setTimeout(() => setAdded(false), 1400);
+  };
+
+  return (
+    <article
+      className={`snap-start shrink-0 animate-fade-in motion-reduce:animate-none ${
+        lead ? "w-[86%] sm:w-[28rem] lg:w-[34rem]" : "w-[72%] min-[420px]:w-60 sm:w-64"
+      }`}
+      style={{ animationDelay: `${Math.min(rank - 1, 6) * 45}ms`, animationFillMode: "backwards" }}
+    >
+      <Link
+        to={`/products/${product.id}`}
+        className={`group flex h-full flex-col overflow-hidden rounded-2xl bg-white text-stone-900 shadow-[0_16px_40px_rgba(0,0,0,0.22)] transition duration-300 hover:-translate-y-1 ${
+          lead ? "sm:min-h-[18rem] sm:flex-row" : ""
+        }`}
+      >
+        <div className={`relative overflow-hidden bg-stone-100 ${lead ? "aspect-[5/4] sm:aspect-auto sm:w-[52%] sm:min-h-[18rem]" : "aspect-[4/3]"}`}>
+          <img
+            src={productImageSrc(product.imageUrl, FALLBACK)}
+            alt={product.name}
+            draggable={false}
+            className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.04]"
+            onError={(event) => {
+              const img = event.currentTarget;
+              if (img.dataset.fallback === "1") return;
+              img.dataset.fallback = "1";
+              img.src = FALLBACK;
+            }}
+          />
+          <span className="absolute left-2.5 top-2.5 rounded-full bg-[#2a1812] px-2.5 py-1 text-[11px] font-bold text-apricot-100">
+            {lead ? "Top pick" : `#${rank}`}
+          </span>
+          {soldOut && (
+            <div className="absolute inset-0 flex items-center justify-center bg-stone-900/45">
+              <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-stone-800">Sold out</span>
+            </div>
+          )}
+        </div>
+
+        <div className="flex flex-1 flex-col p-3.5 sm:p-4">
+          {product.category && (
+            <span className={`w-fit max-w-full truncate rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${lightChip(product.category)}`}>
+              {product.category}
+            </span>
+          )}
+          <h3 className={`mt-2 font-semibold leading-snug ${lead ? "font-display text-xl sm:text-2xl" : "line-clamp-2 text-sm sm:text-base"}`}>
+            {product.name}
+          </h3>
+          {lead && product.description && (
+            <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed text-stone-600">{product.description}</p>
+          )}
+          {sold > 0 && (
+            <p className="mt-2 text-xs font-medium text-stone-500">{sold} sold</p>
+          )}
+          <div className="mt-auto flex items-end justify-between gap-2 pt-3">
+            <p className="min-w-0 truncate font-display text-base font-semibold text-primary-700 sm:text-lg">
+              {formatMMK(product.price)}
+            </p>
+            <button
+              type="button"
+              onClick={handleAdd}
+              disabled={soldOut}
+              className={`shrink-0 rounded-full px-3.5 py-2 text-xs font-bold text-white transition active:scale-[0.98] ${
+                added ? "bg-accent-500" : "bg-primary-600 hover:bg-primary-700"
+              } disabled:opacity-40`}
+            >
+              {soldOut ? "Sold out" : added ? "Added" : "Add"}
+            </button>
+          </div>
+        </div>
+      </Link>
+    </article>
+  );
+}
+
+function lightChip(name?: string | null) {
+  switch (categoryKind(name)) {
+    case "kids":
+      return "bg-apricot-100 text-amber-900";
+    case "kitchen":
+      return "bg-primary-100 text-primary-800";
+    case "food":
+      return "bg-accent-100 text-accent-700";
+    default:
+      return "bg-stone-100 text-stone-700";
+  }
+}
+
+function RailButton({
+  label,
+  disabled,
+  onClick,
+  children,
+}: {
+  label: string;
+  disabled: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      disabled={disabled}
+      onClick={onClick}
+      className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition hover:bg-white/20 disabled:opacity-30"
+    >
+      {children}
+    </button>
+  );
+}
+
+function Chevron({ dir }: { dir: "left" | "right" }) {
+  return (
+    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden>
+      {dir === "left" ? (
+        <path d="M14 6l-6 6 6 6" strokeLinecap="round" strokeLinejoin="round" />
+      ) : (
+        <path d="M10 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
+      )}
+    </svg>
+  );
+}

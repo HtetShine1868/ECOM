@@ -45,8 +45,6 @@ export default function ReceiptPage() {
     );
   }
 
-  const handlePrint = () => window.print();
-
   const handleDownload = async () => {
     if (!order) return;
     setDownloading(true);
@@ -61,22 +59,10 @@ export default function ReceiptPage() {
   };
 
   return (
-    <>
-      {/* Print-only styles injected via style tag */}
-      <style>{`
-        @media print {
-          body * { visibility: hidden; }
-          #receipt-printable, #receipt-printable * { visibility: visible; }
-          #receipt-printable { position: absolute; left: 0; top: 0; width: 100%; }
-          .no-print { display: none !important; }
-        }
-      `}</style>
-
-      <div className="min-h-screen bg-surface-50 p-4 dark:bg-surface-900 sm:p-6">
+    <div className="min-h-screen bg-surface-50 p-4 dark:bg-surface-900 sm:p-6">
         <div className="mx-auto max-w-2xl">
 
-          {/* Success banner – no-print */}
-          <div className="no-print text-center mb-8 animate-fade-in">
+          <div className="text-center mb-8 animate-fade-in">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -87,10 +73,7 @@ export default function ReceiptPage() {
           </div>
 
           {/* Receipt Card */}
-          <div
-            id="receipt-printable"
-            className="animate-fade-in rounded-2xl bg-white p-4 shadow-lg dark:bg-surface-800/50 sm:p-8"
-          >
+          <div className="animate-fade-in rounded-2xl bg-white p-4 shadow-lg dark:bg-surface-800/50 sm:p-8">
             {/* Store header */}
             <div className="text-center mb-6 pb-4 border-b-2 border-dashed border-surface-200 dark:border-surface-700">
               <h2 className="mb-1 font-display text-2xl font-bold text-primary-600 sm:text-3xl">{STORE_NAME}</h2>
@@ -129,7 +112,7 @@ export default function ReceiptPage() {
                       <img
                         src={productImageSrc(item.productImageUrl)}
                         alt={item.productName}
-                        className="no-print h-12 w-12 rounded-lg object-cover flex-shrink-0"
+                        className="h-12 w-12 rounded-lg object-cover flex-shrink-0"
                       />
                     )}
                     <div className="min-w-0 flex-1">
@@ -169,26 +152,16 @@ export default function ReceiptPage() {
           </div>
 
           {downloadError && (
-            <p className="no-print mt-4 text-center text-sm text-red-600">{downloadError}</p>
+            <p className="mt-4 text-center text-sm text-red-600">{downloadError}</p>
           )}
 
-          {/* Action buttons – no-print */}
-          <div className="no-print mt-6 flex flex-col sm:flex-row gap-3 justify-center">
+          <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
             <button
               onClick={handleDownload}
               disabled={downloading}
               className="btn-primary"
             >
               {downloading ? "Preparing…" : "Download"}
-            </button>
-            <button
-              onClick={handlePrint}
-              className="btn-secondary gap-2"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-              </svg>
-              Print Receipt
             </button>
             <Link
               to="/orders"
@@ -204,7 +177,6 @@ export default function ReceiptPage() {
             </Link>
           </div>
         </div>
-      </div>
-    </>
+    </div>
   );
 }
