@@ -68,11 +68,17 @@ export default function ProductDetailPage() {
         </nav>
 
         <div className="grid gap-6 md:grid-cols-2 md:gap-8">
-          <div className="shop-card overflow-hidden bg-primary-50">
+          <div className="shop-card relative aspect-[4/3] overflow-hidden bg-stone-100 dark:bg-surface-800 md:aspect-square">
             <img
-              src={product.imageUrl ?? "https://placehold.co/600x700?text=No+Image"}
+              src={product.imageUrl?.trim() || "https://placehold.co/800x800?text=No+Image"}
               alt={product.name}
-              className="aspect-[4/5] w-full object-cover md:aspect-square"
+              className="absolute inset-0 h-full w-full object-cover object-center"
+              onError={(event) => {
+                const img = event.currentTarget;
+                if (img.dataset.fallback === "1") return;
+                img.dataset.fallback = "1";
+                img.src = "https://placehold.co/800x800?text=No+Image";
+              }}
             />
           </div>
 

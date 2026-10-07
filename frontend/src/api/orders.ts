@@ -55,6 +55,7 @@ export interface StoreAnalytics {
   to: string;
   totalRevenue: number;
   totalOrders: number;
+  ordersPlaced: number;
   unitsSold: number;
   averageOrderValue: number;
   cancelledOrders: number;

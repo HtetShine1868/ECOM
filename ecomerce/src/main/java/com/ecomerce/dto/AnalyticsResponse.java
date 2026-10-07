@@ -16,6 +16,8 @@ public class AnalyticsResponse {
     private LocalDate to;
     private BigDecimal totalRevenue;
     private long totalOrders;
+    /** Every order placed in the period, including ones still waiting for confirmation. */
+    private long ordersPlaced;
     private long unitsSold;
     private BigDecimal averageOrderValue;
     private long cancelledOrders;

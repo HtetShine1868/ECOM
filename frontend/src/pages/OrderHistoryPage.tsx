@@ -43,7 +43,7 @@ export default function OrderHistoryPage() {
     <div className="p-4 md:p-6">
       <div className="mx-auto max-w-3xl">
         <h1 className="font-display text-3xl font-semibold md:text-4xl">Your orders</h1>
-        <p className="mt-2 text-sm text-stone-500">Open an order, or download its receipt as a PDF.</p>
+        <p className="mt-2 text-sm text-stone-500">Open an order, or download its receipt as a PDF. Status changes also show up in the bell.</p>
 
         {downloadError && (
           <p className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-400/10 dark:text-red-200">

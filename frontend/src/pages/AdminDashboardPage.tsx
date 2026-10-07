@@ -1,5 +1,5 @@
 ﻿import { useEffect, useState, useRef, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { productApi } from "../api/products";
 import type { Category as ApiCategory } from "../api/products";
@@ -32,24 +32,24 @@ const emptyForm: ProductFormState = {
 };
 
 // ─── Analytics helpers ────────────────────────────────────────────────────────
-function StatCard({
-  label,
-  value,
-  icon,
-}: {
-  label: string;
-  value: number | string;
-  icon: React.ReactNode;
-}) {
+function ActionCard({ title, detail, onClick }: { title: string; detail: string; onClick: () => void }) {
   return (
-    <div className="shop-card flex items-center gap-4 p-5 shadow-shop">
-      <div className="rounded-xl bg-primary-100 p-3 text-primary-700 dark:bg-primary-900/50 dark:text-primary-200">
-        {icon}
-      </div>
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-wide text-stone-600 dark:text-stone-300">{label}</p>
-        <p className="text-3xl font-bold text-stone-900 dark:text-stone-50">{value}</p>
-      </div>
+    <button
+      type="button"
+      onClick={onClick}
+      className="shop-card p-4 text-left shadow-shop transition hover:-translate-y-0.5 hover:border-primary-300"
+    >
+      <p className="font-semibold text-stone-900 dark:text-stone-50">{title}</p>
+      <p className="mt-1 text-sm text-stone-500">{detail}</p>
+    </button>
+  );
+}
+
+function Pulse({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-xl bg-surface-100 px-3 py-3 dark:bg-surface-950">
+      <dt className="text-xs uppercase tracking-wide text-stone-500">{label}</dt>
+      <dd className="mt-1 font-display text-2xl font-semibold text-stone-900 dark:text-stone-50">{value}</dd>
     </div>
   );
 }
@@ -82,6 +82,7 @@ function TabButton({
 export default function AdminDashboardPage() {
   const { isAdmin, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [tab, setTab] = useState<Tab>("dashboard");
 
   // Products state
@@ -91,6 +92,10 @@ export default function AdminDashboardPage() {
   // Orders state
   const [orders, setOrders] = useState<Order[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
+  const [ordersError, setOrdersError] = useState("");
+  const [freshOrders, setFreshOrders] = useState<Order[]>([]);
+  const [statusBusyId, setStatusBusyId] = useState<number | null>(null);
+  const knownOrderIds = useRef<Set<number> | null>(null);
 
   // Selected order detail
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -147,13 +152,27 @@ export default function AdminDashboardPage() {
       .finally(() => setProductsLoading(false));
   }, []);
 
-  const loadOrders = useCallback(() => {
-    setOrdersLoading(true);
+  const loadOrders = useCallback((silent = false) => {
+    if (!silent) setOrdersLoading(true);
     orderApi
       .getAllAdmin()
-      .then((data) => setOrders(Array.isArray(data) ? data : []))
-      .catch(() => setOrders([]))
-      .finally(() => setOrdersLoading(false));
+      .then((data) => {
+        const list = Array.isArray(data) ? data : [];
+        setOrders(list);
+        setOrdersError("");
+        if (knownOrderIds.current) {
+          const arrived = list.filter((order) => !knownOrderIds.current?.has(order.id));
+          if (arrived.length > 0) setFreshOrders(arrived);
+        }
+        knownOrderIds.current = new Set(list.map((order) => order.id));
+      })
+      .catch(() => {
+        setOrdersError("Orders could not be loaded. Refresh to try again.");
+        if (!silent) setOrders([]);
+      })
+      .finally(() => {
+        if (!silent) setOrdersLoading(false);
+      });
   }, []);
 
   const loadCategories = useCallback(() => {
@@ -177,6 +196,30 @@ export default function AdminDashboardPage() {
     loadCategories();
     loadZones();
   }, [isAdmin, loadProducts, loadOrders, loadCategories, loadZones]);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    const timer = window.setInterval(() => loadOrders(true), 12000);
+    const onFocus = () => loadOrders(true);
+    window.addEventListener("focus", onFocus);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, [isAdmin, loadOrders]);
+
+  useEffect(() => {
+    const raw = searchParams.get("order");
+    if (!raw || orders.length === 0) return;
+    const found = orders.find((order) => order.id === Number(raw));
+    if (!found) return;
+    setSelectedOrder(found);
+    setNewStatus(found.status);
+    setTab("order-detail");
+    const next = new URLSearchParams(searchParams);
+    next.delete("order");
+    setSearchParams(next, { replace: true });
+  }, [orders, searchParams, setSearchParams]);
 
   // ── Computed stats ─────────────────────────────────────────────────────────
 
@@ -403,6 +446,20 @@ export default function AdminDashboardPage() {
     setTab("order-detail");
   }
 
+  async function quickStatus(order: Order, status: string) {
+    setStatusBusyId(order.id);
+    try {
+      const updated = await orderApi.updateStatus(order.id, status);
+      setOrders((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
+      setSelectedOrder((current) => (current?.id === updated.id ? updated : current));
+      if (selectedOrder?.id === updated.id) setNewStatus(updated.status);
+    } catch {
+      alert("Failed to update status.");
+    } finally {
+      setStatusBusyId(null);
+    }
+  }
+
   async function handleStatusUpdate() {
     if (!selectedOrder || !newStatus) return;
     setStatusUpdating(true);
@@ -469,115 +526,130 @@ export default function AdminDashboardPage() {
 
         {/* ── DASHBOARD TAB ─────────────────────────────────────────────────── */}
         {tab === "dashboard" && (
-          <div className="animate-fade-in space-y-8">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              <StatCard
-                label="Total Products"
-                value={stats.totalProducts}
-                icon={
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                  </svg>
-                }
-              />
-              <StatCard
-                label="Total Orders"
-                value={stats.totalOrders}
-                icon={
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                  </svg>
-                }
-              />
-              <StatCard
-                label="Pending Orders"
-                value={stats.pending}
-                icon={
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                }
-              />
-              <StatCard
-                label="Processing"
-                value={stats.processing}
-                icon={
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
-                }
-              />
-              <StatCard
-                label="Delivered"
-                value={stats.delivered}
-                icon={
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                }
-              />
-              <StatCard
-                label="Cancelled"
-                value={stats.cancelled}
-                icon={
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                }
-              />
-            </div>
+          <div className="animate-fade-in space-y-6">
+            {freshOrders.length > 0 && (
+              <div className="flex flex-col gap-3 rounded-2xl border border-primary-200 bg-primary-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between dark:border-primary-800 dark:bg-primary-900/30">
+                <p className="text-sm font-semibold text-primary-900 dark:text-primary-100">
+                  {freshOrders.length === 1
+                    ? `New order from ${freshOrders[0].customerName}`
+                    : `${freshOrders.length} new orders just came in`}
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      openOrderDetail(freshOrders[0]);
+                      setFreshOrders([]);
+                    }}
+                    className="rounded-xl bg-primary-600 px-3 py-1.5 text-xs font-semibold text-white"
+                  >
+                    Review
+                  </button>
+                  <button
+                    onClick={() => setFreshOrders([])}
+                    className="rounded-xl px-3 py-1.5 text-xs font-semibold text-primary-800 dark:text-primary-100"
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              </div>
+            )}
 
-            {/* Recent orders snapshot */}
-            <div className="shop-card p-6 shadow-lg">
-              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-50">Recent Orders</h2>
-                <button
-                  onClick={() => setTab("orders")}
-                  className="text-sm font-semibold text-primary-700 hover:underline dark:text-primary-300"
-                >
-                  View all →
+            <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <ActionCard title="Add product" detail="Put something new in the shop" onClick={() => { setTab("products"); openAddForm(); }} />
+              <ActionCard title="Review orders" detail={`${stats.pending} waiting · ${stats.totalOrders} total`} onClick={() => setTab("orders")} />
+              <ActionCard title="Delivery fees" detail={`${zones.length} towns configured`} onClick={() => setTab("settings")} />
+              <ActionCard title="Categories" detail={`${categories.length} categories`} onClick={() => setTab("settings")} />
+            </section>
+
+            <section className="shop-card p-5 shadow-lg">
+              <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+                <div>
+                  <h2 className="font-display text-xl font-semibold text-stone-900 dark:text-stone-50">Needs a decision</h2>
+                  <p className="mt-1 text-sm text-stone-500">Confirm or cancel new orders. The customer is notified when the status changes.</p>
+                </div>
+                <button onClick={() => loadOrders()} className="text-sm font-semibold text-primary-700 dark:text-primary-300">
+                  Refresh
                 </button>
               </div>
+              {ordersError && <p className="mb-3 text-sm text-red-700 dark:text-red-300">{ordersError}</p>}
               {ordersLoading ? (
                 <div className="space-y-2">
-                  {[...Array(4)].map((_, i) => (
-                    <div key={i} className="h-12 rounded-xl animate-pulse bg-surface-100 dark:bg-surface-800" />
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="h-16 animate-pulse rounded-xl bg-surface-100 dark:bg-surface-800" />
                   ))}
                 </div>
-              ) : orders.length === 0 ? (
-                <p className="text-stone-600 dark:text-stone-300 text-sm text-center py-8">No orders yet.</p>
+              ) : stats.pending === 0 ? (
+                <p className="py-8 text-center text-sm text-stone-500">No orders are waiting. New checkouts appear here on their own.</p>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full min-w-[36rem] text-sm">
-                    <thead>
-                      <tr className="text-left text-xs text-stone-600 dark:text-stone-300 border-b border-stone-200 dark:border-surface-700">
-                        <th className="pb-2 pr-4">Order</th>
-                        <th className="pb-2 pr-4">Customer</th>
-                        <th className="pb-2 pr-4">Total</th>
-                        <th className="pb-2">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-stone-200 dark:divide-surface-700">
-                      {orders.slice(0, 8).map((order) => (
-                        <tr
-                          key={order.id}
-                          className="cursor-pointer hover:bg-surface-50 dark:hover:bg-surface-800/60 transition-colors"
-                          onClick={() => openOrderDetail(order)}
+                <div className="space-y-3">
+                  {orders.filter((order) => order.status === "PENDING").map((order) => (
+                    <article key={order.id} className="flex flex-col gap-3 rounded-2xl border border-stone-200 p-4 sm:flex-row sm:items-center dark:border-surface-700">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold text-stone-900 dark:text-stone-50">#{order.id} · {order.customerName}</p>
+                        <p className="mt-0.5 truncate text-sm text-stone-500">
+                          {formatDate(order.orderDate)} · {(order.items ?? []).length} items · {order.townName || order.deliveryAddress}
+                        </p>
+                      </div>
+                      <p className="font-display text-lg font-semibold text-primary-700 dark:text-primary-300">{formatMMK(order.total)}</p>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          onClick={() => quickStatus(order, "CONFIRMED")}
+                          disabled={statusBusyId === order.id}
+                          className="rounded-xl bg-primary-600 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
                         >
-                          <td className="py-2.5 pr-4 font-medium">#{order.id}</td>
-                          <td className="py-2.5 pr-4 text-stone-700 dark:text-stone-200">{order.customerName}</td>
-                          <td className="py-2.5 pr-4 font-semibold">{formatMMK(order.total)}</td>
-                          <td className="py-2.5">
-                            <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${getOrderStatusColor(order.status)}`}>
-                              {order.status}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                          Confirm
+                        </button>
+                        <button
+                          onClick={() => quickStatus(order, "CANCELLED")}
+                          disabled={statusBusyId === order.id}
+                          className="rounded-xl bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 disabled:opacity-50 dark:bg-red-400/10 dark:text-red-200"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={() => openOrderDetail(order)}
+                          className="rounded-xl bg-surface-100 px-3 py-2 text-xs font-semibold text-stone-800 dark:bg-surface-800 dark:text-stone-100"
+                        >
+                          Open
+                        </button>
+                      </div>
+                    </article>
+                  ))}
                 </div>
               )}
+            </section>
+
+            <div className="grid gap-4 lg:grid-cols-2">
+              <section className="shop-card p-5">
+                <div className="mb-3 flex items-center justify-between">
+                  <h2 className="font-semibold text-stone-900 dark:text-stone-50">Low stock</h2>
+                  <button onClick={() => setTab("products")} className="text-sm font-semibold text-primary-700 dark:text-primary-300">Edit products</button>
+                </div>
+                {products.filter((product) => product.stock <= 5).length === 0 ? (
+                  <p className="text-sm text-stone-500">Stock looks fine.</p>
+                ) : (
+                  <ul className="space-y-2 text-sm">
+                    {products.filter((product) => product.stock <= 5).slice(0, 6).map((product) => (
+                      <li key={product.id} className="flex items-center justify-between gap-3">
+                        <span className="min-w-0 truncate">{product.name}</span>
+                        <span className={product.stock === 0 ? "font-semibold text-red-700 dark:text-red-300" : "font-semibold text-amber-700 dark:text-amber-200"}>
+                          {product.stock === 0 ? "Out" : product.stock}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </section>
+
+              <section className="shop-card p-5">
+                <h2 className="mb-3 font-semibold text-stone-900 dark:text-stone-50">Store pulse</h2>
+                <dl className="grid grid-cols-2 gap-3 text-sm">
+                  <Pulse label="Products" value={stats.totalProducts} />
+                  <Pulse label="Processing" value={stats.processing} />
+                  <Pulse label="Delivered" value={stats.delivered} />
+                  <Pulse label="Cancelled" value={stats.cancelled} />
+                </dl>
+              </section>
             </div>
           </div>
         )}
@@ -892,10 +964,11 @@ export default function AdminDashboardPage() {
         {/* ── ORDERS TAB ───────────────────────────────────────────────────── */}
         {tab === "orders" && (
           <div className="animate-fade-in space-y-4">
+            {ordersError && <p className="text-sm text-red-700 dark:text-red-300">{ordersError}</p>}
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <h2 className="font-display text-xl font-bold text-stone-900 dark:text-stone-50">All Orders ({orders.length})</h2>
               <button
-                onClick={loadOrders}
+                onClick={() => loadOrders()}
                 className="flex items-center gap-2 rounded-xl border border-stone-200 bg-white text-stone-800 dark:border-surface-700 dark:bg-surface-800 dark:text-stone-100 px-4 py-2 text-sm font-medium hover:bg-surface-50 dark:hover:bg-surface-700 transition-colors"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -939,7 +1012,7 @@ export default function AdminDashboardPage() {
                             <p className="text-xs text-stone-600 dark:text-stone-300">{order.customerEmail}</p>
                           </td>
                           <td className="px-5 py-4 text-stone-600 dark:text-stone-300 text-xs">{formatDate(order.orderDate)}</td>
-                          <td className="px-5 py-4 text-stone-600 dark:text-stone-300">{order.items.length} item{order.items.length !== 1 ? "s" : ""}</td>
+                          <td className="px-5 py-4 text-stone-600 dark:text-stone-300">{(order.items ?? []).length} item{(order.items ?? []).length !== 1 ? "s" : ""}</td>
                           <td className="px-5 py-4 font-semibold text-primary-700 dark:text-primary-300">{formatMMK(order.total)}</td>
                           <td className="px-5 py-4">
                             <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${getOrderStatusColor(order.status)}`}>

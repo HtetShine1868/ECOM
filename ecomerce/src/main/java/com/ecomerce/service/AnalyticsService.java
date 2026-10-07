@@ -122,6 +122,7 @@ public class AnalyticsService {
                 .to(window.toInclusive())
                 .totalRevenue(totalRevenue)
                 .totalOrders(revenueOrders)
+                .ordersPlaced(allOrders)
                 .unitsSold(unitsSold)
                 .averageOrderValue(average)
                 .cancelledOrders(cancelledOrders)

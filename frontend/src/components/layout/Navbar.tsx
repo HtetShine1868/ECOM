@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useCart } from "../../context/CartContext";
 import { useTheme } from "../../hooks/useTheme";
+import NotificationBell from "./NotificationBell";
 import ShopMark from "./ShopMark";
 
 const navLinks = [
@@ -98,6 +99,7 @@ export default function Navbar() {
 
           {isAuthenticated ? (
             <>
+              <NotificationBell />
               <button
                 onClick={() => setIsOpen(true)}
                 className="relative hidden rounded-full p-2 text-stone-600 hover:bg-white md:inline-flex dark:text-stone-300 dark:hover:bg-surface-800"

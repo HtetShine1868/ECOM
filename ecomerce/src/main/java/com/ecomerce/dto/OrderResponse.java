@@ -1,6 +1,7 @@
 package com.ecomerce.dto;
 
 import com.ecomerce.entity.Order;
+import com.ecomerce.entity.OrderItem;
 import lombok.Builder;
 import lombok.Data;
 
@@ -40,7 +41,8 @@ public class OrderResponse {
     }
 
     public static OrderResponse from(Order order) {
-        List<OrderItemResponse> itemResponses = order.getOrderItems().stream()
+        List<OrderItem> sourceItems = order.getOrderItems() == null ? List.of() : order.getOrderItems();
+        List<OrderItemResponse> itemResponses = sourceItems.stream()
                 .map(item -> OrderItemResponse.builder()
                         .id(item.getId())
                         .productId(item.getProduct() != null ? item.getProduct().getId() : null)
@@ -56,7 +58,7 @@ public class OrderResponse {
         return OrderResponse.builder()
                 .id(order.getId())
                 .customerName(order.getCustomerName())
-                .customerEmail(order.getUser().getEmail())
+                .customerEmail(order.getUser() != null ? order.getUser().getEmail() : "")
                 .customerPhone(order.getCustomerPhone())
                 .deliveryAddress(order.getDeliveryAddress())
                 .townName(order.getTownName())

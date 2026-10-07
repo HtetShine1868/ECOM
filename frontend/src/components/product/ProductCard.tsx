@@ -28,13 +28,19 @@ export default function ProductCard({ product, isPopular }: ProductCardProps) {
       to={`/products/${product.id}`}
       className="shop-card group flex min-w-0 flex-col overflow-hidden transition duration-200 hover:-translate-y-0.5 hover:border-primary-300"
     >
-      <div className="relative aspect-[4/5] overflow-hidden bg-primary-50 dark:bg-surface-800">
+      <div className="relative aspect-[4/3] overflow-hidden bg-stone-100 dark:bg-surface-800">
         <img
-          src={product.imageUrl ?? "https://placehold.co/400x500?text=No+Image"}
+          src={product.imageUrl?.trim() || "https://placehold.co/640x480?text=No+Image"}
           alt={product.name}
-          className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+          className="absolute inset-0 h-full w-full object-cover object-center transition duration-500 group-hover:scale-[1.03]"
+          onError={(event) => {
+            const img = event.currentTarget;
+            if (img.dataset.fallback === "1") return;
+            img.dataset.fallback = "1";
+            img.src = "https://placehold.co/640x480?text=No+Image";
+          }}
         />
-        <div className="absolute left-2 top-2 flex flex-col gap-1">
+        <div className="absolute left-2 top-2 z-10 flex max-w-[65%] flex-col gap-1">
           {isPopular && (
             <span className="rounded-full bg-white/95 px-2.5 py-0.5 text-[11px] font-bold text-primary-800">
               Popular
@@ -54,7 +60,7 @@ export default function ProductCard({ product, isPopular }: ProductCardProps) {
           </div>
         )}
         {!isOutOfStock && product.stock <= 5 && (
-          <span className="absolute right-2 top-2 rounded-full bg-white/95 px-2.5 py-0.5 text-[11px] font-semibold text-amber-800">
+          <span className="absolute right-2 top-2 z-10 rounded-full bg-white/95 px-2.5 py-0.5 text-[11px] font-semibold text-amber-800">
             {product.stock} left
           </span>
         )}

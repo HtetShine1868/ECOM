@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { orderApi } from "../api/orders";
 import type { StoreAnalytics } from "../api/orders";
 import { formatMMK, formatStatus } from "../utils/format";
@@ -58,8 +58,9 @@ export default function AdminAnalytics() {
   const [data, setData] = useState<StoreAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
 
-  useEffect(() => {
+  const load = useCallback((silent = false) => {
     if (range === "custom" && (!from || !to)) {
       setData(null);
       setError("");
@@ -72,14 +73,32 @@ export default function AdminAnalytics() {
       setLoading(false);
       return;
     }
-    setLoading(true);
+    if (!silent) setLoading(true);
     setError("");
     orderApi
       .getAnalytics({ range, from: range === "custom" ? from : undefined, to: range === "custom" ? to : undefined })
-      .then(setData)
-      .catch(() => setError("Analytics could not be loaded."))
-      .finally(() => setLoading(false));
+      .then((next) => {
+        setData(next);
+        setUpdatedAt(new Date());
+      })
+      .catch(() => {
+        if (!silent) setError("Analytics could not be loaded.");
+      })
+      .finally(() => {
+        if (!silent) setLoading(false);
+      });
   }, [range, from, to]);
+
+  useEffect(() => {
+    load(false);
+    const timer = window.setInterval(() => load(true), 15000);
+    const onFocus = () => load(true);
+    window.addEventListener("focus", onFocus);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, [load]);
 
   const quickActive = QUICK_RANGES.some((option) => option.value === range);
   const revenue = asNumber(data?.totalRevenue);
@@ -97,6 +116,7 @@ export default function AdminAnalytics() {
           <h2 className="font-display text-2xl font-semibold text-stone-900 dark:text-stone-50">Sales</h2>
           <p className="mt-1 text-sm text-stone-500">
             {data ? `${data.rangeLabel} · ${data.from} to ${data.to}` : "Pick a period to load sales."}
+            {updatedAt ? ` · live, updated ${updatedAt.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}` : ""}
           </p>
         </div>
         <div className="flex flex-col items-start gap-2">
@@ -150,16 +170,20 @@ export default function AdminAnalytics() {
 
       {data && !loading && (
         <>
-          <section className="grid gap-3 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
+          <section className="grid gap-3 lg:grid-cols-2 xl:grid-cols-4">
+            <Metric
+              label="Orders placed"
+              value={String(data.ordersPlaced ?? 0)}
+              hint="Every checkout in this period, including ones still waiting on you."
+              featured
+            />
+            <Metric label="Waiting on you" value={String(data.pendingOrders)} hint="New orders that still need a status change." />
             <Metric
               label="Sales revenue"
               value={formatMMK(revenue)}
-              hint="Confirmed through delivered. Pending and cancelled stay out of this total."
-              featured
+              hint="Confirmed through delivered. A new checkout moves this after you confirm it."
             />
-            <Metric label="Sales orders" value={String(data.totalOrders)} hint="Orders counted in revenue" />
-            <Metric label="Average order" value={formatMMK(data.averageOrderValue)} hint="Revenue divided by those orders" />
-            <Metric label="Units sold" value={String(data.unitsSold)} hint="Items on those orders" />
+            <Metric label="Units sold" value={String(data.unitsSold)} hint={`${data.totalOrders} confirmed orders · avg ${formatMMK(data.averageOrderValue)}`} />
           </section>
 
           <section className="shop-card p-5">

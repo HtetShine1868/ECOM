@@ -101,7 +101,7 @@ export default function HomePage() {
       {loading ? (
         <div className="mt-10 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-80 animate-pulse rounded-2xl bg-white/70 dark:bg-surface-800" />
+            <div key={i} className="aspect-[4/3] animate-pulse rounded-2xl bg-white/70 dark:bg-surface-800" />
           ))}
         </div>
       ) : error ? (

@@ -7,8 +7,11 @@ import com.ecomerce.exception.InsufficientStockException;
 import com.ecomerce.exception.ResourceNotFoundException;
 import com.ecomerce.repository.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -17,6 +20,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 @Transactional(readOnly = true)
 public class OrderService {
 
@@ -24,6 +28,7 @@ public class OrderService {
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
     private final DeliveryZoneService deliveryZoneService;
+    private final NotificationService notificationService;
 
     @Transactional
     public OrderResponse placeOrder(Long userId, OrderRequest request) {
@@ -126,6 +131,17 @@ public class OrderService {
         order.setOrderItems(orderItems);
         order = orderRepository.save(order);
 
+        Long savedOrderId = order.getId();
+        String savedCustomerName = order.getCustomerName();
+        BigDecimal savedTotal = order.getTotal();
+        afterCommit(() -> {
+            try {
+                notificationService.notifyNewOrder(savedOrderId, savedCustomerName, savedTotal);
+            } catch (Exception ex) {
+                log.warn("Order {} was saved, but admins were not notified", savedOrderId, ex);
+            }
+        });
+
         return OrderResponse.from(order);
     }
 
@@ -148,7 +164,7 @@ public class OrderService {
     }
 
     public List<OrderResponse> getAllOrders() {
-        return orderRepository.findAll().stream()
+        return orderRepository.findAllWithUser().stream()
                 .map(OrderResponse::from)
                 .collect(Collectors.toList());
     }
@@ -157,7 +173,34 @@ public class OrderService {
     public OrderResponse updateOrderStatus(Long orderId, Order.OrderStatus newStatus) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + orderId));
+        Order.OrderStatus previous = order.getStatus();
         order.setStatus(newStatus);
-        return OrderResponse.from(orderRepository.save(order));
+        order = orderRepository.save(order);
+        if (previous != newStatus && order.getUser() != null) {
+            Long userId = order.getUser().getId();
+            Long savedOrderId = order.getId();
+            String statusName = newStatus.name();
+            afterCommit(() -> {
+                try {
+                    notificationService.notifyStatusChange(userId, savedOrderId, statusName);
+                } catch (Exception ex) {
+                    log.warn("Order {} status saved, but the customer was not notified", savedOrderId, ex);
+                }
+            });
+        }
+        return OrderResponse.from(order);
+    }
+
+    private void afterCommit(Runnable action) {
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    action.run();
+                }
+            });
+            return;
+        }
+        action.run();
     }
 }

@@ -98,8 +98,7 @@ public class AdminController {
 
     @GetMapping("/orders/{id}")
     public ResponseEntity<OrderResponse> getOrder(@PathVariable Long id) {
-        Order order = adminService.getOrderById(id);
-        return ResponseEntity.ok(OrderResponse.from(order));
+        return ResponseEntity.ok(adminService.getOrderById(id));
     }
 
     @PutMapping("/orders/{id}/status")
