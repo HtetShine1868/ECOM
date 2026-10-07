@@ -11,6 +11,15 @@ export function formatDate(dateStr: string): string {
   });
 }
 
+export function formatStatus(status: string): string {
+  return status
+    .toLowerCase()
+    .split("_")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
 export function getOrderStatusColor(status: string): string {
   const map: Record<string, string> = {
     PENDING:    "bg-amber-100 text-amber-950 dark:bg-amber-400/15 dark:text-amber-100",

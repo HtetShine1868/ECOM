@@ -2,6 +2,7 @@
 import { useParams, Link } from "react-router-dom";
 import { orderApi } from "../api/orders";
 import { formatMMK, formatDate, getOrderStatusColor } from "../utils/format";
+import { downloadOrderReceipt } from "../utils/receiptPdf";
 import type { Order } from "../types";
 
 const STORE_NAME = "ShopNow";
@@ -10,6 +11,8 @@ export default function ReceiptPage() {
   const { id } = useParams<{ id: string }>();
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
+  const [downloading, setDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState("");
 
   useEffect(() => {
     if (!id) return;
@@ -42,6 +45,19 @@ export default function ReceiptPage() {
   }
 
   const handlePrint = () => window.print();
+
+  const handleDownload = async () => {
+    if (!order) return;
+    setDownloading(true);
+    setDownloadError("");
+    try {
+      await downloadOrderReceipt(order);
+    } catch {
+      setDownloadError("Could not download the receipt.");
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   return (
     <>
@@ -151,11 +167,22 @@ export default function ReceiptPage() {
             </div>
           </div>
 
+          {downloadError && (
+            <p className="no-print mt-4 text-center text-sm text-red-600">{downloadError}</p>
+          )}
+
           {/* Action buttons – no-print */}
           <div className="no-print mt-6 flex flex-col sm:flex-row gap-3 justify-center">
             <button
-              onClick={handlePrint}
+              onClick={handleDownload}
+              disabled={downloading}
               className="btn-primary"
+            >
+              {downloading ? "Preparing…" : "Download"}
+            </button>
+            <button
+              onClick={handlePrint}
+              className="btn-secondary gap-2"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />

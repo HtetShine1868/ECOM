@@ -18,7 +18,7 @@ export default function HomePage() {
   useEffect(() => {
     setLoading(true);
     Promise.all([
-      productApi.getBestSellers(8).catch(() => []),
+      productApi.getBestSellers(4).catch(() => []),
       productApi.getPage({ sort: "newest", page: 0, size: 8 }),
       productApi.getCategories().catch(() => []),
     ])
@@ -39,129 +39,207 @@ export default function HomePage() {
     navigate(query ? `/products?search=${encodeURIComponent(query)}` : "/products");
   };
 
+  const featured = popular.length > 0 ? popular : recent.slice(0, 4);
+  const popularIds = new Set(popular.map((product) => product.id));
+  const fresh = popular.length > 0 ? recent.filter((product) => !popularIds.has(product.id)).slice(0, 4) : [];
+
   return (
-    <div>
-      <section className="mx-auto max-w-7xl px-4 pb-6 pt-8 md:px-6 md:pt-12">
-        <div className="shop-card overflow-hidden px-5 py-8 md:px-10 md:py-12">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary-700">
-            For the house
-          </p>
-          <h1 className="mt-3 max-w-xl font-display text-4xl font-semibold leading-tight text-stone-900 dark:text-stone-50 md:text-5xl">
-            Kitchen, kids, and the everyday things you actually use.
-          </h1>
-          <p className="mt-4 max-w-lg text-base leading-relaxed text-stone-600 dark:text-stone-300">
-            Browse what’s in stock, drop it in your bag, and check out with delivery to your township.
-          </p>
+    <div className="mx-auto max-w-7xl px-4 pb-10 pt-6 md:px-6 md:pt-10">
+      <section className="max-w-2xl">
+        <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary-700">For the house</p>
+        <h1 className="mt-2 font-display text-4xl font-semibold leading-[1.08] text-stone-900 dark:text-stone-50 md:text-5xl">
+          What do you need today?
+        </h1>
+        <p className="mt-3 text-base leading-relaxed text-stone-600 dark:text-stone-300">
+          Kitchen, kids, and everyday goods that are actually in stock, delivered to your township.
+        </p>
 
-          <form onSubmit={submitSearch} className="mt-7 flex max-w-xl flex-col gap-2 sm:flex-row">
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Try pans, toys, soap..."
-              className="field"
-            />
-            <button type="submit" className="btn-primary sm:px-6">
-              Find it
+        <form onSubmit={submitSearch} className="mt-6 flex flex-col gap-2 sm:flex-row">
+          <label className="sr-only" htmlFor="home-search">Search the shop</label>
+          <input
+            id="home-search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search pans, toys, soap..."
+            className="field sm:max-w-md"
+          />
+          <div className="flex gap-2">
+            <button type="submit" className="btn-primary">Search</button>
+            <button type="button" onClick={() => navigate("/products")} className="btn-secondary">
+              Browse shop
             </button>
-          </form>
-        </div>
+          </div>
+        </form>
 
-        <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <TrustNote title="In-stock first" body="We show live stock so you don’t order empty shelves." />
-          <TrustNote title="Town delivery" body="Pick your township at checkout. Fee is shown before you pay." />
-          <TrustNote title="Kids to kitchen" body="Daily house things in one bag, not five different shops." />
-        </div>
+        <ul className="mt-5 flex flex-wrap gap-x-5 gap-y-1 text-sm text-stone-500">
+          <li>Live stock</li>
+          <li>Fee shown before you pay</li>
+          <li>One bag for the house</li>
+        </ul>
       </section>
 
       {categories.length > 0 && (
-        <section className="mx-auto max-w-7xl px-4 pb-8 md:px-6">
-          <div className="mb-4 flex items-end justify-between">
-            <h2 className="font-display text-2xl font-semibold">Shop by aisle</h2>
+        <section className="mt-10">
+          <div className="mb-3 flex items-end justify-between gap-3">
+            <h2 className="font-display text-2xl font-semibold">Aisles</h2>
             <button onClick={() => navigate("/products")} className="text-sm font-semibold text-primary-700 hover:underline">
-              See all
+              All products
             </button>
           </div>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+          <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:px-0">
             {categories.map((category) => (
-              <button
+              <Aisle
                 key={category.id}
+                name={category.name}
                 onClick={() => navigate(`/products?categoryId=${category.id}`)}
-                className="shop-card group px-4 py-5 text-left transition hover:-translate-y-0.5 hover:border-primary-300"
-              >
-                <span className="block font-display text-lg font-semibold text-stone-900 dark:text-stone-50">
-                  {category.name}
-                </span>
-                <span className="mt-1 block text-xs text-stone-500">
-                  {categoryLabel(categoryKind(category.name))}
-                </span>
-              </button>
+              />
             ))}
           </div>
         </section>
       )}
 
       {loading ? (
-        <div className="mx-auto grid max-w-7xl grid-cols-2 gap-4 px-4 pb-12 sm:grid-cols-2 lg:grid-cols-4 md:px-6">
+        <div className="mt-10 grid grid-cols-2 gap-4 lg:grid-cols-4">
           {[...Array(4)].map((_, i) => (
             <div key={i} className="h-80 animate-pulse rounded-2xl bg-white/70 dark:bg-surface-800" />
           ))}
         </div>
       ) : error ? (
-        <p className="pb-16 text-center text-sm text-red-600">{error}</p>
+        <p className="mt-12 text-center text-sm text-red-600">{error}</p>
       ) : (
-        <div className="mx-auto max-w-7xl space-y-12 px-4 pb-8 md:px-6">
+        <div className="mt-12 space-y-12">
           <section>
-            <div className="mb-5 flex items-end justify-between">
-              <div>
-                <h2 className="font-display text-2xl font-semibold">People keep buying</h2>
-                <p className="mt-1 text-sm text-stone-500">The ones that leave the shelf first.</p>
-              </div>
-              <button onClick={() => navigate("/products?sort=popular")} className="text-sm font-semibold text-primary-700 hover:underline">
-                View all
-              </button>
-            </div>
-            {popular.length === 0 ? (
-              <p className="text-sm text-stone-500">Popular picks show up after the first orders come in.</p>
+            <SectionHead
+              title={popular.length > 0 ? "Selling well" : "On the shelf"}
+              hint={popular.length > 0 ? "The ones that leave the shelf first." : "Start here, or search for something specific."}
+              action={popular.length > 0 ? "See popular" : "Browse shop"}
+              onAction={() => navigate(popular.length > 0 ? "/products?sort=popular" : "/products")}
+            />
+            {featured.length === 0 ? (
+              <EmptyShelf message="Products show up here once the shop has something on the shelf." />
             ) : (
               <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-                {popular.map((product) => (
-                  <ProductCard key={product.id} product={product} isPopular />
+                {featured.map((product) => (
+                  <ProductCard key={product.id} product={product} isPopular={popular.length > 0} />
                 ))}
               </div>
             )}
           </section>
 
-          <section>
-            <div className="mb-5 flex items-end justify-between">
-              <div>
-                <h2 className="font-display text-2xl font-semibold">Just in</h2>
-                <p className="mt-1 text-sm text-stone-500">Newest on the shelf.</p>
-              </div>
-              <button onClick={() => navigate("/products")} className="text-sm font-semibold text-primary-700 hover:underline">
-                Browse shop
-              </button>
-            </div>
-            {recent.length === 0 ? (
-              <p className="text-sm text-stone-500">No products available yet.</p>
-            ) : (
+          {fresh.length > 0 && (
+            <section>
+              <SectionHead
+                title="Just arrived"
+                hint="Newest on the shelf."
+                action="Browse shop"
+                onAction={() => navigate("/products")}
+              />
               <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-                {recent.map((product) => (
+                {fresh.map((product) => (
                   <ProductCard key={product.id} product={product} />
                 ))}
               </div>
-            )}
-          </section>
+            </section>
+          )}
         </div>
       )}
     </div>
   );
 }
 
-function TrustNote({ title, body }: { title: string; body: string }) {
+function SectionHead({
+  title,
+  hint,
+  action,
+  onAction,
+}: {
+  title: string;
+  hint: string;
+  action: string;
+  onAction: () => void;
+}) {
   return (
-    <div className="rounded-2xl border border-stone-200/80 bg-white/70 px-4 py-4 dark:border-surface-800 dark:bg-surface-800/50">
-      <p className="font-semibold text-stone-900 dark:text-stone-50">{title}</p>
-      <p className="mt-1 text-sm leading-relaxed text-stone-600 dark:text-stone-300">{body}</p>
+    <div className="mb-4 flex items-end justify-between gap-3">
+      <div>
+        <h2 className="font-display text-2xl font-semibold">{title}</h2>
+        <p className="mt-1 text-sm text-stone-500">{hint}</p>
+      </div>
+      <button onClick={onAction} className="shrink-0 text-sm font-semibold text-primary-700 hover:underline">
+        {action}
+      </button>
     </div>
+  );
+}
+
+function EmptyShelf({ message }: { message: string }) {
+  return (
+    <p className="rounded-2xl border border-dashed border-stone-300 px-4 py-8 text-center text-sm text-stone-500 dark:border-surface-700">
+      {message}
+    </p>
+  );
+}
+
+function Aisle({ name, onClick }: { name: string; onClick: () => void }) {
+  const kind = categoryKind(name);
+  return (
+    <button
+      onClick={onClick}
+      className="flex shrink-0 items-center gap-3 rounded-2xl border border-stone-200/80 bg-white px-3 py-2.5 text-left transition hover:border-primary-300 dark:border-surface-800 dark:bg-surface-800/80"
+    >
+      <span className={`flex h-10 w-10 items-center justify-center rounded-xl ${aisleTone(kind)}`}>
+        <AisleMark kind={kind} />
+      </span>
+      <span>
+        <span className="block text-sm font-semibold text-stone-900 dark:text-stone-50">{name}</span>
+        <span className="block text-xs text-stone-500">{categoryLabel(kind)}</span>
+      </span>
+    </button>
+  );
+}
+
+function aisleTone(kind: string) {
+  switch (kind) {
+    case "kids":
+      return "bg-apricot-100 text-amber-800";
+    case "kitchen":
+      return "bg-primary-100 text-primary-800";
+    case "food":
+      return "bg-accent-100 text-accent-600";
+    default:
+      return "bg-stone-100 text-stone-700 dark:bg-surface-900 dark:text-stone-200";
+  }
+}
+
+function AisleMark({ kind }: { kind: string }) {
+  const common = "h-5 w-5";
+  if (kind === "kids") {
+    return (
+      <svg className={common} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+        <circle cx="12" cy="8" r="3" />
+        <path d="M6 19c1.2-3 3.2-4.5 6-4.5S16.8 16 18 19" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  if (kind === "kitchen") {
+    return (
+      <svg className={common} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+        <path d="M6 4v8a3 3 0 0 0 6 0V4" strokeLinecap="round" />
+        <path d="M9 12v8M16 4v16" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  if (kind === "food") {
+    return (
+      <svg className={common} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+        <path d="M5 10h14v8a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-8z" />
+        <path d="M8 10V7a4 4 0 0 1 8 0v3" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  return (
+    <svg className={common} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <path d="M6 8h12l-1 11H7L6 8z" strokeLinejoin="round" />
+      <path d="M9 8V7a3 3 0 0 1 6 0v1" strokeLinecap="round" />
+    </svg>
   );
 }

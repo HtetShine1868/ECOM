@@ -1,8 +1,9 @@
-﻿import { useEffect, useState } from "react";
+﻿import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { orderApi } from "../api/orders";
 import { useAuth } from "../context/AuthContext";
-import { formatMMK, formatDate, getOrderStatusColor } from "../utils/format";
+import { formatMMK, formatDate, formatStatus, getOrderStatusColor } from "../utils/format";
+import { downloadOrderReceipt } from "../utils/receiptPdf";
 import type { Order } from "../types";
 
 export default function OrderHistoryPage() {
@@ -10,6 +11,8 @@ export default function OrderHistoryPage() {
   const navigate = useNavigate();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [downloadingId, setDownloadingId] = useState<number | null>(null);
+  const [downloadError, setDownloadError] = useState("");
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -23,70 +26,96 @@ export default function OrderHistoryPage() {
       .finally(() => setLoading(false));
   }, [isAuthenticated, navigate]);
 
+  const download = async (order: Order) => {
+    setDownloadingId(order.id);
+    setDownloadError("");
+    try {
+      const full = order.items?.length ? order : await orderApi.getById(order.id);
+      await downloadOrderReceipt(full);
+    } catch {
+      setDownloadError(`Could not download the receipt for order #${order.id}.`);
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
   return (
     <div className="p-4 md:p-6">
-      <div className="mx-auto max-w-4xl">
-        <h1 className="mb-8 font-display text-3xl font-semibold md:text-4xl">Your orders</h1>
+      <div className="mx-auto max-w-3xl">
+        <h1 className="font-display text-3xl font-semibold md:text-4xl">Your orders</h1>
+        <p className="mt-2 text-sm text-stone-500">Open an order, or download its receipt as a PDF.</p>
+
+        {downloadError && (
+          <p className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-400/10 dark:text-red-200">
+            {downloadError}
+          </p>
+        )}
 
         {loading ? (
-          <div className="space-y-4">
+          <div className="mt-8 space-y-4">
             {[...Array(3)].map((_, i) => (
-              <div key={i} className="animate-pulse rounded-2xl bg-surface-100 dark:bg-surface-800 h-28" />
+              <div key={i} className="h-36 animate-pulse rounded-2xl bg-white/80 dark:bg-surface-800" />
             ))}
           </div>
         ) : orders.length === 0 ? (
-          <div className="text-center py-20 text-gray-400">
-            <svg xmlns="http://www.w3.org/2000/svg" className="mx-auto h-20 w-20 mb-4 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-            </svg>
-            <p className="text-lg font-medium">No orders yet</p>
-            <p className="mt-1 text-sm mb-6">Start shopping to place your first order</p>
-            <Link
-              to="/products"
-              className="btn-primary"
-            >
-              Browse Products
+          <div className="py-20 text-center">
+            <p className="font-display text-2xl font-semibold">No orders yet</p>
+            <p className="mt-2 text-sm text-stone-500">Your receipts will show up here after checkout.</p>
+            <Link to="/products" className="btn-primary mt-6">
+              Browse the shop
             </Link>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="mt-8 space-y-4">
             {orders.map((order) => (
-              <Link
-                key={order.id}
-                to={"/receipt/" + order.id}
-                className="block rounded-2xl bg-white dark:bg-surface-800/50 p-5 shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5 animate-fade-in"
-              >
-                <div className="flex items-center justify-between mb-3">
+              <article key={order.id} className="shop-card p-5">
+                <div className="flex items-start justify-between gap-3">
                   <div>
-                    <span className="font-semibold">Order #{order.id}</span>
-                    <span className="ml-3 text-sm text-gray-400">
-                      {formatDate(order.orderDate)}
-                    </span>
+                    <Link
+                      to={"/receipt/" + order.id}
+                      className="font-display text-xl font-semibold hover:text-primary-700"
+                    >
+                      Order #{order.id}
+                    </Link>
+                    <p className="mt-0.5 text-sm text-stone-500">{formatDate(order.orderDate)}</p>
                   </div>
                   <span className={`rounded-full px-3 py-1 text-xs font-semibold ${getOrderStatusColor(order.status)}`}>
-                    {order.status}
+                    {formatStatus(order.status)}
                   </span>
                 </div>
 
-                {/* Items preview */}
-                <div className="flex items-center gap-2 mb-3 overflow-hidden">
+                <ul className="mt-3 space-y-1 text-sm text-stone-600 dark:text-stone-300">
                   {order.items.slice(0, 3).map((item) => (
-                    <div key={item.id} className="flex items-center gap-1">
-                      {item.productImageUrl && (
-                        <img src={item.productImageUrl} alt={item.productName} className="h-8 w-8 rounded object-cover" />
-                      )}
-                    </div>
+                    <li key={item.id} className="flex justify-between gap-3">
+                      <span className="truncate">{item.productName}</span>
+                      <span className="shrink-0 tabular-nums text-stone-400">× {item.quantity}</span>
+                    </li>
                   ))}
-                  <span className="text-xs text-gray-400">
-                    {order.items.length} {order.items.length === 1 ? "item" : "items"}
-                  </span>
-                </div>
+                  {order.items.length > 3 && (
+                    <li className="text-xs text-stone-400">+ {order.items.length - 3} more</li>
+                  )}
+                </ul>
 
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-500">{order.deliveryAddress}</span>
-                  <span className="font-bold text-primary-600">{formatMMK(order.total)}</span>
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-stone-100 pt-4 dark:border-surface-700">
+                  <div className="min-w-0">
+                    <p className="truncate text-xs text-stone-500">{order.deliveryAddress}</p>
+                    <p className="font-display text-lg font-semibold text-primary-700">{formatMMK(order.total)}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => download(order)}
+                      disabled={downloadingId === order.id}
+                      className="btn-primary"
+                    >
+                      {downloadingId === order.id ? "Preparing…" : "Download"}
+                    </button>
+                    <Link to={"/receipt/" + order.id} className="btn-secondary">
+                      View
+                    </Link>
+                  </div>
                 </div>
-              </Link>
+              </article>
             ))}
           </div>
         )}
