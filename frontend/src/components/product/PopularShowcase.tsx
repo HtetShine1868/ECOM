@@ -42,7 +42,12 @@ export default function PopularShowcase({ products, loved, onSeeAll }: PopularSh
   const scrollByDir = (dir: number) => {
     const el = scroller.current;
     if (!el) return;
-    const amount = Math.max(260, Math.round(el.clientWidth * 0.78));
+    const card = el.querySelector("article");
+    const gap = parseFloat(window.getComputedStyle(el).columnGap) || 12;
+    const cardWidth = card?.getBoundingClientRect().width || 248;
+    const stride = cardWidth + gap;
+    const visible = Math.max(1, Math.floor((el.clientWidth + gap) / stride));
+    const amount = stride * Math.max(1, visible - 1);
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     el.scrollBy({ left: dir * amount, behavior: reduce ? "auto" : "smooth" });
   };
@@ -144,10 +149,10 @@ export default function PopularShowcase({ products, loved, onSeeAll }: PopularSh
           onClickCapture={onClickCapture}
           role="region"
           aria-labelledby="popular-heading"
-          className="rail-scroll flex cursor-grab gap-3 overflow-x-auto overscroll-x-contain px-5 pb-6 sm:px-7"
+          className="rail-scroll flex cursor-grab items-stretch gap-3 overflow-x-auto overscroll-x-contain px-5 pb-6 sm:gap-4 sm:px-7"
         >
           {products.map((product, index) => (
-            <PopularCard key={product.id} product={product} rank={index + 1} lead={index === 0 && loved} />
+            <PopularCard key={product.id} product={product} rank={index + 1} featured={index === 0 && loved} />
           ))}
         </div>
       </div>
@@ -155,11 +160,12 @@ export default function PopularShowcase({ products, loved, onSeeAll }: PopularSh
   );
 }
 
-function PopularCard({ product, rank, lead }: { product: Product; rank: number; lead: boolean }) {
+function PopularCard({ product, rank, featured }: { product: Product; rank: number; featured: boolean }) {
   const { addItem } = useCart();
   const [added, setAdded] = useState(false);
   const soldOut = product.stock === 0;
   const sold = product.unitsSold ?? 0;
+  const lowStock = !soldOut && product.stock <= 5;
 
   const handleAdd = (event: React.MouseEvent) => {
     event.preventDefault();
@@ -172,18 +178,14 @@ function PopularCard({ product, rank, lead }: { product: Product; rank: number; 
 
   return (
     <article
-      className={`snap-start shrink-0 animate-fade-in motion-reduce:animate-none ${
-        lead ? "w-[86%] sm:w-[28rem] lg:w-[34rem]" : "w-[72%] min-[420px]:w-60 sm:w-64"
-      }`}
-      style={{ animationDelay: `${Math.min(rank - 1, 6) * 45}ms`, animationFillMode: "backwards" }}
+      className="w-[15.5rem] shrink-0 snap-start animate-fade-in motion-reduce:animate-none sm:w-60"
+      style={{ animationDelay: `${Math.min(rank - 1, 6) * 40}ms`, animationFillMode: "backwards" }}
     >
       <Link
         to={`/products/${product.id}`}
-        className={`group flex h-full flex-col overflow-hidden rounded-2xl bg-white text-stone-900 shadow-[0_16px_40px_rgba(0,0,0,0.22)] transition duration-300 hover:-translate-y-1 ${
-          lead ? "sm:min-h-[18rem] sm:flex-row" : ""
-        }`}
+        className="group flex h-full flex-col overflow-hidden rounded-2xl bg-white text-stone-900 shadow-[0_12px_28px_rgba(0,0,0,0.18)] transition duration-300 hover:-translate-y-0.5"
       >
-        <div className={`relative overflow-hidden bg-stone-100 ${lead ? "aspect-[5/4] sm:aspect-auto sm:w-[52%] sm:min-h-[18rem]" : "aspect-[4/3]"}`}>
+        <div className="relative aspect-[4/3] overflow-hidden bg-stone-100">
           <img
             src={productImageSrc(product.imageUrl, FALLBACK)}
             alt={product.name}
@@ -197,8 +199,13 @@ function PopularCard({ product, rank, lead }: { product: Product; rank: number; 
             }}
           />
           <span className="absolute left-2.5 top-2.5 rounded-full bg-[#2a1812] px-2.5 py-1 text-[11px] font-bold text-apricot-100">
-            {lead ? "Top pick" : `#${rank}`}
+            {featured ? "Top" : `#${rank}`}
           </span>
+          {lowStock && (
+            <span className="absolute right-2.5 top-2.5 rounded-full bg-white/95 px-2 py-1 text-[11px] font-semibold text-amber-800">
+              {product.stock} left
+            </span>
+          )}
           {soldOut && (
             <div className="absolute inset-0 flex items-center justify-center bg-stone-900/45">
               <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-stone-800">Sold out</span>
@@ -206,25 +213,35 @@ function PopularCard({ product, rank, lead }: { product: Product; rank: number; 
           )}
         </div>
 
-        <div className="flex flex-1 flex-col p-3.5 sm:p-4">
-          {product.category && (
-            <span className={`w-fit max-w-full truncate rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${lightChip(product.category)}`}>
-              {product.category}
-            </span>
-          )}
-          <h3 className={`mt-2 font-semibold leading-snug ${lead ? "font-display text-xl sm:text-2xl" : "line-clamp-2 text-sm sm:text-base"}`}>
+        <div className="flex flex-1 flex-col p-3.5">
+          <div className="h-5">
+            {product.category && (
+              <span className={`block w-fit max-w-full truncate rounded-full px-2.5 text-[11px] font-semibold leading-5 ${lightChip(product.category)}`}>
+                {product.category}
+              </span>
+            )}
+          </div>
+          <h3 className="mt-2 line-clamp-2 min-h-[2.5rem] text-sm font-semibold leading-snug">
             {product.name}
           </h3>
-          {lead && product.description && (
-            <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed text-stone-600">{product.description}</p>
-          )}
-          {sold > 0 && (
-            <p className="mt-2 text-xs font-medium text-stone-500">{sold} sold</p>
-          )}
+          <p className="mt-1 line-clamp-2 min-h-[2rem] text-xs leading-relaxed text-stone-500">
+            {product.description || " "}
+          </p>
           <div className="mt-auto flex items-end justify-between gap-2 pt-3">
-            <p className="min-w-0 truncate font-display text-base font-semibold text-primary-700 sm:text-lg">
-              {formatMMK(product.price)}
-            </p>
+            <div className="min-w-0">
+              <p className="truncate font-display text-base font-semibold text-primary-700">
+                {formatMMK(product.price)}
+              </p>
+              <p className="truncate text-[11px] text-stone-500">
+                {sold > 0
+                  ? `${sold} sold`
+                  : product.cargoPrice > 0
+                    ? `+${formatMMK(product.cargoPrice)} cargo`
+                    : soldOut
+                      ? "Unavailable"
+                      : `${product.stock} in stock`}
+              </p>
+            </div>
             <button
               type="button"
               onClick={handleAdd}

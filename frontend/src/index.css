@@ -66,8 +66,15 @@ body {
     scrollbar-width: none;
     -ms-overflow-style: none;
     scroll-snap-type: x mandatory;
+    scroll-padding-inline: 1.25rem;
     scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
+  }
+
+  @media (min-width: 640px) {
+    .rail-scroll {
+      scroll-padding-inline: 1.75rem;
+    }
   }
 
   .rail-scroll::-webkit-scrollbar {

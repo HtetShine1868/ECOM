@@ -51,54 +51,76 @@ export default function HomePage() {
   const fresh = recent.filter((product) => !popularIds.has(product.id)).slice(0, 4);
 
   return (
-    <div className="mx-auto max-w-7xl px-4 pb-10 pt-6 md:px-6 md:pt-10">
-      <section className="max-w-2xl">
-        <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary-700 dark:text-primary-300">For the house</p>
-        <h1 className="mt-2 font-display text-3xl font-semibold leading-[1.08] text-stone-900 sm:text-4xl md:text-5xl dark:text-stone-50">
-          What do you need today?
-        </h1>
-        <p className="mt-3 text-base leading-relaxed text-stone-600 dark:text-stone-300">
-          Kitchen, kids, and everyday goods that are actually in stock, delivered to your township.
-        </p>
+    <div className="mx-auto max-w-7xl px-4 pb-16 pt-5 md:px-6 md:pb-12 md:pt-8">
+      <section className="grid items-end gap-5 lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-10">
+        <div className="max-w-xl">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary-700 dark:text-primary-300">For the house</p>
+          <h1 className="mt-2 font-display text-[2rem] font-semibold leading-[1.12] text-stone-900 sm:text-4xl dark:text-stone-50">
+            What do you need today?
+          </h1>
+          <p className="mt-2 max-w-md text-sm leading-relaxed text-stone-600 sm:text-base dark:text-stone-300">
+            Kitchen, kids, and everyday goods that are actually in stock, delivered to your township.
+          </p>
+          <ul className="mt-4 flex flex-wrap gap-2">
+            {["Live stock", "Fee before you pay", "Township delivery"].map((item) => (
+              <li
+                key={item}
+                className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-stone-600 ring-1 ring-stone-200/80 dark:bg-surface-800 dark:text-stone-300 dark:ring-surface-700"
+              >
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
 
-        <form onSubmit={submitSearch} className="mt-6 flex flex-col gap-2 sm:flex-row">
-          <label className="sr-only" htmlFor="home-search">Search the shop</label>
-          <input
-            id="home-search"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search pans, toys, soap..."
-            className="field sm:max-w-md"
-          />
-          <div className="flex gap-2">
-            <button type="submit" className="btn-primary">Search</button>
-            <button type="button" onClick={() => navigate("/products")} className="btn-secondary">
-              Browse shop
+        <form
+          onSubmit={submitSearch}
+          className="rounded-2xl border border-stone-200/80 bg-white p-3 shadow-shop dark:border-surface-800 dark:bg-surface-800/90"
+        >
+          <label htmlFor="home-search" className="text-[11px] font-bold uppercase tracking-[0.16em] text-stone-500 dark:text-stone-400">
+            Search the shop
+          </label>
+          <div className="mt-2 flex gap-2">
+            <input
+              id="home-search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Pans, toys, soap..."
+              className="field min-w-0 flex-1"
+            />
+            <button type="submit" className="btn-primary shrink-0 px-4">
+              Search
             </button>
           </div>
+          <button
+            type="button"
+            onClick={() => navigate("/products")}
+            className="mt-2.5 text-sm font-semibold text-primary-700 hover:underline dark:text-primary-300"
+          >
+            Browse the whole shop
+          </button>
         </form>
-
-        <ul className="mt-5 flex flex-wrap gap-x-5 gap-y-1 text-sm text-stone-600 dark:text-stone-300">
-          <li>Live stock</li>
-          <li>Fee shown before you pay</li>
-          <li>One bag for the house</li>
-        </ul>
       </section>
 
       {loading ? (
-        <div className="mt-10 overflow-hidden rounded-[1.75rem] bg-[#2a1812] px-5 py-6 sm:px-7">
-          <div className="h-4 w-28 animate-pulse rounded-full bg-white/10" />
-          <div className="mt-3 h-8 w-52 animate-pulse rounded-full bg-white/10" />
-          <div className="mt-6 flex gap-3">
-            <div className="h-64 w-[86%] shrink-0 animate-pulse rounded-2xl bg-white/10 sm:w-[28rem]" />
-            <div className="hidden h-64 w-64 shrink-0 animate-pulse rounded-2xl bg-white/10 sm:block" />
-            <div className="hidden h-64 w-64 shrink-0 animate-pulse rounded-2xl bg-white/10 lg:block" />
+        <div className="mt-8 overflow-hidden rounded-[1.75rem] bg-[#2a1812] px-5 py-6 sm:px-7">
+          <div className="h-3 w-24 animate-pulse rounded-full bg-white/10" />
+          <div className="mt-3 h-7 w-48 animate-pulse rounded-full bg-white/10" />
+          <div className="mt-5 flex gap-3 sm:gap-4">
+            {[0, 1, 2, 3].map((slot) => (
+              <div
+                key={slot}
+                className={`h-[22rem] w-[15.5rem] shrink-0 animate-pulse rounded-2xl bg-white/10 sm:w-60 ${
+                  slot === 0 ? "" : slot < 3 ? "hidden sm:block" : "hidden lg:block"
+                }`}
+              />
+            ))}
           </div>
         </div>
       ) : error ? (
         <p className="mt-12 text-center text-sm text-red-600">{error}</p>
       ) : popular.length > 0 ? (
-        <div className="mt-10">
+        <div className="mt-8">
           <PopularShowcase
             products={popular}
             loved={loved}
@@ -114,12 +136,15 @@ export default function HomePage() {
       {categories.length > 0 && (
         <section className="mt-10">
           <div className="mb-3 flex items-end justify-between gap-3">
-            <h2 className="font-display text-2xl font-semibold">Aisles</h2>
-            <button onClick={() => navigate("/products")} className="text-sm font-semibold text-primary-700 hover:underline dark:text-primary-300">
+            <div>
+              <h2 className="font-display text-2xl font-semibold">Aisles</h2>
+              <p className="mt-1 text-sm text-stone-600 dark:text-stone-300">Jump to a part of the shop.</p>
+            </div>
+            <button onClick={() => navigate("/products")} className="shrink-0 text-sm font-semibold text-primary-700 hover:underline dark:text-primary-300">
               All products
             </button>
           </div>
-          <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:px-0">
+          <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:flex-wrap md:overflow-visible md:px-0">
             {categories.map((category) => (
               <Aisle
                 key={category.id}
@@ -132,7 +157,7 @@ export default function HomePage() {
       )}
 
       {!loading && !error && fresh.length > 0 && (
-        <section className="mt-12">
+        <section className="mt-10">
           <SectionHead
             title="Just arrived"
             hint="Newest on the shelf."
