@@ -20,7 +20,7 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
             WHERE oi.product IS NOT NULL
             AND oi.order.status <> com.ecomerce.entity.Order.OrderStatus.CANCELLED
             GROUP BY oi.product.id
-            ORDER BY totalSold DESC
+            ORDER BY CASE WHEN MAX(oi.product.stock) > 0 THEN 1 ELSE 0 END DESC, totalSold DESC
             """)
     List<Object[]> findTopSellingProductIds(Pageable pageable);
 
@@ -34,7 +34,7 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
             AND oi.order.status <> com.ecomerce.entity.Order.OrderStatus.CANCELLED
             AND oi.product.category.id = :categoryId
             GROUP BY oi.product.id
-            ORDER BY totalSold DESC
+            ORDER BY CASE WHEN MAX(oi.product.stock) > 0 THEN 1 ELSE 0 END DESC, totalSold DESC
             """)
     List<Object[]> findTopSellingProductIdsByCategory(@Param("categoryId") Long categoryId, Pageable pageable);
 }

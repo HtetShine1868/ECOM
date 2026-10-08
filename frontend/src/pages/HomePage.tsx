@@ -160,7 +160,7 @@ export default function HomePage() {
         <section className="mt-10">
           <SectionHead
             title="Just arrived"
-            hint="Newest on the shelf."
+            hint="Newest on the shelf, with in-stock items first."
             action="Browse shop"
             onAction={() => navigate("/products")}
           />

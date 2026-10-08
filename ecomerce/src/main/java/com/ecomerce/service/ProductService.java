@@ -10,7 +10,6 @@ import com.ecomerce.repository.CategoryRepository;
 import com.ecomerce.repository.OrderItemRepository;
 import com.ecomerce.repository.ProductRepository;
 import com.ecomerce.security.SqlInjectionGuard;
-import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -47,11 +46,9 @@ public class ProductService {
             if (search != null && !search.isBlank()) {
                 SqlInjectionGuard.assertSafe(search);
                 String like = likePattern(search);
-                var category = root.join("category", JoinType.LEFT);
                 predicates.add(cb.or(
                         cb.like(cb.lower(root.get("name")), like, '\\'),
-                        cb.like(cb.lower(cb.coalesce(root.get("description"), "")), like, '\\'),
-                        cb.like(cb.lower(cb.coalesce(category.get("name"), "")), like, '\\')
+                        cb.like(cb.lower(cb.coalesce(root.get("description"), "")), like, '\\')
                 ));
             }
             if (categoryId != null) {
@@ -193,7 +190,10 @@ public class ProductService {
             return cb.and(predicates.toArray(new Predicate[0]));
         };
 
-        Sort sort = Sort.by(Sort.Order.desc("popularityScore"), Sort.Order.desc("stock"));
+        Sort sort = Sort.by(
+                Sort.Order.desc("inStockRank"),
+                Sort.Order.desc("popularityScore"),
+                Sort.Order.desc("createdAt"));
         List<ProductResponse> related = productRepository
                 .findAll(spec, PageRequest.of(0, safeLimit, sort))
                 .map(ProductResponse::from)

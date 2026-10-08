@@ -114,7 +114,7 @@ export default function ProductsPage() {
           <div className="flex flex-col gap-3 lg:flex-row">
             <input
               type="text"
-              placeholder="Search by name or aisle"
+              placeholder="Search by product name"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               className="field flex-1"

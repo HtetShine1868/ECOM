@@ -81,9 +81,11 @@ public class ProductController {
             case "name_asc", "name-asc" -> Sort.by("name").ascending();
             case "name_desc", "name-desc" -> Sort.by("name").descending();
             case "popular", "popularity" -> Sort.by(
-                    Sort.Order.desc("popularityScore"), Sort.Order.desc("createdAt"));
-            case "oldest" -> Sort.by("createdAt").ascending();
-            default -> Sort.by("createdAt").descending();
+                    Sort.Order.desc("inStockRank"),
+                    Sort.Order.desc("popularityScore"),
+                    Sort.Order.desc("createdAt"));
+            case "oldest" -> Sort.by(Sort.Order.desc("inStockRank"), Sort.Order.asc("createdAt"));
+            default -> Sort.by(Sort.Order.desc("inStockRank"), Sort.Order.desc("createdAt"));
         };
     }
 }

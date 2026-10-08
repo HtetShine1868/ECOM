@@ -346,7 +346,7 @@ public class ChatService {
             case CART -> "Use Add to Cart on a product. The bag icon in the navbar, and the floating cart button, open your cart. You can change quantities there, up to the current stock. Checkout starts from the cart.";
             case DELIVERY -> deliveryGuide();
             case ORDERS -> "Open Orders in the navbar while you're signed in. Each order shows items, totals, and status: PENDING, CONFIRMED, PROCESSING, SHIPPED, DELIVERING, DELIVERED, or CANCELLED. After checkout you also get a receipt page.";
-            case BROWSE -> "On Home, use the search box or tap a category. On Products you can search by name, filter by category, price, and in-stock only, and sort by newest, price, name, or popularity. A product page shows details, stock, and related items.";
+            case BROWSE -> "On Home, use the search box or tap a category. On Products, search matches product names, not aisles. You can still filter by category, price, and in-stock only, and sort by newest, price, name, or popularity. In-stock items are shown first. A product page shows details, stock, and related items.";
             case PAYMENT -> "ShopNow records the order on the site — there is no card payment step at checkout. You choose delivery details and place the order. Payment is handled with the store when the order is fulfilled or delivered.";
             case ADMIN -> "Admin accounts see an Admin link in the navbar. From there you can manage products, images, categories, delivery zones, orders, and analytics. Shoppers see the store, cart, and their own orders.";
             case THEME -> "Use the sun / moon icon in the navbar to switch between light and dark. The choice stays in this browser.";

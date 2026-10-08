@@ -35,6 +35,10 @@ public class Product {
     @Builder.Default
     private Integer stock = 0;
 
+    /** 1 when the product can be bought, 0 when it is sold out. Used only for ordering. */
+    @Formula("(CASE WHEN COALESCE(stock, 0) > 0 THEN 1 ELSE 0 END)")
+    private Integer inStockRank;
+
     @Column(nullable = true, precision = 10, scale = 2)
     @Builder.Default
     private BigDecimal cargoPrice = BigDecimal.ZERO;
