@@ -338,7 +338,7 @@ public class ChatService {
                     1. Sign in.
                     2. Add items to your cart from a product card or product page.
                     3. Open the cart and choose Proceed to Checkout.
-                    4. Enter your name and phone number.
+                    4. Enter your name and a required Myanmar phone number (+95, digits only).
                     5. Select a delivery township and type your street / block address.
                     6. Place the order.
 
@@ -361,7 +361,7 @@ public class ChatService {
                 • Finding products — stock, price, categories, cheap options, best sellers.
                 • Account — sign in or register with email, Google, or Facebook.
                 • Cart — add items and change quantity up to current stock.
-                • Checkout — name, phone, township, and street address. Delivery fee depends on the township; some items also have a cargo fee.
+                • Checkout — name, required phone (+95 and digits only), township, and street address. Delivery fee depends on the township; some items also have a cargo fee.
                 • Orders — history, status, and the receipt after you place an order.
 
                 Try something like “do you still have headphones?” or “how do I check out?”""";

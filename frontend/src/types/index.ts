@@ -75,7 +75,7 @@ export interface Order {
 
 export interface OrderRequest {
   customerName: string;
-  customerPhone?: string;
+  customerPhone: string;
   /** ID of a predefined DeliveryZone */
   deliveryZoneId?: number;
   /** Free-text address when no zone applies — fee will be 0 */

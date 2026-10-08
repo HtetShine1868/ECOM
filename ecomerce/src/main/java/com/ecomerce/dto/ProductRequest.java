@@ -9,8 +9,10 @@ import java.math.BigDecimal;
 public class ProductRequest {
 
     @NotBlank(message = "Product name is required")
+    @Size(max = 200, message = "Product name must be 200 characters or less")
     private String name;
 
+    @Size(max = 5000, message = "Description must be 5000 characters or less")
     private String description;
 
     @NotNull(message = "Price is required")

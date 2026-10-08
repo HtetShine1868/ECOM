@@ -6,6 +6,7 @@ import { orderApi } from "../api/orders";
 import type { DeliveryZoneApi } from "../api/orders";
 import { formatMMK } from "../utils/format";
 import { productImageSrc } from "../utils/image";
+import { isMyanmarPhone, nationalPhoneDigits, toMyanmarPhone } from "../utils/phone";
 
 
 
@@ -25,7 +26,7 @@ export default function CheckoutPage() {
   }, []);
 
   const [customerName, setCustomerName] = useState(user?.name ?? "");
-  const [customerPhone, setCustomerPhone] = useState("");
+  const [phoneDigits, setPhoneDigits] = useState("");
 
   // Delivery fields
   const [selectedZoneId, setSelectedZoneId] = useState<number | "">("");
@@ -66,6 +67,11 @@ export default function CheckoutPage() {
       setError("Please enter your name");
       return;
     }
+    const customerPhone = toMyanmarPhone(phoneDigits);
+    if (!isMyanmarPhone(customerPhone)) {
+      setError("Phone is required. Use +95 followed by digits only, for example +959123456789.");
+      return;
+    }
     if (selectedZoneId === "") {
       setError("Please select a delivery township");
       return;
@@ -82,7 +88,7 @@ export default function CheckoutPage() {
     try {
       const order = await orderApi.create({
         customerName: customerName.trim(),
-        customerPhone: customerPhone.trim() || undefined,
+        customerPhone,
         deliveryZoneId: selectedZoneId as number,
         customDeliveryAddress: otherAddress.trim(),
         idempotencyKey: idempotencyKey.current,
@@ -199,14 +205,31 @@ export default function CheckoutPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1.5">Phone Number</label>
-                <input
-                  type="tel"
-                  value={customerPhone}
-                  onChange={(e) => setCustomerPhone(e.target.value)}
-                  placeholder="e.g. 09xxxxxxxxx"
-                  className="field"
-                />
+                <label htmlFor="customer-phone" className="block text-sm font-medium mb-1.5">
+                  Phone Number <span className="text-red-500">*</span>
+                </label>
+                <div className="flex min-w-0 overflow-hidden rounded-xl border border-stone-200 bg-white focus-within:border-primary-400 focus-within:ring-2 focus-within:ring-primary-500/20 dark:border-surface-800 dark:bg-surface-800">
+                  <span className="flex shrink-0 items-center border-r border-stone-200 px-3 text-sm font-semibold text-stone-700 dark:border-surface-700 dark:text-stone-100">
+                    +95
+                  </span>
+                  <input
+                    id="customer-phone"
+                    type="tel"
+                    inputMode="numeric"
+                    autoComplete="tel-national"
+                    required
+                    pattern="[1-9][0-9]{6,10}"
+                    maxLength={11}
+                    value={phoneDigits}
+                    onChange={(e) => setPhoneDigits(nationalPhoneDigits(e.target.value))}
+                    placeholder="9123456789"
+                    aria-describedby="phone-hint"
+                    className="min-w-0 flex-1 bg-transparent px-3 py-2.5 text-base text-stone-800 outline-none placeholder:text-stone-400 sm:text-sm dark:text-stone-100"
+                  />
+                </div>
+                <p id="phone-hint" className="mt-1.5 text-xs text-stone-500">
+                  Required. Digits only, for example +959123456789.
+                </p>
               </div>
             </div>
           </div>

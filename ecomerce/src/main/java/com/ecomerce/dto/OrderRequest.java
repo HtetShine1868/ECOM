@@ -4,6 +4,8 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 import java.util.List;
@@ -12,8 +14,14 @@ import java.util.List;
 public class OrderRequest {
 
     @NotBlank(message = "Customer name is required")
+    @Size(max = 120, message = "Name must be 120 characters or less")
     private String customerName;
 
+    @NotBlank(message = "Phone number is required")
+    @Pattern(
+            regexp = "^\\+95[1-9]\\d{6,10}$",
+            message = "Phone must be a Myanmar number like +959123456789 (digits only after +95)"
+    )
     private String customerPhone;
 
     /**
@@ -26,6 +34,7 @@ public class OrderRequest {
      * Specific street/block/detail location written by the user.
      */
     @NotBlank(message = "Specific delivery address is required")
+    @Size(max = 500, message = "Address must be 500 characters or less")
     private String customDeliveryAddress;
 
     /**
@@ -35,6 +44,8 @@ public class OrderRequest {
     private List<OrderItemRequest> items;
 
     /** Optional key that makes a repeated checkout return the original order. */
+    @Size(max = 80, message = "Idempotency key is too long")
+    @Pattern(regexp = "^[A-Za-z0-9-]*$", message = "Idempotency key contains invalid characters")
     private String idempotencyKey;
 
     @Data

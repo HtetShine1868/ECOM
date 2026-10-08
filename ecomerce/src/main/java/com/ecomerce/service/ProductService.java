@@ -9,6 +9,7 @@ import com.ecomerce.exception.ResourceNotFoundException;
 import com.ecomerce.repository.CategoryRepository;
 import com.ecomerce.repository.OrderItemRepository;
 import com.ecomerce.repository.ProductRepository;
+import com.ecomerce.security.SqlInjectionGuard;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
@@ -44,12 +45,13 @@ public class ProductService {
         Specification<Product> spec = (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
             if (search != null && !search.isBlank()) {
-                String like = "%" + search.trim().toLowerCase() + "%";
+                SqlInjectionGuard.assertSafe(search);
+                String like = likePattern(search);
                 var category = root.join("category", JoinType.LEFT);
                 predicates.add(cb.or(
-                        cb.like(cb.lower(root.get("name")), like),
-                        cb.like(cb.lower(cb.coalesce(root.get("description"), "")), like),
-                        cb.like(cb.lower(cb.coalesce(category.get("name"), "")), like)
+                        cb.like(cb.lower(root.get("name")), like, '\\'),
+                        cb.like(cb.lower(cb.coalesce(root.get("description"), "")), like, '\\'),
+                        cb.like(cb.lower(cb.coalesce(category.get("name"), "")), like, '\\')
                 ));
             }
             if (categoryId != null) {
@@ -227,6 +229,15 @@ public class ProductService {
     }
 
     // ---- helpers ----
+
+    /** Binds the search text as a LIKE pattern and escapes wildcard characters. */
+    private static String likePattern(String search) {
+        String escaped = search.trim().toLowerCase()
+                .replace("\\", "\\\\")
+                .replace("%", "\\%")
+                .replace("_", "\\_");
+        return "%" + escaped + "%";
+    }
 
     private Category resolveCategory(Long categoryId) {
         if (categoryId == null) return null;

@@ -53,11 +53,14 @@ public class GlobalExceptionHandler {
             String message = error.getDefaultMessage();
             errors.put(field, message);
         });
+        String summary = errors.isEmpty()
+                ? "Invalid request data"
+                : String.join(" ", errors.values());
         ErrorResponse response = ErrorResponse.builder()
                 .timestamp(LocalDateTime.now())
                 .status(HttpStatus.BAD_REQUEST.value())
                 .error("Validation Failed")
-                .message("Invalid request data")
+                .message(summary)
                 .validationErrors(errors)
                 .build();
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);

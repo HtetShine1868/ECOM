@@ -10,10 +10,12 @@ public class AuthRequest {
     @Data
     public static class Register {
         @NotBlank(message = "Name is required")
+        @Size(max = 120, message = "Name must be 120 characters or less")
         private String name;
 
         @NotBlank(message = "Email is required")
         @Email(message = "Invalid email format")
+        @Size(max = 180, message = "Email must be 180 characters or less")
         private String email;
 
         @NotBlank(message = "Password is required")
@@ -25,6 +27,7 @@ public class AuthRequest {
     public static class Login {
         @NotBlank(message = "Email is required")
         @Email(message = "Invalid email format")
+        @Size(max = 180, message = "Email must be 180 characters or less")
         private String email;
 
         @NotBlank(message = "Password is required")

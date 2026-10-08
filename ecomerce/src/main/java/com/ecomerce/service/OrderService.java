@@ -57,6 +57,11 @@ public class OrderService {
         if (request.getCustomDeliveryAddress() == null || request.getCustomDeliveryAddress().isBlank()) {
             throw new IllegalArgumentException("Please provide a specific delivery address (street, block, etc.).");
         }
+        String phone = request.getCustomerPhone() == null ? "" : request.getCustomerPhone().trim();
+        if (!phone.matches("\\+95[1-9]\\d{6,10}")) {
+            throw new IllegalArgumentException(
+                    "Phone must be a Myanmar number like +959123456789 (digits only after +95).");
+        }
 
         // Resolve delivery zone
         DeliveryZone zone = deliveryZoneService.resolveZone(request.getDeliveryZoneId());
@@ -108,8 +113,8 @@ public class OrderService {
         // Create order
         Order order = Order.builder()
                 .user(user)
-                .customerName(request.getCustomerName())
-                .customerPhone(request.getCustomerPhone())
+                .customerName(request.getCustomerName().trim())
+                .customerPhone(phone)
                 .deliveryAddress(deliveryAddress)
                 .townName(townName)
                 .deliveryFee(deliveryFee)

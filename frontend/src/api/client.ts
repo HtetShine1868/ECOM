@@ -1,4 +1,5 @@
 import { API_URL } from "./config";
+import { assertSqlSafe } from "../utils/sqlSafe";
 
 const BASE_URL = API_URL;
 
@@ -25,7 +26,14 @@ function messageFromBody(text: string, fallback: string): string {
     return "Please sign in again, then save the product.";
   }
   try {
-    const error = JSON.parse(trimmed) as { message?: string };
+    const error = JSON.parse(trimmed) as {
+      message?: string;
+      validationErrors?: Record<string, string>;
+    };
+    if (error.validationErrors) {
+      const details = Object.values(error.validationErrors).filter(Boolean);
+      if (details.length > 0) return details.join(" ");
+    }
     return error.message || fallback;
   } catch {
     return fallback;
@@ -38,6 +46,15 @@ async function request<T>(
   retries = 1
 ): Promise<T> {
   const isFormData = options.body instanceof FormData;
+  const query = path.includes("?") ? path.slice(path.indexOf("?") + 1) : "";
+  if (query) {
+    for (const value of new URLSearchParams(query).values()) {
+      assertSqlSafe(value);
+    }
+  }
+  if (!isFormData && typeof options.body === "string" && options.body.trim()) {
+    assertSqlSafe(JSON.parse(options.body));
+  }
 
   const headers: HeadersInit = {
     Accept: "application/json",
