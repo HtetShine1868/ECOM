@@ -105,7 +105,7 @@ async function request<T>(
 }
 
 export const api = {
-  get: <T>(path: string) => request<T>(path),
+  get: <T>(path: string, retries = 1) => request<T>(path, {}, retries),
 
   post: <T>(path: string, body?: unknown) =>
     request<T>(path, {

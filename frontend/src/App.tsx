@@ -1,4 +1,4 @@
-import { BrowserRouter, Navigate, Routes, Route } from "react-router-dom"
+import { BrowserRouter, Navigate, Routes, Route, useLocation } from "react-router-dom"
 import { AuthProvider, useAuth } from "./context/AuthContext"
 import { CartProvider } from "./context/CartContext"
 import Navbar from "./components/layout/Navbar"
@@ -20,10 +20,21 @@ import RegisterPage from "./pages/RegisterPage"
 import AdminDashboardPage from "./pages/AdminDashboardPage"
 import OAuth2CallbackPage from "./pages/OAuth2CallbackPage"
 
+function isPublicPath(pathname: string) {
+  return (
+    pathname === "/" ||
+    pathname === "/login" ||
+    pathname === "/register" ||
+    pathname === "/oauth2/callback"
+  )
+}
+
 function AppLayout() {
   const { isAuthenticated, loading } = useAuth()
+  const { pathname } = useLocation()
 
-  if (loading) return <Splash />
+  // Do not hold the landing page for a sleeping Render backend.
+  if (loading && !isPublicPath(pathname)) return <Splash />
 
   if (!isAuthenticated) {
     return (
