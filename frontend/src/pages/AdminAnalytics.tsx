@@ -451,54 +451,131 @@ function ShareBar({ percent, wide = false }: { percent: number; wide?: boolean }
   );
 }
 
-function SalesChart({ points }: { points: StoreAnalytics["salesOverTime"] }) {
-  const amounts = points.map((point) => asNumber(point.revenue));
-  const max = Math.max(...amounts, 1);
-  const hasSales = amounts.some((amount) => amount > 0);
+/** Round the axis top up to 1, 2, 2.5 or 5 × 10^n so gridline labels are readable numbers. */
+function niceMax(value: number) {
+  if (value <= 0) return 1;
+  const exp = Math.pow(10, Math.floor(Math.log10(value)));
+  for (const step of [1, 2, 2.5, 5, 10]) {
+    if (value <= step * exp) return step * exp;
+  }
+  return 10 * exp;
+}
 
-  if (!hasSales) {
-    return <p className="text-sm text-stone-500">No confirmed sales in this period.</p>;
+function SalesChart({ points }: { points: StoreAnalytics["salesOverTime"] }) {
+  const [hover, setHover] = useState<number | null>(null);
+  const values = points.map((point) => asNumber(point.revenue));
+  const hasSales = values.some((amount) => amount > 0);
+
+  if (points.length === 0 || !hasSales) {
+    return (
+      <div className="flex h-48 flex-col items-center justify-center rounded-xl border border-dashed border-stone-200 text-center dark:border-surface-800">
+        <p className="text-sm font-medium text-stone-600 dark:text-stone-300">No confirmed sales in this period</p>
+        <p className="mt-1 text-xs text-stone-500">Try a longer range, like 30 days or All time.</p>
+      </div>
+    );
   }
 
-  const labelEvery = points.length > 16 ? Math.ceil(points.length / 8) : 1;
-  const plot = 176;
+  const top = niceMax(Math.max(...values));
+  const n = points.length;
+  const xPct = (i: number) => (n === 1 ? 50 : (i / (n - 1)) * 100);
+  const yPct = (v: number) => 100 - (v / top) * 100;
+  const line = values.map((v, i) => `${i === 0 ? "M" : "L"}${xPct(i)},${yPct(v)}`).join(" ");
+  const area = `${line} L${xPct(n - 1)},100 L${xPct(0)},100 Z`;
+  const labelEvery = Math.max(1, Math.ceil(n / 7));
+  const ticks = [top, top / 2, 0];
+
+  const pick = (event: React.PointerEvent<HTMLDivElement>) => {
+    const box = event.currentTarget.getBoundingClientRect();
+    const ratio = Math.min(Math.max((event.clientX - box.left) / box.width, 0), 1);
+    setHover(n === 1 ? 0 : Math.round(ratio * (n - 1)));
+  };
+
+  const active = hover == null ? null : points[hover];
 
   return (
-    <div className="flex gap-3">
-      <div className="flex h-44 w-12 shrink-0 flex-col justify-between text-right text-[11px] tabular-nums text-stone-400">
-        <span>{compactMMK(max)}</span>
-        <span>{compactMMK(max / 2)}</span>
-        <span>0</span>
-      </div>
-      <div className="min-w-0 flex-1 overflow-x-auto">
-        <div style={{ minWidth: `${Math.min(points.length, 40) * 36}px` }}>
-          <div className="relative border-b border-stone-200 dark:border-surface-700" style={{ height: plot }}>
-            <div className="pointer-events-none absolute inset-x-0 top-1/2 border-t border-dashed border-stone-200 dark:border-surface-700" />
-            <div className={`absolute inset-0 flex items-end gap-2 ${points.length < 12 ? "justify-center" : ""}`}>
-              {points.map((point, index) => {
-                const amount = asNumber(point.revenue);
-                const height = amount <= 0 ? 0 : Math.max(6, (amount / max) * plot);
-                return (
-                  <div key={`${point.label}-${index}`} className="group flex min-w-8 max-w-14 flex-1 items-end">
-                    <div className="relative w-full" style={{ height }}>
-                      <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1 hidden -translate-x-1/2 whitespace-nowrap rounded-lg bg-stone-900 px-2 py-1 text-[11px] text-white group-hover:block">
-                        {formatMMK(amount)} · {point.orders} {point.orders === 1 ? "order" : "orders"}
-                      </div>
-                      <div className="h-full w-full rounded-t-md bg-primary-600 transition-opacity group-hover:opacity-80" />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-          <div className={`mt-2 flex gap-2 ${points.length < 12 ? "justify-center" : ""}`}>
-            {points.map((point, index) => (
-              <span key={`${point.label}-label-${index}`} className="min-w-8 max-w-14 flex-1 truncate text-center text-[11px] text-stone-500">
-                {index % labelEvery === 0 ? point.label : ""}
-              </span>
-            ))}
-          </div>
+    <div className="select-none">
+      <div className="flex gap-3">
+        <div className="relative h-56 w-11 shrink-0 text-right text-[11px] tabular-nums text-stone-400">
+          {ticks.map((tick, i) => (
+            <span key={i} className="absolute right-0 -translate-y-1/2" style={{ top: `${(i / (ticks.length - 1)) * 100}%` }}>
+              {compactMMK(tick)}
+            </span>
+          ))}
         </div>
+
+        <div
+          className="relative h-56 flex-1 touch-none"
+          onPointerMove={pick}
+          onPointerDown={pick}
+          onPointerLeave={() => setHover(null)}
+          role="img"
+          aria-label={`Revenue over time. Highest ${formatMMK(Math.max(...values))}.`}
+        >
+          {ticks.map((_, i) => (
+            <div
+              key={i}
+              className={`pointer-events-none absolute inset-x-0 border-t ${i === ticks.length - 1 ? "border-stone-300 dark:border-stone-600" : "border-dashed border-stone-200 dark:border-stone-700/60"}`}
+              style={{ top: `${(i / (ticks.length - 1)) * 100}%` }}
+            />
+          ))}
+
+          <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 h-full w-full overflow-visible text-primary-600 dark:text-primary-400" aria-hidden="true">
+            <defs>
+              <linearGradient id="revenue-fill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stopColor="currentColor" stopOpacity="0.28" />
+                <stop offset="1" stopColor="currentColor" stopOpacity="0" />
+              </linearGradient>
+            </defs>
+            <path d={area} fill="url(#revenue-fill)" />
+            <path d={line} fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+          </svg>
+
+          {values.map((v, i) =>
+            v > 0 || hover === i ? (
+              <span
+                key={i}
+                className={`pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-primary-600 dark:border-surface-900 dark:bg-primary-400 ${hover === i ? "h-3.5 w-3.5" : "h-2 w-2"}`}
+                style={{ left: `${xPct(i)}%`, top: `${yPct(v)}%` }}
+              />
+            ) : null
+          )}
+
+          {active && hover != null && (
+            <>
+              <div className="pointer-events-none absolute inset-y-0 w-px bg-stone-300 dark:bg-stone-600" style={{ left: `${xPct(hover)}%` }} />
+              <div
+                className="pointer-events-none absolute z-10 -translate-y-full whitespace-nowrap rounded-lg bg-stone-900 px-2.5 py-1.5 text-xs text-white shadow-lg dark:bg-stone-100 dark:text-stone-900"
+                style={{
+                  left: `${xPct(hover)}%`,
+                  top: `calc(${yPct(values[hover])}% - 10px)`,
+                  transform: `translate(${xPct(hover) > 75 ? "-100%" : xPct(hover) < 25 ? "0" : "-50%"}, -100%)`,
+                }}
+              >
+                <p className="font-semibold">{formatMMK(values[hover])}</p>
+                <p className="opacity-75">
+                  {active.label} · {active.orders} {active.orders === 1 ? "order" : "orders"}
+                </p>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      <div className="relative ml-14 mt-2 h-4 text-[11px] text-stone-500">
+        {points.map((point, i) =>
+          i % labelEvery === 0 || i === n - 1 ? (
+            <span
+              key={`${point.label}-${i}`}
+              className="absolute whitespace-nowrap"
+              style={{
+                left: `${xPct(i)}%`,
+                transform: i === 0 && n > 1 ? "none" : i === n - 1 && n > 1 ? "translateX(-100%)" : "translateX(-50%)",
+              }}
+            >
+              {i === n - 1 && i % labelEvery !== 0 && n - 1 - (Math.floor((n - 1) / labelEvery) * labelEvery) < labelEvery / 2 ? "" : point.label}
+            </span>
+          ) : null
+        )}
       </div>
     </div>
   );

@@ -18,10 +18,18 @@ export interface ChatTurn {
   text: string;
 }
 
+export interface ChatAction {
+  label: string;
+  /** A route like "/orders", or "#bag" to open the bag drawer. */
+  href: string;
+}
+
 export interface ChatResponse {
   reply: string;
   mode: ChatMode;
   products?: ChatProductCard[];
+  suggestions?: string[];
+  actions?: ChatAction[];
 }
 
 export const chatApi = {

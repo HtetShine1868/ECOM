@@ -36,8 +36,36 @@ public class ChatService {
     private final ProductService productService;
     private final DeliveryZoneService deliveryZoneService;
     private final CategoryRepository categoryRepository;
+    private final ChatSkills chatSkills;
+    private final com.ecomerce.ai.GeminiShopAssistant gemini;
 
+    /**
+     * Gemini answers first (understands any phrasing and uses live shop data through functions).
+     * If Gemini is not configured or unavailable, the built-in skills and rule-based matcher reply.
+     */
     public ChatResponse reply(ChatRequest request) {
+        ChatResponse response = gemini.reply(request)
+                .or(() -> chatSkills.answer(request.getMessage(), this::toCard))
+                .orElseGet(() -> replyCore(request));
+        return withSuggestions(response);
+    }
+
+    /** Every reply ends with a few things the shopper can tap next. */
+    private ChatResponse withSuggestions(ChatResponse response) {
+        if (response.getSuggestions() != null && !response.getSuggestions().isEmpty()) {
+            return response;
+        }
+        boolean hasProducts = response.getProducts() != null && !response.getProducts().isEmpty();
+        response.setSuggestions(hasProducts
+                ? List.of("Show me something cheaper", "What's new?", "What's in my bag?")
+                : List.of("What are the best sellers?", "Track my last order", "How much is delivery?"));
+        if (hasProducts && (response.getActions() == null || response.getActions().isEmpty())) {
+            response.setActions(List.of(new ChatResponse.Action("Browse all products", "/products")));
+        }
+        return response;
+    }
+
+    private ChatResponse replyCore(ChatRequest request) {
         boolean productMode = isProductMode(request.getMode());
         List<Category> categories = categoryRepository.findAll();
         List<ProductResponse> catalog = loadCatalog();

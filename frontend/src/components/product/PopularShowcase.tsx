@@ -89,27 +89,29 @@ export default function PopularShowcase({ products, loved, onSeeAll }: PopularSh
     event.stopPropagation();
   };
 
+  const useRail = products.length > 4;
+
   return (
-    <section className="relative overflow-hidden rounded-[1.75rem] bg-[#2a1812] text-white shadow-shop">
-      <div className="pointer-events-none absolute -right-20 -top-24 h-64 w-64 rounded-full bg-primary-500/35 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-24 left-10 h-48 w-48 rounded-full bg-apricot-500/20 blur-3xl" />
+    <section className="relative overflow-hidden rounded-3xl border border-primary-100 bg-primary-50 text-stone-900 dark:border-surface-800 dark:bg-surface-800 dark:text-stone-50">
+      <div className="pointer-events-none absolute -right-20 -top-24 h-64 w-64 rounded-full bg-primary-300/30 blur-3xl dark:bg-primary-500/20" />
+      <div className="pointer-events-none absolute -bottom-24 left-10 h-48 w-48 rounded-full bg-apricot-500/15 blur-3xl" />
 
       <div className="relative flex flex-wrap items-end justify-between gap-3 px-5 pt-6 sm:px-7">
         <div className="min-w-0">
-          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-apricot-500">
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-primary-700 dark:text-apricot-500">
             {loved ? "Loved nearby" : "On the shelf"}
           </p>
           <h2 id="popular-heading" className="mt-2 font-display text-2xl font-semibold sm:text-3xl">
             {loved ? "Popular right now" : "Start with these"}
           </h2>
-          <p className="mt-1 max-w-md text-sm text-stone-300">
+          <p className="mt-1 max-w-md text-sm text-stone-600 dark:text-stone-300">
             {loved
               ? "The ones people keep adding to their bag."
               : "A few things worth opening first."}
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          {products.length > 1 && (
+          {useRail && (
             <div className="flex items-center gap-1.5">
               <RailButton label="Previous popular products" disabled={!canPrev} onClick={() => scrollByDir(-1)}>
                 <Chevron dir="left" />
@@ -122,45 +124,57 @@ export default function PopularShowcase({ products, loved, onSeeAll }: PopularSh
           <button
             type="button"
             onClick={onSeeAll}
-            className="rounded-full bg-white px-3.5 py-2 text-xs font-bold text-stone-900 transition hover:bg-apricot-100 sm:px-4 sm:text-sm"
+            className="rounded-full bg-stone-900 px-3.5 py-2 text-xs font-bold text-white transition hover:bg-primary-700 sm:px-4 sm:text-sm dark:bg-white dark:text-stone-900 dark:hover:bg-apricot-100"
           >
             See all
           </button>
         </div>
       </div>
 
-      <div className="relative mt-5">
+      {useRail ? (
+        <div className="relative mt-5">
+          <div
+            className={`pointer-events-none absolute inset-y-0 left-0 z-10 w-8 bg-gradient-to-r from-primary-50 to-transparent transition-opacity dark:from-surface-800 ${
+              canPrev ? "opacity-100" : "opacity-0"
+            }`}
+          />
+          <div
+            className={`pointer-events-none absolute inset-y-0 right-0 z-10 w-10 bg-gradient-to-l from-primary-50 to-transparent transition-opacity dark:from-surface-800 ${
+              canNext ? "opacity-100" : "opacity-0"
+            }`}
+          />
+          <div
+            ref={scroller}
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={endDrag}
+            onPointerCancel={endDrag}
+            onClickCapture={onClickCapture}
+            role="region"
+            aria-labelledby="popular-heading"
+            className="rail-scroll flex cursor-grab items-stretch gap-3 overflow-x-auto overscroll-x-contain px-5 pb-6 sm:gap-4 sm:px-7"
+          >
+            {products.map((product, index) => (
+              <PopularCard key={product.id} product={product} rank={index + 1} featured={index === 0 && loved} />
+            ))}
+          </div>
+        </div>
+      ) : (
         <div
-          className={`pointer-events-none absolute inset-y-0 left-0 z-10 w-8 bg-gradient-to-r from-[#2a1812] to-transparent transition-opacity ${
-            canPrev ? "opacity-100" : "opacity-0"
-          }`}
-        />
-        <div
-          className={`pointer-events-none absolute inset-y-0 right-0 z-10 w-10 bg-gradient-to-l from-[#2a1812] to-transparent transition-opacity ${
-            canNext ? "opacity-100" : "opacity-0"
-          }`}
-        />
-        <div
-          ref={scroller}
-          onPointerDown={onPointerDown}
-          onPointerMove={onPointerMove}
-          onPointerUp={endDrag}
-          onPointerCancel={endDrag}
-          onClickCapture={onClickCapture}
           role="region"
           aria-labelledby="popular-heading"
-          className="rail-scroll flex cursor-grab items-stretch gap-3 overflow-x-auto overscroll-x-contain px-5 pb-6 sm:gap-4 sm:px-7"
+          className="relative mt-5 grid grid-cols-2 gap-3 px-5 pb-6 sm:gap-4 sm:px-7 md:grid-cols-3 lg:grid-cols-4"
         >
           {products.map((product, index) => (
-            <PopularCard key={product.id} product={product} rank={index + 1} featured={index === 0 && loved} />
+            <PopularCard key={product.id} product={product} rank={index + 1} featured={index === 0 && loved} fluid />
           ))}
         </div>
-      </div>
+      )}
     </section>
   );
 }
 
-function PopularCard({ product, rank, featured }: { product: Product; rank: number; featured: boolean }) {
+function PopularCard({ product, rank, featured, fluid = false }: { product: Product; rank: number; featured: boolean; fluid?: boolean }) {
   const { addItem } = useCart();
   const [added, setAdded] = useState(false);
   const soldOut = product.stock === 0;
@@ -180,12 +194,12 @@ function PopularCard({ product, rank, featured }: { product: Product; rank: numb
 
   return (
     <article
-      className="w-[15.5rem] shrink-0 snap-start animate-fade-in motion-reduce:animate-none sm:w-60"
+      className={`${fluid ? "min-w-0" : "w-[15.5rem] shrink-0 snap-start sm:w-60"} animate-fade-in motion-reduce:animate-none`}
       style={{ animationDelay: `${Math.min(rank - 1, 6) * 40}ms`, animationFillMode: "backwards" }}
     >
       <Link
         to={`/products/${product.id}`}
-        className="group flex h-full flex-col overflow-hidden rounded-2xl bg-white text-stone-900 shadow-[0_12px_28px_rgba(0,0,0,0.18)] transition duration-300 hover:-translate-y-0.5"
+        className="group flex h-full flex-col overflow-hidden rounded-2xl border border-stone-200/80 bg-white text-stone-900 shadow-shop transition duration-300 hover:-translate-y-0.5 hover:border-primary-300 dark:border-surface-700 dark:bg-surface-900 dark:text-stone-50"
       >
         <div className="relative aspect-[4/3] overflow-hidden bg-stone-100">
           <img
@@ -200,11 +214,11 @@ function PopularCard({ product, rank, featured }: { product: Product; rank: numb
               img.src = FALLBACK;
             }}
           />
-          <span className="absolute left-2.5 top-2.5 rounded-full bg-[#2a1812] px-2.5 py-1 text-[11px] font-bold text-apricot-100">
+          <span className="absolute left-2.5 top-2.5 rounded-full bg-stone-900/85 px-2.5 py-1 text-[11px] font-bold text-white backdrop-blur">
             {featured ? "Top" : `#${rank}`}
           </span>
           {lowStock && (
-            <span className="absolute right-2.5 top-2.5 rounded-full bg-white/95 px-2 py-1 text-[11px] font-semibold text-amber-800">
+            <span className="absolute right-2.5 top-2.5 rounded-full bg-white/95 px-2 py-1 text-[11px] font-semibold text-amber-800 shadow-sm">
               {product.stock} left
             </span>
           )}
@@ -231,7 +245,7 @@ function PopularCard({ product, rank, featured }: { product: Product; rank: numb
           </p>
           <div className="mt-auto flex items-end justify-between gap-2 pt-3">
             <div className="min-w-0">
-              <p className="truncate font-display text-base font-semibold text-primary-700">
+              <p className="truncate font-display text-base font-semibold text-primary-700 dark:text-primary-300">
                 {formatMMK(product.price)}
               </p>
               <p className="truncate text-[11px] text-stone-500">
@@ -291,7 +305,7 @@ function RailButton({
       aria-label={label}
       disabled={disabled}
       onClick={onClick}
-      className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition hover:bg-white/20 disabled:opacity-30"
+      className="flex h-9 w-9 items-center justify-center rounded-full border border-stone-300 bg-white text-stone-800 transition hover:border-primary-400 disabled:opacity-30 dark:border-surface-700 dark:bg-surface-900 dark:text-stone-100"
     >
       {children}
     </button>

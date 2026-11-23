@@ -127,14 +127,14 @@ export default function HomePage() {
       </section>
 
       {loading ? (
-        <div className="mt-6 overflow-hidden rounded-[1.75rem] bg-[#2a1812] px-5 py-6 sm:px-7">
-          <div className="h-3 w-24 animate-pulse rounded-full bg-white/10" />
-          <div className="mt-3 h-7 w-48 animate-pulse rounded-full bg-white/10" />
+        <div className="mt-6 overflow-hidden rounded-3xl border border-primary-100 bg-primary-50 px-5 py-6 sm:px-7 dark:border-surface-800 dark:bg-surface-800">
+          <div className="h-3 w-24 animate-pulse rounded-full bg-stone-200 dark:bg-white/10" />
+          <div className="mt-3 h-7 w-48 animate-pulse rounded-full bg-stone-200 dark:bg-white/10" />
           <div className="mt-5 flex gap-3 sm:gap-4">
             {[0, 1, 2, 3].map((slot) => (
               <div
                 key={slot}
-                className={`h-[22rem] w-[15.5rem] shrink-0 animate-pulse rounded-2xl bg-white/10 sm:w-60 ${
+                className={`h-[22rem] w-[15.5rem] shrink-0 animate-pulse rounded-2xl bg-white dark:bg-white/10 sm:w-60 ${
                   slot === 0 ? "" : slot < 3 ? "hidden sm:block" : "hidden lg:block"
                 }`}
               />

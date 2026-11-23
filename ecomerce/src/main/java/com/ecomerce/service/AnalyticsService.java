@@ -164,33 +164,37 @@ public class AnalyticsService {
 
         long days = ChronoUnit.DAYS.between(window.from(), window.toInclusive()) + 1;
         DateTimeFormatter daily = DateTimeFormatter.ofPattern("MMM d");
+        java.util.function.Function<LocalDate, String> labeler;
         if (days > 120) {
-            return rollup(rows, date -> date.withDayOfMonth(1).format(DateTimeFormatter.ofPattern("MMM yyyy")));
+            DateTimeFormatter monthly = DateTimeFormatter.ofPattern("MMM yyyy");
+            labeler = date -> date.withDayOfMonth(1).format(monthly);
+        } else if (days > 45) {
+            labeler = date -> date.minusDays(date.getDayOfWeek().getValue() - 1L).format(daily);
+        } else {
+            labeler = daily::format;
         }
-        if (days > 45) {
-            return rollup(rows, date -> "Week of " + date.minusDays(date.getDayOfWeek().getValue() - 1L).format(daily));
-        }
-        return rollup(rows, daily::format);
+        return rollup(rows, labeler, window);
     }
 
+    /**
+     * Continuous series: every day/week/month in the window gets a point, zero when there
+     * were no sales, so the chart shows a real timeline instead of one bar per sale day.
+     */
     private List<AnalyticsResponse.SalesPoint> rollup(List<Map<String, Object>> rows,
-                                                      java.util.function.Function<LocalDate, String> labeler) {
+                                                      java.util.function.Function<LocalDate, String> labeler,
+                                                      Window window) {
         Map<String, AnalyticsResponse.SalesPoint> buckets = new LinkedHashMap<>();
+        for (LocalDate day = window.from(); !day.isAfter(window.toInclusive()); day = day.plusDays(1)) {
+            buckets.computeIfAbsent(labeler.apply(day), label -> AnalyticsResponse.SalesPoint.builder()
+                    .label(label).revenue(BigDecimal.ZERO).orders(0L).build());
+        }
         for (Map<String, Object> row : rows) {
             LocalDate day = toDate(row.get("day"));
             if (day == null) continue;
-            String label = labeler.apply(day);
-            AnalyticsResponse.SalesPoint existing = buckets.get(label);
-            if (existing == null) {
-                buckets.put(label, AnalyticsResponse.SalesPoint.builder()
-                        .label(label)
-                        .revenue(money(row.get("revenue")))
-                        .orders(asLong(row.get("orders")))
-                        .build());
-            } else {
-                existing.setRevenue(existing.getRevenue().add(money(row.get("revenue"))));
-                existing.setOrders(existing.getOrders() + asLong(row.get("orders")));
-            }
+            AnalyticsResponse.SalesPoint point = buckets.computeIfAbsent(labeler.apply(day),
+                    label -> AnalyticsResponse.SalesPoint.builder().label(label).revenue(BigDecimal.ZERO).orders(0L).build());
+            point.setRevenue(point.getRevenue().add(money(row.get("revenue"))));
+            point.setOrders(point.getOrders() + asLong(row.get("orders")));
         }
         return new ArrayList<>(buckets.values());
     }
@@ -373,7 +377,7 @@ public class AnalyticsService {
                 yield new Window(key, "Last Month", first.minusMonths(1), first.minusDays(1));
             }
             case "this_year" -> new Window(key, "This Year", today.withDayOfYear(1), today);
-            case "all" -> new Window(key, "All Time", LocalDate.of(2000, 1, 1), today);
+            case "all" -> new Window(key, "All Time", firstOrderDate(today), today);
             case "custom" -> {
                 LocalDate from = customFrom != null ? customFrom : today.minusDays(29);
                 LocalDate to = customTo != null ? customTo : today;
@@ -386,6 +390,19 @@ public class AnalyticsService {
             }
             default -> new Window("last30", "Last 30 Days", today.minusDays(29), today);
         };
+    }
+
+    /** "All time" starts at the first order (not an arbitrary year), at least 7 days back. */
+    private LocalDate firstOrderDate(LocalDate today) {
+        LocalDate first = null;
+        try {
+            first = jdbc.getJdbcTemplate().queryForObject(
+                    "SELECT CAST(MIN(order_date) AS date) FROM orders", LocalDate.class);
+        } catch (RuntimeException ignored) {
+            // empty table or unreadable value: fall back below
+        }
+        LocalDate floor = today.minusDays(6);
+        return first == null || first.isAfter(floor) ? floor : first;
     }
 
     private record Window(String key, String label, LocalDate from, LocalDate toInclusive) {}
