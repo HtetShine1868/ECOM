@@ -52,11 +52,7 @@ public class IdempotencyService {
     @Value("${app.idempotency.processing-timeout-seconds:120}")
     private long processingTimeoutSeconds = 120;
 
-    /**
-     * Deterministic SHA-256 of the business content of a checkout request. Items are merged
-     * per product and sorted, and text is trimmed, so the same cart always hashes the same.
-     * Expected prices are deliberately excluded: they are a confirmation signal, not the order.
-     */
+   
     public String calculateRequestHash(OrderRequest request) {
         StringBuilder sb = new StringBuilder("v1|");
         sb.append("customer:").append(trim(request.getCustomerName())).append('|');
