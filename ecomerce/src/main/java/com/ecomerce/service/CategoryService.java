@@ -9,8 +9,11 @@ import com.ecomerce.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -19,11 +22,19 @@ public class CategoryService {
 
     private final CategoryRepository categoryRepository;
     private final ProductRepository productRepository;
+    private final ProductCacheService productCacheService;
 
     public List<CategoryResponse> getAllCategories() {
-        return categoryRepository.findAll().stream()
+        Optional<List<CategoryResponse>> cached = productCacheService.getAllCategories();
+        if (cached.isPresent()) {
+            return cached.get();
+        }
+
+        List<CategoryResponse> list = categoryRepository.findAll().stream()
                 .map(CategoryResponse::from)
                 .collect(Collectors.toList());
+        productCacheService.putAllCategories(list);
+        return list;
     }
 
     public CategoryResponse getCategoryById(Long id) {
@@ -41,7 +52,9 @@ public class CategoryService {
                 .name(request.getName().trim())
                 .description(request.getDescription())
                 .build();
-        return CategoryResponse.from(categoryRepository.save(category));
+        CategoryResponse response = CategoryResponse.from(categoryRepository.save(category));
+        afterCommit(productCacheService::evictCategories);
+        return response;
     }
 
     @Transactional
@@ -49,7 +62,6 @@ public class CategoryService {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found: " + id));
 
-        // Allow renaming to the same name (case-insensitive) without conflict
         boolean nameConflict = categoryRepository.existsByNameIgnoreCase(request.getName())
                 && !category.getName().equalsIgnoreCase(request.getName());
         if (nameConflict) {
@@ -58,7 +70,9 @@ public class CategoryService {
 
         category.setName(request.getName().trim());
         category.setDescription(request.getDescription());
-        return CategoryResponse.from(categoryRepository.save(category));
+        CategoryResponse response = CategoryResponse.from(categoryRepository.save(category));
+        afterCommit(productCacheService::evictCategories);
+        return response;
     }
 
     /**
@@ -69,7 +83,6 @@ public class CategoryService {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found: " + id));
 
-        // Detach category from products before deleting
         productRepository.findAll().stream()
                 .filter(p -> p.getCategory() != null && p.getCategory().getId().equals(id))
                 .forEach(p -> {
@@ -78,5 +91,19 @@ public class CategoryService {
                 });
 
         categoryRepository.delete(category);
+        afterCommit(productCacheService::evictCategories);
+    }
+
+    private void afterCommit(Runnable action) {
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    action.run();
+                }
+            });
+            return;
+        }
+        action.run();
     }
 }

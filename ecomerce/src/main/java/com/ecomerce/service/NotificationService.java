@@ -52,8 +52,12 @@ public class NotificationService {
         notificationRepository.markAllRead(userId);
     }
 
-    /** Runs in its own transaction so a notification failure does not undo the order. */
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    /**
+     * Joins the caller's transaction: the ORDER_CREATED handler records the event as processed
+     * in the same transaction, so notifications are created exactly once per event.
+     * (Runs after the order has committed; it can never undo an order.)
+     */
+    @Transactional
     public void notifyNewOrder(Long orderId, String customerName, BigDecimal total) {
         List<User> admins = userRepository.findByRole(User.Role.ADMIN);
         if (admins.isEmpty()) {

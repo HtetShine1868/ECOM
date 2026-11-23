@@ -25,6 +25,8 @@ public class AuthController {
 
     private final AuthService authService;
     private final AuthCookieService authCookieService;
+    private final com.ecomerce.ratelimit.RateLimiter rateLimiter;
+    private final com.ecomerce.ratelimit.RateLimitPolicies rateLimitPolicies;
 
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody AuthRequest.Register request,
@@ -39,6 +41,13 @@ public class AuthController {
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody AuthRequest.Login request,
                                               HttpServletRequest httpRequest,
                                               HttpServletResponse httpResponse) {
+        // Per-account limit on top of the per-IP limit, against password guessing spread over IPs.
+        String account = request.getEmail() == null ? "" : request.getEmail().trim().toLowerCase();
+        var decision = rateLimiter.acquire(rateLimitPolicies.named("auth-account"),
+                "acct:" + com.ecomerce.ratelimit.RateLimiter.hashIdentity(account));
+        if (!decision.allowed()) {
+            throw new com.ecomerce.exception.RateLimitedException(decision.retryAfterSeconds());
+        }
         AuthService.AuthSession session = authService.login(request);
         authCookieService.setTokenCookie(httpRequest, httpResponse, session.token());
         return ResponseEntity.ok(AuthResponse.from(session.user()));

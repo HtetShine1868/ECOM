@@ -42,4 +42,8 @@ public class OrderItem {
 
     @Column(nullable = false)
     private Integer quantity;
+
+    /** unitPrice × quantity at purchase time. Null only on rows created before this column existed. */
+    @Column(name = "line_total", precision = 15, scale = 2)
+    private BigDecimal lineTotal;
 }

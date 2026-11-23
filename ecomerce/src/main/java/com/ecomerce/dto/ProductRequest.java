@@ -29,4 +29,20 @@ public class ProductRequest {
 
     /** Optional — ID of a predefined category */
     private Long categoryId;
+
+    /**
+     * Optimistic locking version.
+     * Admin must submit the version shown to them. If the product was modified
+     * by another admin since it was loaded, the version will not match and
+     * the update will be rejected with PRODUCT_MODIFIED_BY_ANOTHER_USER.
+     * Null is accepted (skips optimistic check — legacy clients).
+     */
+    private Long version;
+
+    /**
+     * Optional — deactivate/reactivate a product.
+     * When null, the existing active state is preserved.
+     */
+    private Boolean active;
 }
+

@@ -10,12 +10,17 @@ import java.time.LocalDateTime;
 
 @Data
 @Builder
+@lombok.NoArgsConstructor
+@lombok.AllArgsConstructor
 public class ProductResponse {
     private Long id;
     private String name;
     private String description;
     private BigDecimal price;
     private Integer stock;
+    private Boolean active;
+    /** Optimistic locking version — admin edits must submit this back */
+    private Long version;
     private BigDecimal cargoPrice;
     private String imageUrl;
     private Long categoryId;
@@ -33,6 +38,8 @@ public class ProductResponse {
                 .description(product.getDescription())
                 .price(product.getPrice())
                 .stock(product.getStock())
+                .active(product.getActive())
+                .version(product.getVersion())
                 .cargoPrice(product.getCargoPrice())
                 .imageUrl(ImageUrls.reachable(product.getImageUrl()))
                 .categoryId(product.getCategory() != null ? product.getCategory().getId() : null)
@@ -44,3 +51,4 @@ public class ProductResponse {
                 .build();
     }
 }
+

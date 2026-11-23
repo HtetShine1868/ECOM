@@ -6,15 +6,21 @@ import com.ecomerce.dto.OrderStatusUpdateRequest;
 import com.ecomerce.dto.ProductRequest;
 import com.ecomerce.dto.ProductResponse;
 import com.ecomerce.dto.OrderResponse;
+import com.ecomerce.entity.AuditLog;
 import com.ecomerce.entity.Order;
 import com.ecomerce.entity.Product;
 import com.ecomerce.repository.UserRepository;
 import com.ecomerce.service.AdminService;
 import com.ecomerce.service.AnalyticsService;
+import com.ecomerce.service.AuditService;
 import com.ecomerce.service.ProductService;
 import com.ecomerce.service.StorageService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,6 +31,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -36,9 +43,41 @@ public class AdminController {
     private final StorageService storageService;
     private final AdminService adminService;
     private final AnalyticsService analyticsService;
+    private final AuditService auditService;
     private final UserRepository userRepository;
+    private final com.ecomerce.service.SystemStatusService systemStatusService;
+
+    private static final java.util.Set<String> ADMIN_SORT_FIELDS =
+            java.util.Set.of("createdAt", "updatedAt", "name", "price", "stock");
 
     // ----- Product Management -----
+
+    /**
+     * Admin product listing — includes inactive products.
+     */
+    @GetMapping("/products")
+    public ResponseEntity<Page<ProductResponse>> listProducts(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) BigDecimal minPrice,
+            @RequestParam(required = false) BigDecimal maxPrice,
+            @RequestParam(required = false) Boolean inStock,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
+        if (!ADMIN_SORT_FIELDS.contains(sortBy)) {
+            sortBy = "createdAt";
+        }
+        size = Math.min(Math.max(size, 1), 100);
+        Sort sort = sortDir.equalsIgnoreCase("asc")
+                ? Sort.by(sortBy).ascending()
+                : Sort.by(sortBy).descending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+        return ResponseEntity.ok(
+                productService.getProductsAdmin(search, categoryId, minPrice, maxPrice, inStock, pageable));
+    }
+
     @PostMapping("/products")
     public ResponseEntity<ProductResponse> createProduct(@Valid @RequestBody ProductRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(productService.createProduct(request));
@@ -60,7 +99,7 @@ public class AdminController {
     public ResponseEntity<ProductResponse> uploadProductImage(@PathVariable Long id,
                                                                @RequestParam("file") MultipartFile file) throws IOException {
         // Capture the existing image URL before we overwrite it
-        String oldImageUrl = productService.getProductById(id).getImageUrl();
+        String oldImageUrl = productService.getProductFresh(id).getImageUrl(); // never a cached value
 
         // Upload new image to Supabase Storage → get public URL
         String newImageUrl = storageService.uploadProductImage(file);
@@ -116,4 +155,30 @@ public class AdminController {
             @RequestParam(defaultValue = "5") int lowStockThreshold) {
         return ResponseEntity.ok(analyticsService.summarize(range, from, to, lowStockThreshold));
     }
+
+    // ----- Audit Logs (Admin) -----
+    @GetMapping("/audit-logs")
+    public ResponseEntity<Page<AuditLog>> getAuditLogs(
+            @RequestParam(required = false) String entityType,
+            @RequestParam(required = false) String entityId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        Pageable pageable = PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), 100));
+        return ResponseEntity.ok(auditService.getLogs(entityType, entityId, pageable));
+    }
+
+    // ----- Operations -----
+
+    /** Redis / outbox health for operators. Admin only; no secrets. */
+    @GetMapping("/system/status")
+    public ResponseEntity<java.util.Map<String, Object>> systemStatus() {
+        return ResponseEntity.ok(systemStatusService.status());
+    }
+
+    /** Give outbox events that exhausted their publish attempts a fresh set of attempts. */
+    @PostMapping("/system/outbox/retry-failed")
+    public ResponseEntity<java.util.Map<String, Object>> retryFailedOutbox() {
+        return ResponseEntity.ok(java.util.Map.of("reset", systemStatusService.retryExhaustedOutbox()));
+    }
 }
+

@@ -37,4 +37,7 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
             ORDER BY CASE WHEN MAX(oi.product.stock) > 0 THEN 1 ELSE 0 END DESC, totalSold DESC
             """)
     List<Object[]> findTopSellingProductIdsByCategory(@Param("categoryId") Long categoryId, Pageable pageable);
+
+    /** True if any order item (including from deleted orders) references this product. */
+    boolean existsByProductId(Long productId);
 }

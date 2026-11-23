@@ -115,24 +115,48 @@ export default function AdminAnalytics() {
 
   return (
     <div className="animate-fade-in space-y-5">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <h2 className="font-display text-2xl font-semibold text-stone-900 dark:text-stone-50">Analytics</h2>
-          <p className="mt-1 text-sm text-stone-500">
-            {data ? `Total revenue for ${data.rangeLabel.toLowerCase()} · ${data.from} to ${data.to}` : "Pick today, this week, or another period."}
-            {updatedAt ? ` · live, updated ${updatedAt.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}` : ""}
-          </p>
+      <header>
+        <h2 className="font-display text-2xl font-semibold text-stone-900 dark:text-stone-50">Analytics</h2>
+        <p className="mt-1 text-sm text-stone-500">
+          {data ? `${data.rangeLabel} · ${data.from} to ${data.to}` : "Pick a period to see how the shop is doing."}
+          {updatedAt ? ` · updated ${updatedAt.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}` : ""}
+        </p>
+      </header>
+
+      <div className="flex flex-col gap-3 border-b border-stone-200 pb-3 dark:border-surface-800 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex gap-1" role="tablist" aria-label="Analytics sections">
+          {([
+            ["sales", "Sales"],
+            ["store", "Store health"],
+          ] as const).map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              aria-selected={view === id}
+              onClick={() => setView(id)}
+              className={`rounded-lg px-3.5 py-2 text-sm font-semibold transition ${
+                view === id
+                  ? "bg-primary-100 text-primary-800 dark:bg-primary-900/40 dark:text-primary-100"
+                  : "text-stone-600 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-surface-800"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
         </div>
-        <div className="flex flex-col items-start gap-2">
-          <div className="flex flex-wrap gap-1.5">
+
+        <div className="flex flex-col items-start gap-2 lg:items-end">
+          <div className="inline-flex max-w-full flex-wrap items-center gap-0.5 rounded-full bg-stone-100 p-1 dark:bg-surface-800" role="group" aria-label="Date range">
             {QUICK_RANGES.map((option) => (
               <button
                 key={option.value}
                 onClick={() => setRange(option.value)}
-                className={`rounded-full px-3 py-1.5 text-sm font-semibold ${
+                aria-pressed={range === option.value}
+                className={`rounded-full px-3 py-1.5 text-sm font-semibold transition ${
                   range === option.value
-                    ? "bg-primary-600 text-white"
-                    : "bg-white text-stone-700 ring-1 ring-stone-200 hover:text-primary-700 dark:bg-surface-800 dark:text-stone-200 dark:ring-surface-700"
+                    ? "bg-white text-primary-700 shadow-sm dark:bg-surface-900 dark:text-primary-200"
+                    : "text-stone-600 hover:text-stone-900 dark:text-stone-300 dark:hover:text-white"
                 }`}
               >
                 {option.label}
@@ -144,13 +168,13 @@ export default function AdminAnalytics() {
                 if (e.target.value) setRange(e.target.value);
               }}
               aria-label="More date ranges"
-              className={`rounded-full px-3 py-1.5 text-sm font-semibold ${
+              className={`cursor-pointer rounded-full border-0 py-1.5 pl-3 pr-7 text-sm font-semibold outline-none ${
                 quickActive
-                  ? "bg-white text-stone-700 ring-1 ring-stone-200 dark:bg-surface-800 dark:text-stone-200 dark:ring-surface-700"
-                  : "bg-primary-600 text-white"
+                  ? "bg-transparent text-stone-600 dark:text-stone-300"
+                  : "bg-white text-primary-700 shadow-sm dark:bg-surface-900 dark:text-primary-200"
               }`}
             >
-              <option value="">More</option>
+              <option value="">More…</option>
               {MORE_RANGES.map((option) => (
                 <option key={option.value} value={option.value}>{option.label}</option>
               ))}
@@ -166,28 +190,6 @@ export default function AdminAnalytics() {
         </div>
       </div>
 
-      <div className="flex gap-2" role="tablist" aria-label="Analytics sections">
-        {([
-          ["sales", "Sales"],
-          ["store", "Store"],
-        ] as const).map(([id, label]) => (
-          <button
-            key={id}
-            type="button"
-            role="tab"
-            aria-selected={view === id}
-            onClick={() => setView(id)}
-            className={`rounded-xl px-4 py-2 text-sm font-semibold ${
-              view === id
-                ? "bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900"
-                : "bg-white text-stone-700 ring-1 ring-stone-200 hover:text-primary-700 dark:bg-surface-800 dark:text-stone-200 dark:ring-surface-700"
-            }`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-
       {error && <p className="text-sm text-red-700 dark:text-red-300">{error}</p>}
       {range === "custom" && (!from || !to) && !error && (
         <p className="text-sm text-stone-500">Choose a start and end date to see that period.</p>
@@ -196,24 +198,15 @@ export default function AdminAnalytics() {
 
       {data && !loading && view === "sales" && (
         <>
-          <section className="grid gap-3 lg:grid-cols-4">
-            <article className="rounded-2xl border border-primary-800 bg-primary-700 p-5 text-white lg:col-span-2">
-              <p className="text-xs font-semibold uppercase tracking-wide text-primary-100">
-                Total revenue · {data.rangeLabel}
-              </p>
-              <p className="mt-2 break-words font-display text-3xl font-semibold leading-tight sm:text-4xl">
-                {formatMMK(revenue)}
-              </p>
-              <p className="mt-2 text-sm text-primary-100">
-                {data.from} to {data.to}. Confirmed through delivered orders.
-              </p>
-            </article>
+          <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <Metric featured label="Revenue" value={formatMMK(revenue)} hint="Confirmed through delivered orders." />
             <Metric
-              label="Orders placed"
-              value={String(data.ordersPlaced ?? 0)}
-              hint={`${data.totalOrders} counted in revenue · avg ${formatMMK(data.averageOrderValue)}`}
+              label="Orders"
+              value={String(data.totalOrders)}
+              hint={`${data.ordersPlaced ?? data.totalOrders} placed in total. Pending and cancelled orders are not counted.`}
             />
-            <Metric label="Units sold" value={String(data.unitsSold)} hint="Units on confirmed through delivered orders." />
+            <Metric label="Average order" value={formatMMK(data.averageOrderValue)} hint="Revenue divided by counted orders." />
+            <Metric label="Units sold" value={String(data.unitsSold)} hint="Items on counted orders." />
           </section>
 
           <section className="shop-card p-5">
@@ -225,7 +218,7 @@ export default function AdminAnalytics() {
                   {peak && asNumber(peak.revenue) > 0 ? ` · strongest ${peak.label}` : ""}
                 </p>
               </div>
-              <p className="font-display text-xl font-semibold text-primary-700">{formatMMK(revenue)}</p>
+              <p className="font-display text-xl font-semibold text-primary-700 dark:text-primary-300">{formatMMK(revenue)}</p>
             </div>
             <SalesChart points={data.salesOverTime} />
           </section>
@@ -237,36 +230,26 @@ export default function AdminAnalytics() {
               {data.topProducts.length === 0 ? (
                 <p className="text-sm text-stone-500">No product sales in this period.</p>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full min-w-[32rem] text-sm">
-                    <thead>
-                      <tr className="border-b border-stone-200 text-left text-xs uppercase tracking-wide text-stone-500 dark:border-surface-700">
-                        <th className="pb-2 pr-3 font-semibold">Product</th>
-                        <th className="pb-2 pr-3 text-right font-semibold">Units</th>
-                        <th className="pb-2 pr-3 text-right font-semibold">Revenue</th>
-                        <th className="pb-2 font-semibold">Share</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {data.topProducts.map((product, index) => {
-                        const pct = share(asNumber(product.revenue), revenue);
-                        return (
-                          <tr key={product.name} className="border-b border-stone-100 last:border-0 dark:border-surface-800">
-                            <td className="py-2.5 pr-3 font-medium text-stone-900 dark:text-stone-50">
-                              <span className="mr-2 tabular-nums text-stone-400">{index + 1}</span>
-                              {product.name}
-                            </td>
-                            <td className="py-2.5 pr-3 text-right tabular-nums">{product.unitsSold}</td>
-                            <td className="py-2.5 pr-3 text-right tabular-nums">{formatMMK(product.revenue)}</td>
-                            <td className="py-2.5">
-                              <ShareBar percent={pct} />
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+                <ol className="space-y-3">
+                  {data.topProducts.map((product, index) => {
+                    const pct = share(asNumber(product.revenue), revenue);
+                    return (
+                      <li key={`${product.name}-${index}`}>
+                        <div className="flex items-baseline justify-between gap-3 text-sm">
+                          <span className="min-w-0 truncate font-medium text-stone-900 dark:text-stone-50">
+                            <span className="mr-2 inline-block w-4 text-right tabular-nums text-stone-400">{index + 1}</span>
+                            {product.name}
+                          </span>
+                          <span className="shrink-0 tabular-nums text-stone-700 dark:text-stone-200">
+                            {formatMMK(product.revenue)}
+                            <span className="ml-2 text-xs text-stone-500">{product.unitsSold} sold</span>
+                          </span>
+                        </div>
+                        <ShareBar percent={pct} wide />
+                      </li>
+                    );
+                  })}
+                </ol>
               )}
             </section>
 
@@ -439,10 +422,8 @@ function Metric({
 }) {
   return (
     <article className={featured ? "rounded-2xl border border-primary-800 bg-primary-700 p-4 text-white" : "shop-card p-4"}>
-      <p className={`text-xs font-semibold uppercase tracking-wide ${featured ? "text-primary-100" : "text-stone-500"}`}>
-        {label}
-      </p>
-      <p className={`mt-1 break-words font-display text-xl font-semibold leading-tight sm:text-2xl ${featured ? "" : "text-stone-900 dark:text-stone-50"}`}>
+      <p className={`text-xs font-semibold uppercase tracking-wide ${featured ? "text-primary-100" : "text-stone-500"}`}>{label}</p>
+      <p className={`mt-1 break-words font-display text-2xl font-semibold leading-tight ${featured ? "" : "text-stone-900 dark:text-stone-50"}`}>
         {value}
       </p>
       <p className={`mt-2 text-xs leading-relaxed ${featured ? "text-primary-100" : "text-stone-500"}`}>{hint}</p>
@@ -461,11 +442,11 @@ function Fact({ label, value }: { label: string; value: string }) {
 
 function ShareBar({ percent, wide = false }: { percent: number; wide?: boolean }) {
   return (
-    <div className="flex items-center gap-2">
-      <div className={`h-1.5 overflow-hidden rounded-full bg-surface-100 dark:bg-surface-900 ${wide ? "flex-1" : "w-16"}`}>
-        <div className="h-full rounded-full bg-primary-600" style={{ width: `${Math.max(percent, percent > 0 ? 4 : 0)}%` }} />
+    <div className={`mt-1.5 flex items-center gap-2 ${wide ? "" : "w-28"}`}>
+      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-stone-200 dark:bg-stone-700">
+        <div className="h-full rounded-full bg-primary-600" style={{ width: `${Math.max(percent, percent > 0 ? 3 : 0)}%` }} />
       </div>
-      <span className="w-9 text-right text-xs tabular-nums text-stone-500">{percent}%</span>
+      <span className="w-9 shrink-0 text-right text-xs tabular-nums text-stone-500">{percent}%</span>
     </div>
   );
 }
@@ -490,29 +471,29 @@ function SalesChart({ points }: { points: StoreAnalytics["salesOverTime"] }) {
         <span>0</span>
       </div>
       <div className="min-w-0 flex-1 overflow-x-auto">
-        <div style={{ minWidth: `${points.length * 36}px` }}>
+        <div style={{ minWidth: `${Math.min(points.length, 40) * 36}px` }}>
           <div className="relative border-b border-stone-200 dark:border-surface-700" style={{ height: plot }}>
             <div className="pointer-events-none absolute inset-x-0 top-1/2 border-t border-dashed border-stone-200 dark:border-surface-700" />
-            <div className="absolute inset-0 flex items-end gap-1.5">
+            <div className={`absolute inset-0 flex items-end gap-2 ${points.length < 12 ? "justify-center" : ""}`}>
               {points.map((point, index) => {
                 const amount = asNumber(point.revenue);
                 const height = amount <= 0 ? 0 : Math.max(6, (amount / max) * plot);
                 return (
-                  <div key={`${point.label}-${index}`} className="group flex min-w-8 flex-1 items-end">
+                  <div key={`${point.label}-${index}`} className="group flex min-w-8 max-w-14 flex-1 items-end">
                     <div className="relative w-full" style={{ height }}>
                       <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1 hidden -translate-x-1/2 whitespace-nowrap rounded-lg bg-stone-900 px-2 py-1 text-[11px] text-white group-hover:block">
                         {formatMMK(amount)} · {point.orders} {point.orders === 1 ? "order" : "orders"}
                       </div>
-                      <div className="h-full w-full rounded-t-md bg-primary-600" />
+                      <div className="h-full w-full rounded-t-md bg-primary-600 transition-opacity group-hover:opacity-80" />
                     </div>
                   </div>
                 );
               })}
             </div>
           </div>
-          <div className="mt-2 flex gap-1.5">
+          <div className={`mt-2 flex gap-2 ${points.length < 12 ? "justify-center" : ""}`}>
             {points.map((point, index) => (
-              <span key={`${point.label}-label-${index}`} className="min-w-8 flex-1 truncate text-center text-[11px] text-stone-500">
+              <span key={`${point.label}-label-${index}`} className="min-w-8 max-w-14 flex-1 truncate text-center text-[11px] text-stone-500">
                 {index % labelEvery === 0 ? point.label : ""}
               </span>
             ))}

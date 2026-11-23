@@ -7,7 +7,7 @@ export default function MobileNav() {
   const location = useLocation();
   const navigate = useNavigate();
   const { isAuthenticated, isAdmin, user, logout } = useAuth();
-  const { totalItems, setIsOpen, clearCart } = useCart();
+  const { totalItems, setIsOpen } = useCart();
   const [accountOpen, setAccountOpen] = useState(false);
 
   useEffect(() => {
@@ -21,7 +21,6 @@ export default function MobileNav() {
 
   const signOut = () => {
     logout();
-    clearCart();
     setAccountOpen(false);
     navigate("/");
   };

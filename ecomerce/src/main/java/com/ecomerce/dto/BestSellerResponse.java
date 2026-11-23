@@ -8,6 +8,8 @@ import java.time.LocalDateTime;
 
 @Data
 @Builder
+@lombok.NoArgsConstructor
+@lombok.AllArgsConstructor
 public class BestSellerResponse {
     private Long productId;
     private String name;

@@ -5,7 +5,13 @@ const BASE_URL = API_URL;
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-type ApiError = { message: string; status?: number };
+export type ApiError = {
+  code?: string;
+  message: string;
+  status?: number;
+  details?: Record<string, any>;
+  requestId?: string;
+};
 
 function isApiError(err: unknown): err is ApiError {
   return typeof err === "object" && err !== null && "message" in err;
@@ -23,7 +29,7 @@ function messageFromBody(text: string, fallback: string): string {
   const trimmed = text.trim();
   if (!trimmed) return fallback;
   if (trimmed.startsWith("<")) {
-    return "Please sign in again, then save the product.";
+    return "Your session has ended. Please sign in again.";
   }
   try {
     const error = JSON.parse(trimmed) as {
@@ -34,17 +40,25 @@ function messageFromBody(text: string, fallback: string): string {
       const details = Object.values(error.validationErrors).filter(Boolean);
       if (details.length > 0) return details.join(" ");
     }
-    return error.message || fallback;
+    if (error.message) return error.message;
+    return fallback;
   } catch {
     return fallback;
   }
 }
 
+/** Safe to repeat automatically: reads, and checkout (protected by its idempotency key). */
+function canAutoRetry(path: string, options: RequestInit) {
+  const method = (options.method ?? "GET").toUpperCase();
+  return method === "GET" || path === "/orders";
+}
+
 async function request<T>(
   path: string,
   options: RequestInit = {},
-  retries = 1
+  requestedRetries = 1
 ): Promise<T> {
+  const retries = canAutoRetry(path, options) ? requestedRetries : 0;
   const isFormData = options.body instanceof FormData;
   const query = path.includes("?") ? path.slice(path.indexOf("?") + 1) : "";
   if (query) {
@@ -71,26 +85,34 @@ async function request<T>(
     });
 
     if (res.type === "opaqueredirect" || (res.status >= 300 && res.status < 400)) {
-      throw { message: "Please sign in again, then save the product.", status: 401 } satisfies ApiError;
+      throw { message: "Your session has ended. Please sign in again.", status: 401 } satisfies ApiError;
     }
 
     const text = await readBody(res);
 
     if (!res.ok) {
-      if (res.status === 503 && retries > 0) {
+      if (res.status === 503 && retries > 0 && !text.includes("CART_UNAVAILABLE")) {
         await delay(3000);
         return request<T>(path, options, retries - 1);
       }
+      let errorData: any = {};
+      try {
+        errorData = JSON.parse(text);
+      } catch {}
+
       throw {
+        code: errorData.code,
         message: messageFromBody(text, res.statusText || "Request failed"),
         status: res.status,
+        details: errorData.details,
+        requestId: errorData.requestId,
       } satisfies ApiError;
     }
 
     if (res.status === 204 || text.trim() === "") return undefined as T;
     if (text.trim().startsWith("<")) {
       throw {
-        message: "Please sign in again, then save the product.",
+        message: "Your session has ended. Please sign in again.",
         status: res.status,
       } satisfies ApiError;
     }

@@ -13,6 +13,8 @@ import java.util.stream.Collectors;
 
 @Data
 @Builder
+@lombok.NoArgsConstructor
+@lombok.AllArgsConstructor
 public class OrderResponse {
     private Long id;
     private String customerName;
@@ -30,6 +32,8 @@ public class OrderResponse {
 
     @Data
     @Builder
+    @lombok.NoArgsConstructor
+    @lombok.AllArgsConstructor
     public static class OrderItemResponse {
         private Long id;
         private Long productId;
@@ -52,7 +56,9 @@ public class OrderResponse {
                         .unitPrice(item.getUnitPrice())
                         .cargoPrice(item.getCargoPrice() != null ? item.getCargoPrice() : BigDecimal.ZERO)
                         .quantity(item.getQuantity())
-                        .lineTotal(item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
+                        .lineTotal(item.getLineTotal() != null
+                                ? item.getLineTotal()
+                                : item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
                         .build())
                 .collect(Collectors.toList());
 

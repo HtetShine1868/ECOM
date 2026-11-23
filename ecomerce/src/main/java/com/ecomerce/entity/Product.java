@@ -35,6 +35,22 @@ public class Product {
     @Builder.Default
     private Integer stock = 0;
 
+    /**
+     * Whether this product is available for purchase.
+     * Soft-delete: set to false instead of hard-deleting when order history exists.
+     */
+    @Column(nullable = false)
+    @Builder.Default
+    private Boolean active = true;
+
+    /**
+     * Optimistic locking version. Incremented by JPA on every update.
+     * Admin edits must submit the current version; a stale version causes a conflict.
+     */
+    @Version
+    @Column(nullable = false)
+    private Long version;
+
     /** 1 when the product can be bought, 0 when it is sold out. Used only for ordering. */
     @Formula("(CASE WHEN COALESCE(stock, 0) > 0 THEN 1 ELSE 0 END)")
     private Integer inStockRank;

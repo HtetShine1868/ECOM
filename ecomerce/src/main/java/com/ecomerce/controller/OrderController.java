@@ -2,7 +2,8 @@ package com.ecomerce.controller;
 
 import com.ecomerce.dto.OrderRequest;
 import com.ecomerce.dto.OrderResponse;
-import com.ecomerce.repository.UserRepository;
+import com.ecomerce.checkout.CheckoutService;
+import com.ecomerce.security.CurrentUser;
 import com.ecomerce.service.OrderService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -20,15 +21,22 @@ import java.util.List;
 public class OrderController {
 
     private final OrderService orderService;
-    private final UserRepository userRepository;
+    private final CheckoutService checkoutService;
+    private final CurrentUser currentUser;
 
     @PostMapping
     public ResponseEntity<OrderResponse> placeOrder(
             @AuthenticationPrincipal UserDetails userDetails,
+            @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKeyHeader,
             @Valid @RequestBody OrderRequest request) {
         Long userId = resolveUserId(userDetails);
+        // The key may come in the standard header or the body (older clients).
+        if ((request.getIdempotencyKey() == null || request.getIdempotencyKey().isBlank())
+                && idempotencyKeyHeader != null) {
+            request.setIdempotencyKey(idempotencyKeyHeader.trim());
+        }
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(orderService.placeOrder(userId, request));
+                .body(checkoutService.placeOrder(userId, request));
     }
 
     @GetMapping
@@ -48,8 +56,6 @@ public class OrderController {
     }
 
     private Long resolveUserId(UserDetails userDetails) {
-        return userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new RuntimeException("User not found"))
-                .getId();
+        return currentUser.id(userDetails);
     }
 }

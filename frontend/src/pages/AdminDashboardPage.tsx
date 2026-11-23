@@ -1,4 +1,4 @@
-﻿import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { productApi } from "../api/products";
@@ -10,9 +10,9 @@ import { productImageSrc } from "../utils/image";
 import AdminAnalytics from "./AdminAnalytics";
 
 
-import type { Product, Order } from "../types";
+import type { Product, Order, AuditLog } from "../types";
 
-type Tab = "dashboard" | "products" | "orders" | "order-detail" | "analytics" | "settings";
+type Tab = "dashboard" | "products" | "orders" | "order-detail" | "analytics" | "settings" | "audit";
 
 interface ProductFormState {
   name: string;
@@ -21,6 +21,7 @@ interface ProductFormState {
   stock: string;
   cargoPrice: string;
   category: string;
+  active: boolean;
 }
 
 const emptyForm: ProductFormState = {
@@ -30,7 +31,42 @@ const emptyForm: ProductFormState = {
   stock: "",
   cargoPrice: "",
   category: "",
+  active: true,
 };
+
+
+// ─── Audit helpers ────────────────────────────────────────────────────────────
+function parseJson(value?: string): Record<string, unknown> | null {
+  if (!value) return null;
+  try {
+    const parsed = JSON.parse(value);
+    return parsed && typeof parsed === "object" ? (parsed as Record<string, unknown>) : null;
+  } catch {
+    return null;
+  }
+}
+
+const AUDIT_LABELS: Record<string, string> = {
+  name: "Name", price: "Price", cargoPrice: "Cargo", stock: "Stock", active: "Sold", categoryId: "Category", status: "Status", imageUrl: "Image",
+};
+
+function summarizeChange(log: AuditLog): string {
+  const before = parseJson(log.oldValues);
+  const after = parseJson(log.newValues);
+  if (!before && !after) return "-";
+  if (!before && after) return `Created: ${String(after.name ?? "")} · ${String(after.price ?? "")} · stock ${String(after.stock ?? "")}`;
+  if (before && !after) return `Deleted: ${String(before.name ?? "")}`;
+  const parts: string[] = [];
+  for (const key of Object.keys(after ?? {})) {
+    if (key === "version" || key === "delta") continue;
+    const from = before?.[key];
+    const to = after?.[key];
+    if (JSON.stringify(from) === JSON.stringify(to)) continue;
+    if (key === "imageUrl") { parts.push("Image replaced"); continue; }
+    parts.push(`${AUDIT_LABELS[key] ?? key}: ${String(from ?? "-")} → ${String(to ?? "-")}`);
+  }
+  return parts.length ? parts.join(" · ") : "No visible change";
+}
 
 // ─── Analytics helpers ────────────────────────────────────────────────────────
 function ActionCard({ title, detail, onClick }: { title: string; detail: string; onClick: () => void }) {
@@ -128,6 +164,21 @@ export default function AdminDashboardPage() {
   const [newZoneFee, setNewZoneFee] = useState("");
   const [editingZone, setEditingZone] = useState<DeliveryZoneApi | null>(null);
   const [zoneError, setZoneError] = useState("");
+
+  // ── Audit logs state ────────────────────────────────────────────────────────
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+  const [auditLoading, setAuditLoading] = useState(false);
+  const [auditError, setAuditError] = useState("");
+
+  const loadAuditLogs = useCallback(() => {
+    setAuditLoading(true);
+    setAuditError("");
+    productApi
+      .getAuditLogs({ size: 50 })
+      .then((res) => setAuditLogs(res.content || []))
+      .catch(() => setAuditError("Failed to load audit history."))
+      .finally(() => setAuditLoading(false));
+  }, []);
 
   // ── Analytics state ────────────────────────────────────────────────────────
   // ── Auth guard ─────────────────────────────────────────────────────────────
@@ -333,6 +384,7 @@ export default function AdminDashboardPage() {
       stock: String(product.stock),
       cargoPrice: String(product.cargoPrice),
       category: product.categoryName ?? "",
+      active: product.active !== false,
     });
     setImageFile(null);
     setImagePreview(product.imageUrl ?? "");
@@ -375,7 +427,7 @@ export default function AdminDashboardPage() {
 
     const price = parseFloat(form.price);
     const stock = parseInt(form.stock, 10);
-    const cargoPrice = 0; // ignore individual cargo price
+    const cargoPrice = editingProduct ? Number(editingProduct.cargoPrice) || 0 : 0; // keep the stored value
 
     if (!form.name.trim()) { setFormError("Product name is required."); return; }
     if (isNaN(price) || price < 0) { setFormError("Price must be a valid non-negative number."); return; }
@@ -390,11 +442,15 @@ export default function AdminDashboardPage() {
         stock,
         cargoPrice,
         categoryId: categories.find(c => c.name === form.category)?.id ?? null,
+        active: form.active,
       };
 
       let savedProduct: Product;
       if (editingProduct) {
-        savedProduct = await productApi.update(editingProduct.id, payload);
+        savedProduct = await productApi.update(editingProduct.id, {
+          ...payload,
+          version: editingProduct.version,
+        });
       } else {
         savedProduct = await productApi.create(payload);
       }
@@ -419,6 +475,37 @@ export default function AdminDashboardPage() {
       loadProducts();
       setTimeout(() => closeForm(), 1200);
     } catch (err: unknown) {
+      const apiErr = err as { code?: string; message?: string };
+      if (apiErr?.code === "PRODUCT_MODIFIED_BY_ANOTHER_USER") {
+        const fresh = (err as { details?: { current?: Product } }).details?.current;
+        const mine = { name: form.name.trim(), price: Number(form.price), stock: Number(form.stock) };
+        if (fresh) {
+          const changed: string[] = [];
+          if (fresh.name !== mine.name) changed.push(`name is now "${fresh.name}"`);
+          if (Number(fresh.price) !== mine.price) changed.push(`price is now ${fresh.price}`);
+          if (Number(fresh.stock) !== mine.stock) changed.push(`stock is now ${fresh.stock}`);
+          setEditingProduct(fresh);
+          setForm({
+            name: fresh.name,
+            description: fresh.description || "",
+            price: String(fresh.price),
+            stock: String(fresh.stock),
+            cargoPrice: String(fresh.cargoPrice || 0),
+            category: fresh.categoryName || "",
+            active: fresh.active !== false,
+          });
+          setFormError(
+            "Not saved: someone else changed this product (or a customer bought some) after you opened it. " +
+            "The form now shows the latest values" +
+            (changed.length ? ` (${changed.join(", ")})` : "") +
+            ". Review them and save again if your change still applies."
+          );
+        } else {
+          setFormError("Not saved: this product changed after you opened it. Close the form and open it again to see the latest values.");
+        }
+        loadProducts();
+        return;
+      }
       const msg =
         err && typeof err === "object" && "message" in err
           ? (err as { message: string }).message
@@ -517,6 +604,9 @@ export default function AdminDashboardPage() {
           </TabButton>
           <TabButton active={tab === "settings"} onClick={() => setTab("settings")}>
             Settings
+          </TabButton>
+          <TabButton active={tab === "audit"} onClick={() => { setTab("audit"); loadAuditLogs(); }}>
+            Audit History
           </TabButton>
           {tab === "order-detail" && selectedOrder && (
             <TabButton active={true} onClick={() => {}}>
@@ -756,6 +846,21 @@ export default function AdminDashboardPage() {
                         className="w-full rounded-xl border border-stone-200 dark:border-surface-700 bg-white text-stone-900 placeholder:text-stone-500 dark:bg-surface-900 dark:text-stone-50 dark:placeholder:text-stone-400 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/40 transition-shadow"
                       />
                     </div>
+
+                    {editingProduct && (
+                      <label className="flex items-center gap-3 rounded-xl border border-stone-200 p-3 text-sm dark:border-surface-700">
+                        <input
+                          type="checkbox"
+                          checked={form.active}
+                          onChange={(e) => setForm({ ...form, active: e.target.checked })}
+                          className="h-4 w-4 accent-primary-600"
+                        />
+                        <span>
+                          <span className="font-medium">Sold in the shop</span>
+                          <span className="block text-xs text-stone-500">Untick to hide it from customers. Past orders keep their details.</span>
+                        </span>
+                      </label>
+                    )}
 
 
 
@@ -1363,6 +1468,84 @@ export default function AdminDashboardPage() {
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+        {/* ── AUDIT TAB ──────────────────────────────────────────────────────── */}
+        {tab === "audit" && (
+          <div className="animate-fade-in space-y-6">
+            <div className="shop-card p-6 shadow-lg">
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h2 className="font-display text-xl font-semibold text-stone-900 dark:text-stone-50">
+                    Audit History
+                  </h2>
+                  <p className="mt-0.5 text-sm text-stone-500">
+                    Administrative log of product edits, stock changes, and system operations
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={loadAuditLogs}
+                  disabled={auditLoading}
+                  className="rounded-xl border border-stone-200 px-3 py-1.5 text-xs font-semibold text-stone-700 hover:border-primary-400 dark:border-surface-700 dark:text-stone-200"
+                >
+                  {auditLoading ? "Refreshing..." : "Refresh Logs"}
+                </button>
+              </div>
+
+              {auditError && (
+                <div className="mb-4 rounded-xl bg-red-50 p-3 text-sm text-red-600 dark:bg-red-950/30 dark:text-red-400">
+                  {auditError}
+                </div>
+              )}
+
+              {auditLoading ? (
+                <div className="space-y-2 py-4">
+                  {[...Array(4)].map((_, i) => (
+                    <div key={i} className="h-12 animate-pulse rounded-xl bg-surface-100 dark:bg-surface-800" />
+                  ))}
+                </div>
+              ) : auditLogs.length === 0 ? (
+                <p className="py-12 text-center text-sm text-stone-500">No audit logs recorded yet.</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm">
+                    <thead>
+                      <tr className="border-b border-stone-200 text-xs font-semibold uppercase tracking-wider text-stone-500 dark:border-surface-700">
+                        <th className="pb-3">Timestamp</th>
+                        <th className="pb-3">Entity</th>
+                        <th className="pb-3">Action</th>
+                        <th className="pb-3">Admin</th>
+                        <th className="pb-3">Changes</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-stone-100 dark:divide-surface-800">
+                      {auditLogs.map((log) => (
+                        <tr key={log.id} className="hover:bg-stone-50/50 dark:hover:bg-surface-800/40">
+                          <td className="whitespace-nowrap py-3 text-xs text-stone-500">
+                            {new Date(log.createdAt).toLocaleString()}
+                          </td>
+                          <td className="py-3 font-medium text-stone-800 dark:text-stone-100">
+                            {log.entityType} #{log.entityId}
+                          </td>
+                          <td className="py-3">
+                            <span className="rounded-md bg-stone-100 px-2 py-0.5 text-xs font-semibold text-stone-700 dark:bg-surface-800 dark:text-stone-300">
+                              {log.action}
+                            </span>
+                          </td>
+                          <td className="py-3 text-xs text-stone-600 dark:text-stone-300">
+                            {log.changedByEmail || "System"}
+                          </td>
+                          <td className="max-w-sm py-3 text-xs text-stone-600 dark:text-stone-300">
+                            {summarizeChange(log)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </div>
         )}

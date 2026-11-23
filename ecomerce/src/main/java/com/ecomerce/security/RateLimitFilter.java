@@ -1,86 +1,75 @@
 package com.ecomerce.security;
 
+import com.ecomerce.exception.GlobalExceptionHandler;
+import com.ecomerce.ratelimit.RateLimitPolicies;
+import com.ecomerce.ratelimit.RateLimiter;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.time.Instant;
-import java.util.ArrayDeque;
-import java.util.Deque;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Optional;
 
+/**
+ * Applies {@link RateLimitPolicies} to API requests. Runs after JWT authentication, so
+ * signed-in users are limited per account (not per shared IP); anonymous requests are
+ * limited per client IP.
+ *
+ * The client IP is {@code request.getRemoteAddr()}: with server.forward-headers-strategy=NATIVE,
+ * Tomcat replaces it with X-Forwarded-For only when the direct peer is a trusted proxy, so a
+ * client cannot pick its own IP by sending the header.
+ *
+ * Rejections are 429 with the standard error body and a Retry-After header.
+ */
 @Component
+@RequiredArgsConstructor
 public class RateLimitFilter extends OncePerRequestFilter {
 
-    private final Map<String, Deque<Long>> hits = new ConcurrentHashMap<>();
+    private final RateLimitPolicies policies;
+    private final RateLimiter rateLimiter;
+    private final ObjectMapper objectMapper;
+
+    @Value("${app.rate-limit.enabled:true}")
+    private boolean enabled = true;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain) throws ServletException, IOException {
-        Limit limit = limitFor(request);
-        if (limit == null) {
-            filterChain.doFilter(request, response);
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
+                                    FilterChain chain) throws ServletException, IOException {
+        Optional<RateLimitPolicies.Policy> policy = enabled
+                ? policies.forRequest(request.getMethod(), request.getRequestURI())
+                : Optional.empty();
+        if (policy.isEmpty()) {
+            chain.doFilter(request, response);
             return;
         }
 
-        String key = clientIp(request) + ":" + limit.bucket();
-        long now = Instant.now().toEpochMilli();
-        long windowStart = now - limit.windowMs();
-        Deque<Long> stamps = hits.computeIfAbsent(key, ignored -> new ArrayDeque<>());
+        String identity = CurrentUser.currentEmail()
+                .map(email -> "u:" + RateLimiter.hashIdentity(email.toLowerCase()))
+                .orElseGet(() -> "ip:" + RateLimiter.hashIdentity(request.getRemoteAddr()));
 
-        synchronized (stamps) {
-            while (!stamps.isEmpty() && stamps.peekFirst() < windowStart) {
-                stamps.pollFirst();
-            }
-            if (stamps.size() >= limit.maxRequests()) {
-                response.setStatus(429);
-                response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-                response.setHeader("Retry-After", String.valueOf(limit.windowMs() / 1000));
-                response.getWriter().write("{\"message\":\"Too many requests. Please try again shortly.\"}");
-                return;
-            }
-            stamps.addLast(now);
+        RateLimiter.Decision decision = rateLimiter.acquire(policy.get(), identity);
+        response.setHeader("X-RateLimit-Limit", String.valueOf(policy.get().maxRequests()));
+        response.setHeader("X-RateLimit-Remaining", String.valueOf(decision.remaining()));
+        if (decision.allowed()) {
+            chain.doFilter(request, response);
+            return;
         }
 
-        if (hits.size() > 10_000) {
-            hits.entrySet().removeIf(entry -> {
-                Deque<Long> values = entry.getValue();
-                synchronized (values) {
-                    return values.isEmpty() || values.peekLast() < windowStart;
-                }
-            });
-        }
-
-        filterChain.doFilter(request, response);
-    }
-
-    private Limit limitFor(HttpServletRequest request) {
-        String path = request.getRequestURI();
-        String method = request.getMethod();
-        if ("POST".equalsIgnoreCase(method) && ("/api/auth/login".equals(path) || "/api/auth/register".equals(path))) {
-            return new Limit("auth", 5, 15 * 60 * 1000L);
-        }
-        if ("POST".equalsIgnoreCase(method) && "/api/chat".equals(path)) {
-            return new Limit("chat", 30, 60 * 1000L);
-        }
-        return null;
-    }
-
-    private String clientIp(HttpServletRequest request) {
-        String forwarded = request.getHeader("X-Forwarded-For");
-        if (forwarded != null && !forwarded.isBlank()) {
-            return forwarded.split(",")[0].trim();
-        }
-        return request.getRemoteAddr();
-    }
-
-    private record Limit(String bucket, int maxRequests, long windowMs) {
+        response.setStatus(429);
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.setHeader(HttpHeaders.RETRY_AFTER, String.valueOf(decision.retryAfterSeconds()));
+        objectMapper.writeValue(response.getOutputStream(), GlobalExceptionHandler.body(
+                "RATE_LIMITED",
+                "Too many requests. Please wait " + decision.retryAfterSeconds() + " seconds and try again.",
+                Map.of("retryAfterSeconds", decision.retryAfterSeconds(), "policy", policy.get().name())));
     }
 }

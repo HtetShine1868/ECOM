@@ -171,9 +171,11 @@ function PopularCard({ product, rank, featured }: { product: Product; rank: numb
     event.preventDefault();
     event.stopPropagation();
     if (soldOut) return;
-    addItem(product, 1);
-    setAdded(true);
-    window.setTimeout(() => setAdded(false), 1400);
+    void addItem(product, 1).then((ok) => {
+      if (!ok) return;
+      setAdded(true);
+      window.setTimeout(() => setAdded(false), 1400);
+    });
   };
 
   return (

@@ -27,4 +27,8 @@ public class CartItem {
     @Column(nullable = false)
     @Builder.Default
     private Integer quantity = 1;
+
+    /** Price the customer last reviewed; used only to flag price changes. Never charged. */
+    @Column(name = "seen_unit_price", precision = 15, scale = 2)
+    private java.math.BigDecimal seenUnitPrice;
 }

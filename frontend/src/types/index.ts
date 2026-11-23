@@ -18,6 +18,8 @@ export interface Product {
   categoryId?: number | null;
   categoryName?: string | null;
   category?: string | null;
+  active?: boolean;
+  version?: number;
   createdAt: string;
   updatedAt: string;
   unitsSold?: number;
@@ -28,6 +30,11 @@ export interface CartItem {
   id: number;
   product: Product;
   quantity: number;
+  /** Set by the server on every cart read. */
+  availability?: "IN_STOCK" | "INSUFFICIENT_STOCK" | "OUT_OF_STOCK" | "INACTIVE" | "REMOVED";
+  priceChanged?: boolean;
+  previousPrice?: number | null;
+  cargoPrice?: number;
 }
 
 export interface Cart {
@@ -80,14 +87,30 @@ export interface OrderRequest {
   deliveryZoneId?: number;
   /** Free-text address when no zone applies — fee will be 0 */
   customDeliveryAddress?: string;
-  /** Cart items — sent directly since the frontend uses a localStorage-only cart */
-  items: { productId: number; quantity: number }[];
-  idempotencyKey?: string;
+  /** Items being bought. Prices here are only the ones the customer reviewed; the server recalculates. */
+  items: { productId: number; quantity: number; expectedUnitPrice?: number; expectedCargoPrice?: number }[];
+  /** One key per checkout attempt; reused when retrying the same attempt. */
+  idempotencyKey: string;
 }
 
 export interface ApiError {
+  code?: string;
   message: string;
   status: number;
+  details?: Record<string, any>;
+  requestId?: string;
+}
+
+export interface AuditLog {
+  id: number;
+  entityType: string;
+  entityId: string;
+  action: string;
+  changedByUserId?: number;
+  changedByEmail?: string;
+  oldValues?: string;
+  newValues?: string;
+  createdAt: string;
 }
 
 export interface PageResponse<T> {

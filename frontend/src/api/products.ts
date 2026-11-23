@@ -1,5 +1,5 @@
-﻿import api from "./client";
-import type { Product, PageResponse } from "../types";
+import api from "./client";
+import type { Product, PageResponse, AuditLog } from "../types";
 
 export interface Category {
   id: number;
@@ -109,6 +109,8 @@ export const productApi = {
       stock: number;
       cargoPrice: number;
       categoryId?: number | null;
+      version?: number;
+      active?: boolean;
     }
   ) => api.put<Product>("/admin/products/" + id, data),
 
@@ -116,4 +118,18 @@ export const productApi = {
     api.upload<Product>("/admin/products/" + id + "/image", formData),
 
   delete: (id: number) => api.delete<void>("/admin/products/" + id),
+
+  getAuditLogs: (params?: {
+    entityType?: string;
+    entityId?: string;
+    page?: number;
+    size?: number;
+  }) => {
+    const query = new URLSearchParams();
+    if (params?.entityType) query.set("entityType", params.entityType);
+    if (params?.entityId) query.set("entityId", params.entityId);
+    if (params?.page != null) query.set("page", String(params.page));
+    if (params?.size != null) query.set("size", String(params.size));
+    return api.get<PageResponse<AuditLog>>("/admin/audit-logs?" + query.toString());
+  },
 };

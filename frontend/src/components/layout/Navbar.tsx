@@ -10,11 +10,12 @@ const navLinks = [
   { to: "/", label: "Home" },
   { to: "/products", label: "Shop" },
   { to: "/orders", label: "Orders" },
+  { to: "/architecture", label: "Architecture" },
 ];
 
 export default function Navbar() {
   const { user, isAuthenticated, isAdmin, logout } = useAuth();
-  const { totalItems, setIsOpen, clearCart } = useCart();
+  const { totalItems, setIsOpen } = useCart();
   const { isDark, toggle } = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
@@ -121,7 +122,6 @@ export default function Navbar() {
                 <button
                   onClick={() => {
                     logout();
-                    clearCart();
                     navigate("/");
                   }}
                   className="btn-secondary px-3 py-1.5"

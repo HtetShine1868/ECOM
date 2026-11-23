@@ -8,6 +8,7 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Data
@@ -43,7 +44,10 @@ public class OrderRequest {
     @NotEmpty(message = "Order must contain at least one item")
     private List<OrderItemRequest> items;
 
-    /** Optional key that makes a repeated checkout return the original order. */
+    /**
+     * Required (here or in the Idempotency-Key header). One key per checkout attempt; a
+     * retry of the same attempt reuses it and gets the original order back.
+     */
     @Size(max = 80, message = "Idempotency key is too long")
     @Pattern(regexp = "^[A-Za-z0-9-]*$", message = "Idempotency key contains invalid characters")
     private String idempotencyKey;
@@ -56,5 +60,15 @@ public class OrderRequest {
         @NotNull(message = "Quantity is required")
         @Min(value = 1, message = "Quantity must be at least 1")
         private Integer quantity;
+
+        /**
+         * Price the customer last reviewed for this product (optional).
+         * If provided and differs from the current DB price, checkout returns PRICE_CHANGED.
+         */
+        private BigDecimal expectedUnitPrice;
+
+        /** Cargo price the customer last reviewed (optional), checked the same way. */
+        private BigDecimal expectedCargoPrice;
     }
 }
+

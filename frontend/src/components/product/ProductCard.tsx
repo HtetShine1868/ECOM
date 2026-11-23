@@ -19,9 +19,11 @@ export default function ProductCard({ product, isPopular }: ProductCardProps) {
   const handleAdd = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    addItem(product, 1);
-    setAdded(true);
-    window.setTimeout(() => setAdded(false), 1400);
+    void addItem(product, 1).then((ok) => {
+      if (!ok) return;
+      setAdded(true);
+      window.setTimeout(() => setAdded(false), 1400);
+    });
   };
 
   return (
