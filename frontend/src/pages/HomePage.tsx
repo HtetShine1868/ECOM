@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { productApi, bestSellerToProduct } from "../api/products";
+import { recommendationsApi } from "../api/recommendations";
 import type { Category } from "../api/products";
-import type { Product, PageResponse } from "../types";
+import type { Product, PageResponse, RecommendationItem } from "../types";
 import ProductCard from "../components/product/ProductCard";
 import PopularShowcase from "../components/product/PopularShowcase";
 import { categoryKind } from "../utils/category";
@@ -21,6 +22,8 @@ export default function HomePage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [popular, setPopular] = useState<Product[]>([]);
   const [recent, setRecent] = useState<Product[]>([]);
+  const [recommended, setRecommended] = useState<RecommendationItem[]>([]);
+  const [recentlyViewed, setRecentlyViewed] = useState<RecommendationItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -32,8 +35,10 @@ export default function HomePage() {
       productApi.getPage({ sort: "popular", page: 0, size: 8 }).catch(() => emptyPage),
       productApi.getPage({ sort: "newest", page: 0, size: 8 }),
       productApi.getCategories().catch(() => []),
+      recommendationsApi.getForYou(8).catch(() => []),
+      recommendationsApi.getRecentlyViewed(undefined, 4).catch(() => []),
     ])
-      .then(([sellers, ranked, newestPage, cats]) => {
+      .then(([sellers, ranked, newestPage, cats, forYou, viewed]) => {
         const fromSales = (Array.isArray(sellers) ? sellers : []).map(bestSellerToProduct);
         const fromRank = ranked.content ?? [];
         const newest = newestPage.content ?? [];
@@ -41,6 +46,8 @@ export default function HomePage() {
         setPopular(picks.slice(0, 8));
         setRecent(newest);
         setCategories(Array.isArray(cats) ? cats : []);
+        setRecommended(Array.isArray(forYou) ? forYou : []);
+        setRecentlyViewed(Array.isArray(viewed) ? viewed : []);
       })
       .catch(() => {
         setError("Unable to load products. Please make sure the server is running.");
@@ -155,6 +162,38 @@ export default function HomePage() {
         <div className="mt-10">
           <EmptyShelf message="Products show up here once the shop has something on the shelf." />
         </div>
+      )}
+
+      {!loading && !error && recommended.length > 0 && (
+        <section className="mt-12">
+          <SectionHead
+            title="Recommended for you"
+            hint="Personalized suggestions based on your shopping activities."
+            action="Browse shop"
+            onAction={() => navigate("/products")}
+          />
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+            {recommended.map((item) => (
+              <ProductCard key={item.product.id} product={item.product} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {!loading && !error && recentlyViewed.length > 0 && (
+        <section className="mt-12">
+          <SectionHead
+            title="Recently viewed"
+            hint="Items you looked at recently."
+            action="Browse shop"
+            onAction={() => navigate("/products")}
+          />
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+            {recentlyViewed.map((item) => (
+              <ProductCard key={item.product.id} product={item.product} />
+            ))}
+          </div>
+        </section>
       )}
 
       {!loading && !error && fresh.length > 0 && (

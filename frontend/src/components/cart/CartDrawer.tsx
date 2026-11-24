@@ -1,9 +1,10 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../../context/CartContext";
+import { recommendationsApi } from "../../api/recommendations";
 import { formatMMK } from "../../utils/format";
 import { productImageSrc } from "../../utils/image";
-import type { CartItem } from "../../types";
+import type { CartItem, RecommendationItem } from "../../types";
 
 const UNAVAILABLE_TEXT: Record<string, string> = {
   INACTIVE: "No longer sold",
@@ -21,10 +22,11 @@ function lineProblem(item: CartItem): string | null {
 
 export default function CartDrawer() {
   const {
-    items, totalItems, totalPrice, cargoTotal, isOpen, setIsOpen, removeItem, updateQuantity,
+    items, totalItems, totalPrice, cargoTotal, isOpen, setIsOpen, removeItem, updateQuantity, addItem,
     hasPriceChanges, hasUnavailableItems, acknowledgePrices, loading, error, refresh,
   } = useCart();
   const navigate = useNavigate();
+  const [suggestions, setSuggestions] = useState<RecommendationItem[]>([]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -33,6 +35,23 @@ export default function CartDrawer() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [isOpen, refresh, setIsOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    if (items.length > 0) {
+      const pId = items[0].product.id;
+      recommendationsApi
+        .getFrequentlyBought(pId, 3)
+        .then((res) => {
+          const cartIds = new Set(items.map((i) => i.product.id));
+          const filtered = res.filter((r) => !cartIds.has(r.product.id));
+          setSuggestions(filtered.slice(0, 2));
+        })
+        .catch(() => setSuggestions([]));
+    } else {
+      setSuggestions([]);
+    }
+  }, [isOpen, items]);
 
   if (!isOpen) return null;
 
@@ -156,6 +175,42 @@ export default function CartDrawer() {
                 );
               })}
             </ul>
+          )}
+
+          {suggestions.length > 0 && (
+            <div className="mt-6 border-t border-stone-200 pt-4 dark:border-surface-800">
+              <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-stone-500">
+                You May Also Like
+              </h3>
+              <div className="space-y-2">
+                {suggestions.map((sug) => (
+                  <div
+                    key={sug.product.id}
+                    className="flex items-center justify-between rounded-xl border border-stone-200/80 bg-white p-2.5 dark:border-surface-800 dark:bg-surface-800/80"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <img
+                        src={productImageSrc(sug.product.imageUrl, "https://placehold.co/64x64?text=Item")}
+                        alt=""
+                        className="h-10 w-10 shrink-0 rounded-lg object-cover"
+                      />
+                      <div className="min-w-0">
+                        <p className="truncate text-xs font-semibold">{sug.product.name}</p>
+                        <p className="text-[11px] font-bold text-primary-700 dark:text-primary-300">
+                          {formatMMK(sug.product.price)}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => void addItem(sug.product, 1)}
+                      className="ml-2 shrink-0 rounded-full bg-primary-100 px-3 py-1 text-xs font-bold text-primary-800 hover:bg-primary-200 dark:bg-primary-950 dark:text-primary-200"
+                    >
+                      + Add
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
         </div>
 

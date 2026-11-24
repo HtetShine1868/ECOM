@@ -31,6 +31,112 @@ BEGIN
     END IF;
 END $$;;
 
+-- ─── Part 1: Account Security & Email Verification ───────────────────────────
+
+-- Add email verification fields to users (safe to re-run)
+ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN NOT NULL DEFAULT FALSE;;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified_at TIMESTAMP WITH TIME ZONE;;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS account_status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE';;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verification_sent_at TIMESTAMP WITH TIME ZONE;;
+
+-- Email verification tokens table
+CREATE TABLE IF NOT EXISTS email_verification_tokens (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    token_hash VARCHAR(64) NOT NULL,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    used_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);;
+
+CREATE INDEX IF NOT EXISTS idx_email_tokens_user_id
+    ON email_verification_tokens (user_id);;
+
+CREATE INDEX IF NOT EXISTS idx_email_tokens_hash
+    ON email_verification_tokens (token_hash);;
+
+-- ─── Part 2: Product Reviews & Ratings ───────────────────────────────────────
+
+-- Reviews table
+CREATE TABLE IF NOT EXISTS reviews (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    product_id BIGINT NOT NULL REFERENCES products (id) ON DELETE CASCADE,
+    order_item_id BIGINT REFERENCES order_items (id) ON DELETE SET NULL,
+    rating SMALLINT NOT NULL CHECK (rating BETWEEN 1 AND 5),
+    title VARCHAR(200),
+    comment TEXT,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uq_review_user_product UNIQUE (user_id, product_id)
+);;
+
+CREATE INDEX IF NOT EXISTS idx_reviews_product_id
+    ON reviews (product_id, created_at DESC);;
+
+CREATE INDEX IF NOT EXISTS idx_reviews_user_id
+    ON reviews (user_id);;
+
+-- Review images
+CREATE TABLE IF NOT EXISTS review_images (
+    id BIGSERIAL PRIMARY KEY,
+    review_id BIGINT NOT NULL REFERENCES reviews (id) ON DELETE CASCADE,
+    image_url VARCHAR(500) NOT NULL,
+    storage_path VARCHAR(500),
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);;
+
+CREATE INDEX IF NOT EXISTS idx_review_images_review_id
+    ON review_images (review_id);;
+
+-- Product rating summary (one row per product, upserted on review changes)
+CREATE TABLE IF NOT EXISTS product_rating_summary (
+    product_id BIGINT PRIMARY KEY REFERENCES products (id) ON DELETE CASCADE,
+    average_rating NUMERIC(3,2) NOT NULL DEFAULT 0,
+    total_reviews INT NOT NULL DEFAULT 0,
+    rating_1_count INT NOT NULL DEFAULT 0,
+    rating_2_count INT NOT NULL DEFAULT 0,
+    rating_3_count INT NOT NULL DEFAULT 0,
+    rating_4_count INT NOT NULL DEFAULT 0,
+    rating_5_count INT NOT NULL DEFAULT 0,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);;
+
+-- ─── Part 3: Recommendation Engine ───────────────────────────────────────────
+
+-- User product interaction events
+CREATE TABLE IF NOT EXISTS user_product_events (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT REFERENCES users (id) ON DELETE CASCADE,
+    product_id BIGINT NOT NULL REFERENCES products (id) ON DELETE CASCADE,
+    event_type VARCHAR(30) NOT NULL,
+    event_weight INT NOT NULL,
+    session_id VARCHAR(100),
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);;
+
+CREATE INDEX IF NOT EXISTS idx_user_product_events_user
+    ON user_product_events (user_id, created_at DESC);;
+
+CREATE INDEX IF NOT EXISTS idx_user_product_events_product
+    ON user_product_events (product_id, event_type);;
+
+-- Product co-occurrence (frequently bought together)
+CREATE TABLE IF NOT EXISTS product_co_occurrences (
+    product_a_id BIGINT NOT NULL REFERENCES products (id) ON DELETE CASCADE,
+    product_b_id BIGINT NOT NULL REFERENCES products (id) ON DELETE CASCADE,
+    co_purchase_count INT NOT NULL DEFAULT 1,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (product_a_id, product_b_id),
+    CONSTRAINT chk_co_occurrence_canonical CHECK (product_a_id < product_b_id)
+);;
+
+CREATE INDEX IF NOT EXISTS idx_co_occurrences_product_a
+    ON product_co_occurrences (product_a_id, co_purchase_count DESC);;
+
+CREATE INDEX IF NOT EXISTS idx_co_occurrences_product_b
+    ON product_co_occurrences (product_b_id, co_purchase_count DESC);;
+
 -- ─── Phase 2: Enhanced idempotency ───────────────────────────────────────────
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS idempotency_status VARCHAR(20);;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS request_hash VARCHAR(64);;
@@ -153,3 +259,109 @@ BEGIN
         END IF;
     END IF;
 END $$;;
+
+-- ─── Part 1: Account Security & Email Verification ───────────────────────────
+
+-- Add email verification fields to users (safe to re-run)
+ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN NOT NULL DEFAULT FALSE;;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified_at TIMESTAMP WITH TIME ZONE;;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS account_status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE';;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verification_sent_at TIMESTAMP WITH TIME ZONE;;
+
+-- Email verification tokens table
+CREATE TABLE IF NOT EXISTS email_verification_tokens (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    token_hash VARCHAR(64) NOT NULL,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    used_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);;
+
+CREATE INDEX IF NOT EXISTS idx_email_tokens_user_id
+    ON email_verification_tokens (user_id);;
+
+CREATE INDEX IF NOT EXISTS idx_email_tokens_hash
+    ON email_verification_tokens (token_hash);;
+
+-- ─── Part 2: Product Reviews & Ratings ───────────────────────────────────────
+
+-- Reviews table
+CREATE TABLE IF NOT EXISTS reviews (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    product_id BIGINT NOT NULL REFERENCES products (id) ON DELETE CASCADE,
+    order_item_id BIGINT REFERENCES order_items (id) ON DELETE SET NULL,
+    rating SMALLINT NOT NULL CHECK (rating BETWEEN 1 AND 5),
+    title VARCHAR(200),
+    comment TEXT,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uq_review_user_product UNIQUE (user_id, product_id)
+);;
+
+CREATE INDEX IF NOT EXISTS idx_reviews_product_id
+    ON reviews (product_id, created_at DESC);;
+
+CREATE INDEX IF NOT EXISTS idx_reviews_user_id
+    ON reviews (user_id);;
+
+-- Review images
+CREATE TABLE IF NOT EXISTS review_images (
+    id BIGSERIAL PRIMARY KEY,
+    review_id BIGINT NOT NULL REFERENCES reviews (id) ON DELETE CASCADE,
+    image_url VARCHAR(500) NOT NULL,
+    storage_path VARCHAR(500),
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);;
+
+CREATE INDEX IF NOT EXISTS idx_review_images_review_id
+    ON review_images (review_id);;
+
+-- Product rating summary (one row per product, upserted on review changes)
+CREATE TABLE IF NOT EXISTS product_rating_summary (
+    product_id BIGINT PRIMARY KEY REFERENCES products (id) ON DELETE CASCADE,
+    average_rating NUMERIC(3,2) NOT NULL DEFAULT 0,
+    total_reviews INT NOT NULL DEFAULT 0,
+    rating_1_count INT NOT NULL DEFAULT 0,
+    rating_2_count INT NOT NULL DEFAULT 0,
+    rating_3_count INT NOT NULL DEFAULT 0,
+    rating_4_count INT NOT NULL DEFAULT 0,
+    rating_5_count INT NOT NULL DEFAULT 0,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);;
+
+-- ─── Part 3: Recommendation Engine ───────────────────────────────────────────
+
+-- User product interaction events
+CREATE TABLE IF NOT EXISTS user_product_events (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT REFERENCES users (id) ON DELETE CASCADE,
+    product_id BIGINT NOT NULL REFERENCES products (id) ON DELETE CASCADE,
+    event_type VARCHAR(30) NOT NULL,
+    event_weight INT NOT NULL,
+    session_id VARCHAR(100),
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);;
+
+CREATE INDEX IF NOT EXISTS idx_user_product_events_user
+    ON user_product_events (user_id, created_at DESC);;
+
+CREATE INDEX IF NOT EXISTS idx_user_product_events_product
+    ON user_product_events (product_id, event_type);;
+
+-- Product co-occurrence (frequently bought together)
+CREATE TABLE IF NOT EXISTS product_co_occurrences (
+    product_a_id BIGINT NOT NULL REFERENCES products (id) ON DELETE CASCADE,
+    product_b_id BIGINT NOT NULL REFERENCES products (id) ON DELETE CASCADE,
+    co_purchase_count INT NOT NULL DEFAULT 1,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (product_a_id, product_b_id),
+    CONSTRAINT chk_co_occurrence_canonical CHECK (product_a_id < product_b_id)
+);;
+
+CREATE INDEX IF NOT EXISTS idx_co_occurrences_product_a
+    ON product_co_occurrences (product_a_id, co_purchase_count DESC);;
+
+CREATE INDEX IF NOT EXISTS idx_co_occurrences_product_b
+    ON product_co_occurrences (product_b_id, co_purchase_count DESC);;

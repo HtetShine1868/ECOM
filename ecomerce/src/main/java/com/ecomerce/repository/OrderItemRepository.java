@@ -40,4 +40,21 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
 
     /** True if any order item (including from deleted orders) references this product. */
     boolean existsByProductId(Long productId);
+
+    @Query("""
+            SELECT oi FROM OrderItem oi
+            WHERE oi.order.user.id = :userId
+            AND oi.product.id = :productId
+            AND oi.order.status IN (com.ecomerce.entity.Order.OrderStatus.DELIVERED, com.ecomerce.entity.Order.OrderStatus.CONFIRMED, com.ecomerce.entity.Order.OrderStatus.DELIVERING)
+            ORDER BY oi.id DESC
+            """)
+    List<OrderItem> findDeliveredItemsForUserAndProduct(@Param("userId") Long userId, @Param("productId") Long productId);
+
+    @Query("""
+            SELECT COUNT(oi) > 0 FROM OrderItem oi
+            WHERE oi.order.user.id = :userId
+            AND oi.product.id = :productId
+            AND oi.order.status IN (com.ecomerce.entity.Order.OrderStatus.DELIVERED, com.ecomerce.entity.Order.OrderStatus.CONFIRMED, com.ecomerce.entity.Order.OrderStatus.DELIVERING)
+            """)
+    boolean hasPurchasedProduct(@Param("userId") Long userId, @Param("productId") Long productId);
 }

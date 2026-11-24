@@ -85,6 +85,9 @@ export default function CheckoutPage() {
     e.preventDefault();
     if (submittingRef.current) return;
     if (!isAuthenticated) return navigate("/login");
+    if (!user?.emailVerified) {
+      return navigate("/verify-email");
+    }
     if (blocked) return setError("Fix the items marked below before placing your order.");
     if (!customerName.trim()) return setError("Please enter your name.");
     const customerPhone = toMyanmarPhone(phoneDigits);
@@ -259,9 +262,21 @@ export default function CheckoutPage() {
               <div role="alert" className="rounded-xl bg-red-50 p-4 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-300">{error}</div>
             )}
 
-            <button type="submit" disabled={submitting || blocked || loading} className="btn-primary w-full py-3.5">
-              {submitting ? "Placing your order..." : "Place order"}
-            </button>
+            {!user?.emailVerified ? (
+              <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-left dark:border-amber-700/60 dark:bg-amber-950/30">
+                <p className="font-semibold text-amber-900 dark:text-amber-200">Email Verification Required</p>
+                <p className="mt-1 text-xs text-amber-800 dark:text-amber-300">
+                  Please verify your email address to complete checkout.
+                </p>
+                <Link to="/verify-email" className="btn-primary mt-3 block w-full py-2.5 text-center text-xs">
+                  Verify Email to Continue
+                </Link>
+              </div>
+            ) : (
+              <button type="submit" disabled={submitting || blocked || loading} className="btn-primary w-full py-3.5">
+                {submitting ? "Placing your order..." : "Place order"}
+              </button>
+            )}
             {blocked && !submitting && (
               <p className="text-center text-xs text-stone-500">
                 {hasUnavailableItems ? "Remove the unavailable items to continue." : "Accept the new prices to continue."}

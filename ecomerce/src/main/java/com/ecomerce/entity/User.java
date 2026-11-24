@@ -6,6 +6,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Entity
 @Table(name = "users")
@@ -40,6 +41,21 @@ public class User {
     /** Subject from OAuth2 token */
     private String providerId;
 
+    @Column(name = "email_verified", nullable = false)
+    @Builder.Default
+    private Boolean emailVerified = false;
+
+    @Column(name = "email_verified_at")
+    private OffsetDateTime emailVerifiedAt;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "account_status", nullable = false, length = 20)
+    @Builder.Default
+    private AccountStatus accountStatus = AccountStatus.ACTIVE;
+
+    @Column(name = "email_verification_sent_at")
+    private OffsetDateTime emailVerificationSentAt;
+
     @CreationTimestamp
     @Column(updatable = false)
     private LocalDateTime createdAt;
@@ -49,5 +65,9 @@ public class User {
 
     public enum Role {
         BUYER, ADMIN
+    }
+
+    public enum AccountStatus {
+        ACTIVE, PENDING_EMAIL, SUSPENDED
     }
 }

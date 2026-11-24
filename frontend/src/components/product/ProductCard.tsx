@@ -73,6 +73,17 @@ export default function ProductCard({ product, isPopular }: ProductCardProps) {
         <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-stone-900 sm:text-base dark:text-stone-50">
           {product.name}
         </h3>
+        {product.averageRating != null && product.averageRating > 0 && (
+          <div className="mt-1 flex items-center gap-1 text-xs">
+            <span className="text-amber-500">★</span>
+            <span className="font-semibold text-stone-800 dark:text-stone-200">
+              {Number(product.averageRating).toFixed(1)}
+            </span>
+            {product.totalReviews != null && product.totalReviews > 0 && (
+              <span className="text-stone-400">({product.totalReviews})</span>
+            )}
+          </div>
+        )}
         <p className="mt-1 line-clamp-2 flex-1 text-xs leading-relaxed text-stone-600 dark:text-stone-300">
           {product.description}
         </p>

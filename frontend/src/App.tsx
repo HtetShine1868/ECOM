@@ -20,12 +20,14 @@ import RegisterPage from "./pages/RegisterPage"
 import AdminDashboardPage from "./pages/AdminDashboardPage"
 import OAuth2CallbackPage from "./pages/OAuth2CallbackPage"
 import ArchitecturePage from "./pages/ArchitecturePage"
+import VerifyEmailPage from "./pages/VerifyEmailPage"
 
 function isPublicPath(pathname: string) {
   return (
     pathname === "/" ||
     pathname === "/login" ||
     pathname === "/register" ||
+    pathname === "/verify-email" ||
     pathname === "/oauth2/callback" ||
     pathname === "/architecture"
   )
@@ -44,6 +46,7 @@ function AppLayout() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/verify-email" element={<VerifyEmailPage />} />
         <Route path="/oauth2/callback" element={<OAuth2CallbackPage />} />
         <Route path="/architecture" element={<ArchitecturePage />} />
         <Route
@@ -68,6 +71,7 @@ function AppLayout() {
           <Route path="/" element={<HomePage />} />
           <Route path="/login" element={<Navigate to="/" replace />} />
           <Route path="/register" element={<Navigate to="/" replace />} />
+          <Route path="/verify-email" element={<VerifyEmailPage />} />
           <Route path="/oauth2/callback" element={<OAuth2CallbackPage />} />
           <Route
             path="/products"

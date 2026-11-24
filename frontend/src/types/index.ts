@@ -4,6 +4,8 @@ export interface User {
   name: string;
   role: "CUSTOMER" | "BUYER" | "ADMIN";
   avatarUrl?: string;
+  emailVerified?: boolean;
+  accountStatus?: "ACTIVE" | "PENDING_EMAIL" | "SUSPENDED";
   createdAt: string;
 }
 
@@ -20,6 +22,8 @@ export interface Product {
   category?: string | null;
   active?: boolean;
   version?: number;
+  averageRating?: number;
+  totalReviews?: number;
   createdAt: string;
   updatedAt: string;
   unitsSold?: number;
@@ -119,4 +123,37 @@ export interface PageResponse<T> {
   totalPages: number;
   size: number;
   number: number;
+}
+
+export interface Review {
+  id: number;
+  userId: number;
+  userName: string;
+  productId: number;
+  rating: number;
+  title?: string;
+  comment?: string;
+  verifiedPurchase: boolean;
+  imageUrls?: string[];
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface RatingSummary {
+  productId: number;
+  averageRating: number;
+  totalReviews: number;
+  rating1Count: number;
+  rating2Count: number;
+  rating3Count: number;
+  rating4Count: number;
+  rating5Count: number;
+  updatedAt: string;
+}
+
+export interface RecommendationItem {
+  product: Product;
+  recommendationType: string;
+  reason: string;
+  score?: number;
 }

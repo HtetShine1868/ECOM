@@ -11,6 +11,8 @@ public class AuthResponse {
     private String email;
     private String name;
     private String role;
+    private Boolean emailVerified;
+    private String accountStatus;
 
     public static AuthResponse from(User user) {
         return AuthResponse.builder()
@@ -18,6 +20,8 @@ public class AuthResponse {
                 .email(user.getEmail())
                 .name(user.getName())
                 .role(user.getRole().name())
+                .emailVerified(Boolean.TRUE.equals(user.getEmailVerified()))
+                .accountStatus(user.getAccountStatus() != null ? user.getAccountStatus().name() : "ACTIVE")
                 .build();
     }
 }

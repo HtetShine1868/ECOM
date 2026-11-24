@@ -61,6 +61,24 @@ public class AuthController {
         return ResponseEntity.ok(AuthResponse.from(authService.requireByEmail(userDetails.getUsername())));
     }
 
+    @PostMapping("/verify-email")
+    public ResponseEntity<AuthResponse> verifyEmail(@Valid @RequestBody com.ecomerce.dto.VerifyEmailRequest request,
+                                                    HttpServletRequest httpRequest,
+                                                    HttpServletResponse httpResponse) {
+        com.ecomerce.entity.User user = authService.verifyEmail(request.getToken());
+        // Issue updated token with verified session
+        String token = authService.tokenFor(user);
+        authCookieService.setTokenCookie(httpRequest, httpResponse, token);
+        return ResponseEntity.ok(AuthResponse.from(user));
+    }
+
+    @PostMapping("/resend-verification")
+    public ResponseEntity<java.util.Map<String, String>> resendVerification(
+            @Valid @RequestBody com.ecomerce.dto.ResendVerificationRequest request) {
+        authService.resendVerification(request.getEmail());
+        return ResponseEntity.ok(java.util.Map.of("message", "If an unverified account exists with that email, a verification link has been sent."));
+    }
+
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(HttpServletRequest request, HttpServletResponse response) {
         authCookieService.clearTokenCookie(request, response);

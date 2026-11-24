@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -16,24 +17,30 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+    private final AccountVerificationService accountVerificationService;
 
+    @Transactional
     public AuthSession register(AuthRequest.Register request) {
-        if (userRepository.existsByEmail(request.getEmail())) {
+        if (userRepository.existsByEmail(request.getEmail().trim().toLowerCase())) {
             throw new IllegalArgumentException("Email already in use: " + request.getEmail());
         }
 
         User user = userRepository.save(User.builder()
-                .email(request.getEmail())
-                .name(request.getName())
+                .email(request.getEmail().trim().toLowerCase())
+                .name(request.getName().trim())
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
                 .role(User.Role.BUYER)
+                .emailVerified(false)
+                .accountStatus(User.AccountStatus.PENDING_EMAIL)
                 .build());
+
+        accountVerificationService.createAndSendVerificationToken(user);
 
         return new AuthSession(user, tokenFor(user));
     }
 
     public AuthSession login(AuthRequest.Login request) {
-        User user = userRepository.findByEmail(request.getEmail())
+        User user = userRepository.findByEmail(request.getEmail().trim().toLowerCase())
                 .orElseThrow(() -> new BadCredentialsException("Invalid email or password"));
 
         if (user.getPasswordHash() == null ||
@@ -44,12 +51,21 @@ public class AuthService {
         return new AuthSession(user, tokenFor(user));
     }
 
+    @Transactional
+    public User verifyEmail(String token) {
+        return accountVerificationService.verifyEmail(token);
+    }
+
+    public void resendVerification(String email) {
+        accountVerificationService.resendVerification(email);
+    }
+
     public User requireByEmail(String email) {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new BadCredentialsException("Invalid session"));
     }
 
-    private String tokenFor(User user) {
+    public String tokenFor(User user) {
         return jwtUtil.generateToken(user.getEmail(), user.getRole().name(), user.getId(), user.getName());
     }
 

@@ -8,15 +8,20 @@ interface AuthResponse {
   email: string;
   name: string;
   role: string;
+  emailVerified?: boolean;
+  accountStatus?: "ACTIVE" | "PENDING_EMAIL" | "SUSPENDED";
 }
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isAdmin: boolean;
+  isEmailVerified: boolean;
   loading: boolean;
   login: (email: string, password: string) => Promise<User>;
-  register: (name: string, email: string, password: string) => Promise<void>;
+  register: (name: string, email: string, password: string) => Promise<User>;
+  verifyEmail: (token: string) => Promise<User>;
+  resendVerification: (email: string) => Promise<void>;
   completeOAuth: () => Promise<User>;
   logout: () => void;
 }
@@ -35,6 +40,8 @@ function toUser(data: AuthResponse): User {
     email: data.email,
     name: data.name,
     role: data.role as User["role"],
+    emailVerified: data.emailVerified ?? false,
+    accountStatus: data.accountStatus ?? "ACTIVE",
     createdAt: new Date().toISOString(),
   };
 }
@@ -81,8 +88,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const register = useCallback(async (name: string, email: string, password: string) => {
     sessionGen.current += 1;
     const data = await api.post<AuthResponse>("/auth/register", { name, email, password });
-    setUser(toUser(data));
+    const next = toUser(data);
+    setUser(next);
     setLoading(false);
+    return next;
+  }, []);
+
+  const verifyEmail = useCallback(async (token: string) => {
+    sessionGen.current += 1;
+    const data = await api.post<AuthResponse>("/auth/verify-email", { token });
+    const next = toUser(data);
+    setUser(next);
+    setLoading(false);
+    return next;
+  }, []);
+
+  const resendVerification = useCallback(async (email: string) => {
+    await api.post("/auth/resend-verification", { email });
   }, []);
 
   const completeOAuth = useCallback(async () => {
@@ -108,9 +130,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         isAuthenticated: !!user,
         isAdmin: user?.role === "ADMIN",
+        isEmailVerified: Boolean(user?.emailVerified),
         loading,
         login,
         register,
+        verifyEmail,
+        resendVerification,
         completeOAuth,
         logout,
       }}

@@ -55,7 +55,7 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       await register(name, email, password);
-      navigate(next);
+      navigate("/verify-email");
     } catch (err: unknown) {
       const msg =
         err && typeof err === "object" && "message" in err

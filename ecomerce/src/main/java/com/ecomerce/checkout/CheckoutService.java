@@ -72,6 +72,8 @@ public class CheckoutService {
     private final OutboxService outboxService;
     private final ProductCacheService productCacheService;
     private final CartService cartService;
+    private final com.ecomerce.service.AccountVerificationService accountVerificationService;
+    private final com.ecomerce.service.UserActivityService userActivityService;
     private final TransactionTemplate tx;
 
     @Value("${app.cart.max-quantity-per-item:99}")
@@ -81,6 +83,8 @@ public class CheckoutService {
                            UserRepository userRepository, DeliveryZoneService deliveryZoneService,
                            IdempotencyService idempotencyService, OutboxService outboxService,
                            ProductCacheService productCacheService, CartService cartService,
+                           com.ecomerce.service.AccountVerificationService accountVerificationService,
+                           com.ecomerce.service.UserActivityService userActivityService,
                            PlatformTransactionManager transactionManager) {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
@@ -90,10 +94,13 @@ public class CheckoutService {
         this.outboxService = outboxService;
         this.productCacheService = productCacheService;
         this.cartService = cartService;
+        this.accountVerificationService = accountVerificationService;
+        this.userActivityService = userActivityService;
         this.tx = new TransactionTemplate(transactionManager);
     }
 
     public OrderResponse placeOrder(Long userId, OrderRequest request) {
+        accountVerificationService.requireVerifiedEmail(userId);
         String key = request.getIdempotencyKey() == null ? "" : request.getIdempotencyKey().trim();
         if (key.length() < 8) {
             throw new IllegalArgumentException(
@@ -208,6 +215,8 @@ public class CheckoutService {
         items.forEach(item -> item.setOrder(order));
         order.setOrderItems(items);
         Order saved = orderRepository.saveAndFlush(order);
+
+        userActivityService.recordOrderPlaced(saved);
 
         outboxService.recordOrderCreated(OrderCreatedEvent.of(
                 UUID.randomUUID(), saved.getId(), userId, OffsetDateTime.now(), RequestIdFilter.currentRequestId()));

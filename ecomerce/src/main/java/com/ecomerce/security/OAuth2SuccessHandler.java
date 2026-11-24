@@ -63,6 +63,9 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
                         .provider(provider)
                         .providerId(resolvedProviderId)
                         .role(User.Role.BUYER)
+                        .emailVerified(true)
+                        .emailVerifiedAt(java.time.OffsetDateTime.now())
+                        .accountStatus(User.AccountStatus.ACTIVE)
                         .build();
                 return userRepository.save(created);
             });
@@ -72,6 +75,14 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             }
             if (user.getProviderId() == null && resolvedProviderId != null) {
                 user.setProviderId(resolvedProviderId);
+            }
+            // Google/Facebook social accounts are verified by provider
+            if (!Boolean.TRUE.equals(user.getEmailVerified())) {
+                user.setEmailVerified(true);
+                user.setEmailVerifiedAt(java.time.OffsetDateTime.now());
+                if (user.getAccountStatus() == User.AccountStatus.PENDING_EMAIL) {
+                    user.setAccountStatus(User.AccountStatus.ACTIVE);
+                }
             }
             userRepository.save(user);
 
