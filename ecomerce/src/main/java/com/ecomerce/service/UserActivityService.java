@@ -1,10 +1,9 @@
 package com.ecomerce.service;
 
-import com.ecomerce.entity.Order;
-import com.ecomerce.entity.OrderItem;
 import com.ecomerce.entity.Product;
 import com.ecomerce.entity.User;
 import com.ecomerce.entity.UserProductEvent;
+import com.ecomerce.entity.UserProductEvent.EventType;
 import com.ecomerce.repository.ProductRepository;
 import com.ecomerce.repository.UserProductEventRepository;
 import com.ecomerce.repository.UserRepository;
@@ -12,12 +11,26 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.Collection;
+import java.util.TreeSet;
 
+/**
+ * Customer activity that feeds recommendations.
+ *
+ * <ul>
+ *   <li>VIEW and SEARCH_CLICK come from the browser (the only place that knows a product page was
+ *       opened). Everything else is recorded by the server from real actions, so a client cannot
+ *       invent purchases or cart adds.</li>
+ *   <li>Weights are decided here from configuration, never taken from the client.</li>
+ *   <li>The same VIEW / SEARCH_CLICK by the same person inside the duplicate window counts once.</li>
+ *   <li>Tracking is best-effort and runs in its own transaction: it can never fail or roll back a
+ *       cart change or an order.</li>
+ * </ul>
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -27,66 +40,95 @@ public class UserActivityService {
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
     private final CoOccurrenceService coOccurrenceService;
+    private final ProductCacheService cache;
 
     @Value("${app.activity.duplicate-window-minutes:10}")
     private int duplicateWindowMinutes = 10;
 
-    @Transactional
-    public void recordEvent(Long userId, Long productId, UserProductEvent.EventType eventType, String sessionId) {
-        if (productId == null || eventType == null) return;
+    @Value("${app.activity.weight.view:1}")
+    private int weightView = 1;
 
-        OffsetDateTime windowStart = OffsetDateTime.now().minusMinutes(duplicateWindowMinutes);
+    @Value("${app.activity.weight.search-click:3}")
+    private int weightSearchClick = 3;
 
-        // Deduplicate rapid repeat events (e.g. repeated page refreshes or clicks)
-        if (eventType == UserProductEvent.EventType.VIEW || eventType == UserProductEvent.EventType.SEARCH_CLICK) {
-            boolean duplicate = eventRepository.existsRecentDuplicate(userId, sessionId, productId, eventType, windowStart);
-            if (duplicate) {
+    @Value("${app.activity.weight.add-to-cart:5}")
+    private int weightAddToCart = 5;
+
+    @Value("${app.activity.weight.purchase:10}")
+    private int weightPurchase = 10;
+
+    public int weightOf(EventType type) {
+        return switch (type) {
+            case VIEW -> weightView;
+            case SEARCH_CLICK -> weightSearchClick;
+            case ADD_TO_CART -> weightAddToCart;
+            case PURCHASE -> weightPurchase;
+        };
+    }
+
+    /** What the browser may report. */
+    public static boolean isClientReportable(EventType type) {
+        return type == EventType.VIEW || type == EventType.SEARCH_CLICK;
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void recordEvent(Long userId, Long productId, EventType type, String sessionId) {
+        if (productId == null || type == null) return;
+        if (userId == null && (sessionId == null || sessionId.isBlank())) return; // nobody to attribute it to
+        String session = sessionId == null || sessionId.isBlank() ? null : sessionId.trim();
+        if (session != null && session.length() > 100) session = session.substring(0, 100);
+
+        if (type == EventType.VIEW || type == EventType.SEARCH_CLICK) {
+            OffsetDateTime since = OffsetDateTime.now().minusMinutes(duplicateWindowMinutes);
+            if (eventRepository.existsRecentDuplicate(userId, session, productId, type, since)) {
                 return;
             }
         }
-
         Product product = productRepository.findById(productId).orElse(null);
-        if (product == null) return;
-
+        if (product == null || !Boolean.TRUE.equals(product.getActive())) return;
         User user = userId != null ? userRepository.findById(userId).orElse(null) : null;
 
-        UserProductEvent event = UserProductEvent.builder()
+        eventRepository.save(UserProductEvent.builder()
                 .user(user)
                 .product(product)
-                .eventType(eventType)
-                .eventWeight(eventType.getDefaultWeight())
-                .sessionId(sessionId)
-                .build();
-
-        eventRepository.save(event);
+                .eventType(type)
+                .eventWeight(weightOf(type))
+                .sessionId(session)
+                .build());
+        if (userId != null && type != EventType.VIEW) {
+            cache.evictUserRecommendations(userId);
+        }
     }
 
-    @Transactional
-    public void recordOrderPlaced(Order order) {
-        if (order == null || order.getOrderItems() == null || order.getOrderItems().isEmpty()) {
-            return;
+    /** After a successful cart operation. Never throws. */
+    public void recordCartAdd(Long userId, Long productId) {
+        try {
+            recordEvent(userId, productId, EventType.ADD_TO_CART, null);
+        } catch (RuntimeException e) {
+            log.warn("Could not record cart event: {}", e.getClass().getSimpleName());
         }
+    }
 
-        User user = order.getUser();
-        Set<Long> productIds = new HashSet<>();
-
-        for (OrderItem item : order.getOrderItems()) {
-            if (item.getProduct() != null) {
-                Long pId = item.getProduct().getId();
-                productIds.add(pId);
-
-                // Record PURCHASE event (weight 10)
-                UserProductEvent event = UserProductEvent.builder()
-                        .user(user)
-                        .product(item.getProduct())
-                        .eventType(UserProductEvent.EventType.PURCHASE)
-                        .eventWeight(UserProductEvent.EventType.PURCHASE.getDefaultWeight())
-                        .build();
-                eventRepository.save(event);
-            }
+    /**
+     * One PURCHASE event per product of a placed order, plus one co-purchase count per product pair
+     * (counted once per order regardless of quantity). Called after the order has committed.
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void recordPurchase(Long userId, Collection<Long> productIds) {
+        if (userId == null || productIds == null || productIds.isEmpty()) return;
+        User user = userRepository.findById(userId).orElse(null);
+        if (user == null) return;
+        TreeSet<Long> distinct = new TreeSet<>(productIds);
+        for (Long productId : distinct) {
+            productRepository.findById(productId).ifPresent(product ->
+                    eventRepository.save(UserProductEvent.builder()
+                            .user(user)
+                            .product(product)
+                            .eventType(EventType.PURCHASE)
+                            .eventWeight(weightPurchase)
+                            .build()));
         }
-
-        // Increment co-occurrence for all pairs in this order
-        coOccurrenceService.recordCoPurchases(productIds);
+        coOccurrenceService.recordCoPurchases(distinct);
+        cache.evictUserRecommendations(userId);
     }
 }

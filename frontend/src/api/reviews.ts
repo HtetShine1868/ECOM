@@ -1,70 +1,41 @@
-import client from "./client";
+import api from "./client";
 import type { PageResponse, RatingSummary, Review } from "../types";
 
 export interface ReviewPayload {
   rating: number;
   title?: string;
   comment?: string;
+  /** URLs returned by uploadImages. */
   imageUrls?: string[];
 }
 
+export type EligibilityReason = "OK" | "SIGN_IN" | "NOT_VERIFIED" | "ALREADY_REVIEWED" | "NOT_DELIVERED";
+
+export type ReviewSort = "newest" | "oldest" | "highest" | "lowest";
+
 export const reviewsApi = {
-  getProductReviews: async (
-    productId: number,
-    page = 0,
-    size = 10,
-    sortBy = "newest"
-  ): Promise<PageResponse<Review>> => {
-    const res = await client.get<PageResponse<Review>>(
-      `/products/${productId}/reviews`,
-      { params: { page, size, sortBy } }
-    );
-    return res.data;
-  },
+  getProductReviews: (productId: number, page = 0, size = 5, sortBy: ReviewSort = "newest") =>
+    api.get<PageResponse<Review>>(`/products/${productId}/reviews?page=${page}&size=${size}&sortBy=${sortBy}`),
 
-  getRatingSummary: async (productId: number): Promise<RatingSummary> => {
-    const res = await client.get<RatingSummary>(
-      `/products/${productId}/rating-summary`
-    );
-    return res.data;
-  },
+  getRatingSummary: (productId: number) => api.get<RatingSummary>(`/products/${productId}/rating-summary`),
 
-  checkEligibility: async (
-    productId: number
-  ): Promise<{ eligible: boolean }> => {
-    const res = await client.get<{ eligible: boolean }>(
-      `/products/${productId}/review-eligibility`
-    );
-    return res.data;
-  },
+  /** Whether the signed-in shopper may review now, and if not, why. */
+  checkEligibility: (productId: number) =>
+    api.get<{ eligible: boolean; reason: EligibilityReason }>(`/products/${productId}/review-eligibility`),
 
-  createReview: async (
-    productId: number,
-    payload: ReviewPayload
-  ): Promise<Review> => {
-    const res = await client.post<Review>(
-      `/products/${productId}/reviews`,
-      payload
-    );
-    return res.data;
-  },
+  createReview: (productId: number, payload: ReviewPayload) => api.post<Review>(`/products/${productId}/reviews`, payload),
 
-  updateReview: async (
-    reviewId: number,
-    payload: ReviewPayload
-  ): Promise<Review> => {
-    const res = await client.put<Review>(`/reviews/${reviewId}`, payload);
-    return res.data;
-  },
+  updateReview: (reviewId: number, payload: ReviewPayload) => api.put<Review>(`/reviews/${reviewId}`, payload),
 
-  deleteReview: async (reviewId: number): Promise<void> => {
-    await client.delete(`/reviews/${reviewId}`);
-  },
+  deleteReview: (reviewId: number) => api.delete<void>(`/reviews/${reviewId}`),
 
-  getMyReviews: async (page = 0, size = 10): Promise<PageResponse<Review>> => {
-    const res = await client.get<PageResponse<Review>>("/users/me/reviews", {
-      params: { page, size },
-    });
-    return res.data;
+  getMyReviews: (page = 0, size = 10) => api.get<PageResponse<Review>>(`/users/me/reviews?page=${page}&size=${size}`),
+
+  /** Upload photos first, then send the returned URLs with the review. */
+  uploadImages: async (files: File[]) => {
+    const form = new FormData();
+    files.forEach((file) => form.append("files", file));
+    const res = await api.upload<{ urls: string[] }>("/reviews/images", form);
+    return res.urls;
   },
 };

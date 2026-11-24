@@ -45,7 +45,7 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
             SELECT oi FROM OrderItem oi
             WHERE oi.order.user.id = :userId
             AND oi.product.id = :productId
-            AND oi.order.status IN (com.ecomerce.entity.Order.OrderStatus.DELIVERED, com.ecomerce.entity.Order.OrderStatus.CONFIRMED, com.ecomerce.entity.Order.OrderStatus.DELIVERING)
+            AND oi.order.status = com.ecomerce.entity.Order.OrderStatus.DELIVERED
             ORDER BY oi.id DESC
             """)
     List<OrderItem> findDeliveredItemsForUserAndProduct(@Param("userId") Long userId, @Param("productId") Long productId);
@@ -54,7 +54,7 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
             SELECT COUNT(oi) > 0 FROM OrderItem oi
             WHERE oi.order.user.id = :userId
             AND oi.product.id = :productId
-            AND oi.order.status IN (com.ecomerce.entity.Order.OrderStatus.DELIVERED, com.ecomerce.entity.Order.OrderStatus.CONFIRMED, com.ecomerce.entity.Order.OrderStatus.DELIVERING)
+            AND oi.order.status = com.ecomerce.entity.Order.OrderStatus.DELIVERED
             """)
     boolean hasPurchasedProduct(@Param("userId") Long userId, @Param("productId") Long productId);
 }

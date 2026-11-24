@@ -20,6 +20,14 @@ function EyeIcon({ open }: { open: boolean }) {
   );
 }
 
+const OAUTH_ERRORS: Record<string, string> = {
+  oauth: "Google or Facebook sign-in did not finish. Please try again.",
+  account_exists:
+    "An account with that email already exists and was created another way. Sign in with your email and password instead. We never merge accounts automatically, to keep yours safe.",
+  email_not_verified: "Google did not confirm that email address, so we could not sign you in with it.",
+  suspended: "This account is suspended. Please contact the shop.",
+};
+
 export default function LoginPage() {
   const { login, isAuthenticated, isAdmin } = useAuth();
   const navigate = useNavigate();
@@ -27,11 +35,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState(
-    searchParams.get("error") === "oauth"
-      ? "Google or Facebook sign-in did not finish. Please try again."
-      : ""
-  );
+  const [error, setError] = useState(OAUTH_ERRORS[searchParams.get("error") ?? ""] ?? "");
   const [loading, setLoading] = useState(false);
 
   const next = safeNextPath(searchParams.get("next"));

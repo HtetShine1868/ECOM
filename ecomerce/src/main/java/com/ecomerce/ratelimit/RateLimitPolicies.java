@@ -38,7 +38,8 @@ public class RateLimitPolicies {
         boolean get = "GET".equalsIgnoreCase(method);
         boolean post = "POST".equalsIgnoreCase(method);
 
-        if (post && ("/api/auth/login".equals(path) || "/api/auth/register".equals(path))) {
+        if (post && ("/api/auth/login".equals(path) || "/api/auth/register".equals(path)
+                || "/api/auth/resend-verification".equals(path) || "/api/auth/verify-email".equals(path))) {
             return Optional.of(policy("auth", false));
         }
         if (post && "/api/orders".equals(path)) {
@@ -49,6 +50,12 @@ public class RateLimitPolicies {
         }
         if (path.startsWith("/api/admin/")) {
             return Optional.of(policy("admin", true));
+        }
+        if (post && "/api/recommendations/events".equals(path)) {
+            return Optional.of(policy("events", false));
+        }
+        if (!get && (path.startsWith("/api/reviews") || (path.startsWith("/api/products/") && path.endsWith("/reviews")))) {
+            return Optional.of(policy("review", true));
         }
         if (post && "/api/chat".equals(path)) {
             return Optional.of(policy("chat", false));
@@ -82,6 +89,8 @@ public class RateLimitPolicies {
             case "product" -> 400;
             case "admin" -> 600;
             case "chat" -> 30;
+            case "events" -> 200;
+            case "review" -> 20;
             default -> 100;
         };
     }

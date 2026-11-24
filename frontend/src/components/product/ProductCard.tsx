@@ -5,13 +5,19 @@ import { useCart } from "../../context/CartContext";
 import { formatMMK } from "../../utils/format";
 import { productImageSrc } from "../../utils/image";
 import { categoryChipClass } from "../../utils/category";
+import { Stars } from "../ui/Stars";
+import { recommendationsApi } from "../../api/recommendations";
 
 interface ProductCardProps {
   product: Product;
   isPopular?: boolean;
+  /** Why this was recommended, shown under the name. */
+  reason?: string;
+  /** The card was opened from search results; the click is reported for recommendations. */
+  fromSearch?: boolean;
 }
 
-export default function ProductCard({ product, isPopular }: ProductCardProps) {
+export default function ProductCard({ product, isPopular, reason, fromSearch }: ProductCardProps) {
   const { addItem } = useCart();
   const [added, setAdded] = useState(false);
   const isOutOfStock = product.stock === 0;
@@ -29,6 +35,9 @@ export default function ProductCard({ product, isPopular }: ProductCardProps) {
   return (
     <Link
       to={`/products/${product.id}`}
+      onClick={() => {
+        if (fromSearch) void recommendationsApi.trackEvent(product.id, "SEARCH_CLICK");
+      }}
       className="shop-card group flex min-w-0 flex-col overflow-hidden transition duration-200 hover:-translate-y-0.5 hover:border-primary-300"
     >
       <div className="relative aspect-[4/3] overflow-hidden bg-stone-100 dark:bg-surface-800">
@@ -73,17 +82,16 @@ export default function ProductCard({ product, isPopular }: ProductCardProps) {
         <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-stone-900 sm:text-base dark:text-stone-50">
           {product.name}
         </h3>
-        {product.averageRating != null && product.averageRating > 0 && (
-          <div className="mt-1 flex items-center gap-1 text-xs">
-            <span className="text-amber-500">★</span>
-            <span className="font-semibold text-stone-800 dark:text-stone-200">
-              {Number(product.averageRating).toFixed(1)}
-            </span>
+        {product.averageRating != null && product.averageRating > 0 ? (
+          <div className="mt-1 flex items-center gap-1.5 text-xs">
+            <Stars value={product.averageRating} size={13} />
+            <span className="font-semibold text-stone-800 dark:text-stone-200">{Number(product.averageRating).toFixed(1)}</span>
             {product.totalReviews != null && product.totalReviews > 0 && (
-              <span className="text-stone-400">({product.totalReviews})</span>
+              <span className="text-stone-500">({product.totalReviews})</span>
             )}
           </div>
-        )}
+        ) : null}
+        {reason && <p className="mt-1 text-[11px] font-medium text-primary-700 dark:text-primary-300">{reason}</p>}
         <p className="mt-1 line-clamp-2 flex-1 text-xs leading-relaxed text-stone-600 dark:text-stone-300">
           {product.description}
         </p>

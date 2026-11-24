@@ -2,8 +2,9 @@ package com.ecomerce.service;
 
 import com.ecomerce.entity.EmailVerificationToken;
 import com.ecomerce.entity.User;
+import com.ecomerce.exception.AccountSuspendedException;
+import com.ecomerce.exception.EmailNotVerifiedException;
 import com.ecomerce.exception.ResourceNotFoundException;
-import com.ecomerce.exception.UnauthorizedException;
 import com.ecomerce.repository.EmailVerificationTokenRepository;
 import com.ecomerce.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -38,6 +39,16 @@ public class AccountVerificationService {
     @Value("${app.frontend.url:http://localhost:5173}")
     private String frontendUrl;
 
+    private final com.ecomerce.mail.MailService mailService;
+
+    /** Same rule as {@link #requireVerifiedEmail} without exceptions, for "can this shopper..." checks. */
+    @Transactional(readOnly = true)
+    public boolean isVerifiedAndActive(Long userId) {
+        return userRepository.findById(userId)
+                .map(u -> u.getAccountStatus() != User.AccountStatus.SUSPENDED && Boolean.TRUE.equals(u.getEmailVerified()))
+                .orElse(false);
+    }
+
     /**
      * Enforce verified email & active account. Throws UnauthorizedException with specific error code if unverified.
      */
@@ -47,11 +58,11 @@ public class AccountVerificationService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found: " + userId));
 
         if (user.getAccountStatus() == User.AccountStatus.SUSPENDED) {
-            throw new UnauthorizedException("Your account is suspended. Please contact support.");
+            throw new AccountSuspendedException();
         }
 
         if (!Boolean.TRUE.equals(user.getEmailVerified())) {
-            throw new UnauthorizedException("EMAIL_NOT_VERIFIED: Please verify your email address to proceed with this action.");
+            throw new EmailNotVerifiedException();
         }
     }
 
@@ -118,7 +129,12 @@ public class AccountVerificationService {
             return;
         }
 
-        createAndSendVerificationToken(user);
+        try {
+            createAndSendVerificationToken(user);
+        } catch (IllegalStateException cooldown) {
+            // Same answer whether or not an email went out: the caller learns nothing about the account.
+            log.info("Resend verification skipped (cooldown) for user {}", user.getId());
+        }
     }
 
     /**
@@ -156,11 +172,21 @@ public class AccountVerificationService {
     }
 
     private void sendVerificationEmail(String toEmail, String name, String rawToken) {
-        String verifyUrl = frontendUrl + "/verify-email?token=" + rawToken;
-        log.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-        log.info("📧 EMAIL VERIFICATION LINK FOR {}:", toEmail);
-        log.info("👉 {}", verifyUrl);
-        log.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        String base = frontendUrl.endsWith("/") ? frontendUrl.substring(0, frontendUrl.length() - 1) : frontendUrl;
+        String verifyUrl = base + "/verify-email?token=" + rawToken;
+        // Send only after the transaction commits, so the link can never arrive before its token exists.
+        Runnable send = () -> mailService.sendVerificationEmail(toEmail, name, verifyUrl, tokenTtlHours);
+        if (org.springframework.transaction.support.TransactionSynchronizationManager.isSynchronizationActive()) {
+            org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(
+                    new org.springframework.transaction.support.TransactionSynchronization() {
+                        @Override
+                        public void afterCommit() {
+                            send.run();
+                        }
+                    });
+        } else {
+            send.run();
+        }
     }
 
     private String sha256(String input) {

@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
@@ -33,10 +34,26 @@ public class StorageService {
      * The public URL is the only thing stored in PostgreSQL (products.image_url).
      */
     public String uploadProductImage(MultipartFile file) throws IOException {
+        return upload(file, "");
+    }
+
+    /** Review photos live under reviews/ in the same bucket. */
+    public String uploadReviewImage(MultipartFile file) throws IOException {
+        return upload(file, "reviews/");
+    }
+
+    /** True only for URLs this application produced for review photos (never arbitrary external URLs). */
+    public boolean isReviewImageUrl(String url) {
+        if (url == null || url.length() > 500) return false;
+        String prefix = ImageUrls.storageRoot(supabaseUrl) + "/storage/v1/object/public/" + bucket + "/reviews/";
+        return url.startsWith(prefix) && url.indexOf("..", prefix.length()) < 0 && url.indexOf('?') < 0 && url.indexOf('#') < 0;
+    }
+
+    private String upload(MultipartFile file, String folder) throws IOException {
         byte[] bytes = file == null ? new byte[0] : file.getBytes();
         DetectedImage image = detectImage(file, bytes);
 
-        String filename = UUID.randomUUID() + "." + image.extension();
+        String filename = folder + UUID.randomUUID() + "." + image.extension();
         String uploadUrl = ImageUrls.storageRoot(supabaseUrl) + "/storage/v1/object/" + bucket + "/" + filename;
 
         HttpHeaders headers = new HttpHeaders();
@@ -53,6 +70,10 @@ public class StorageService {
         } catch (RestClientResponseException ex) {
             log.error("Supabase image upload failed: {} {}", ex.getStatusCode(), ex.getResponseBodyAsString());
             throw new IllegalArgumentException("The image could not be stored. Try a different JPEG, PNG, or WebP file.");
+        } catch (RestClientException ex) {
+            // Storage unreachable or timing out: say so, instead of an unexplained server error.
+            log.error("Supabase storage unreachable: {}", ex.getClass().getSimpleName());
+            throw new IllegalArgumentException("Photo upload is unavailable right now. Please try again in a moment, or post without photos.");
         }
 
         if (!response.getStatusCode().is2xxSuccessful()) {

@@ -36,6 +36,18 @@ public class RecommendationController {
         return ResponseEntity.ok(recommendationService.getPersonalizedRecommendations(userId, limit));
     }
 
+    /** "You may also like" for the signed-in shopper's bag. Anonymous visitors get popular products. */
+    @GetMapping("/for-cart")
+    public ResponseEntity<List<RecommendationItemResponse>> getForCart(
+            @RequestParam(defaultValue = "6") int limit,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        if (userDetails == null) {
+            return ResponseEntity.ok(recommendationService.getPopularProducts(limit));
+        }
+        User user = authService.requireByEmail(userDetails.getUsername());
+        return ResponseEntity.ok(recommendationService.getCartRecommendations(user.getId(), limit));
+    }
+
     @GetMapping("/related/{productId}")
     public ResponseEntity<List<RecommendationItemResponse>> getRelated(
             @PathVariable("productId") Long productId,
@@ -80,6 +92,9 @@ public class RecommendationController {
                 userId = user.getId();
             } catch (Exception ignored) {
             }
+        }
+        if (!com.ecomerce.service.UserActivityService.isClientReportable(request.getEventType())) {
+            throw new IllegalArgumentException("That event type is recorded by the server.");
         }
         activityService.recordEvent(userId, request.getProductId(), request.getEventType(), request.getSessionId());
         return ResponseEntity.accepted().build();

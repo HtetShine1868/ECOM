@@ -130,6 +130,8 @@ export interface Review {
   userId: number;
   userName: string;
   productId: number;
+  productName?: string;
+  productImageUrl?: string | null;
   rating: number;
   title?: string;
   comment?: string;

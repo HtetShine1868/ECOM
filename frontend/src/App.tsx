@@ -21,6 +21,9 @@ import AdminDashboardPage from "./pages/AdminDashboardPage"
 import OAuth2CallbackPage from "./pages/OAuth2CallbackPage"
 import ArchitecturePage from "./pages/ArchitecturePage"
 import VerifyEmailPage from "./pages/VerifyEmailPage"
+import { JUST_REGISTERED } from "./pages/RegisterPage"
+import AccountPage from "./pages/AccountPage"
+import VerifyEmailBanner from "./components/account/VerifyEmailBanner"
 
 function isPublicPath(pathname: string) {
   return (
@@ -31,6 +34,15 @@ function isPublicPath(pathname: string) {
     pathname === "/oauth2/callback" ||
     pathname === "/architecture"
   )
+}
+
+/** Signed-in user on /register: straight after signup go verify the email, otherwise go home. */
+function AfterRegister() {
+  // Read only: React StrictMode renders twice, so the flag is cleared by the verify page instead.
+  const fresh = sessionStorage.getItem(JUST_REGISTERED) === "1"
+  return fresh
+    ? <Navigate to="/verify-email" replace state={{ justRegistered: true }} />
+    : <Navigate to="/" replace />
 }
 
 function AppLayout() {
@@ -64,13 +76,14 @@ function AppLayout() {
   return (
     <div className="linen flex min-h-screen min-w-0 flex-col">
       <Navbar />
+      <VerifyEmailBanner />
       <CartDrawer />
       <CartToast />
       <main className="min-w-0 flex-1 pb-8">
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/login" element={<Navigate to="/" replace />} />
-          <Route path="/register" element={<Navigate to="/" replace />} />
+          <Route path="/register" element={<AfterRegister />} />
           <Route path="/verify-email" element={<VerifyEmailPage />} />
           <Route path="/oauth2/callback" element={<OAuth2CallbackPage />} />
           <Route
@@ -102,6 +115,14 @@ function AppLayout() {
             element={
               <RequireAuth>
                 <ReceiptPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/account"
+            element={
+              <RequireAuth>
+                <AccountPage />
               </RequireAuth>
             }
           />

@@ -42,6 +42,16 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.NOT_FOUND, ex.getCode(), ex.getMessage(), null);
     }
 
+    @ExceptionHandler(EmailNotVerifiedException.class)
+    public ResponseEntity<ApiError> handleEmailNotVerified(EmailNotVerifiedException ex) {
+        return build(HttpStatus.FORBIDDEN, "EMAIL_NOT_VERIFIED", ex.getMessage(), null);
+    }
+
+    @ExceptionHandler(AccountSuspendedException.class)
+    public ResponseEntity<ApiError> handleSuspended(AccountSuspendedException ex) {
+        return build(HttpStatus.FORBIDDEN, "ACCOUNT_SUSPENDED", ex.getMessage(), null);
+    }
+
     @ExceptionHandler(UnauthorizedException.class)
     public ResponseEntity<ApiError> handleUnauthorized(UnauthorizedException ex) {
         return build(HttpStatus.FORBIDDEN, "FORBIDDEN", ex.getMessage(), null);

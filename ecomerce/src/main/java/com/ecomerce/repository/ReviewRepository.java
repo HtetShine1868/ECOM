@@ -31,4 +31,11 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     Double getAverageRating(@Param("productId") Long productId);
 
     long countByProductId(Long productId);
+
+    /**
+     * Serialises review writes per product so the rating summary is always recomputed from a
+     * consistent set of rows. The lock is released automatically when the transaction ends.
+     */
+    @Query(value = "SELECT 1 FROM (SELECT pg_advisory_xact_lock(:key)) AS locked", nativeQuery = true)
+    int lockProductForRatingUpdate(@Param("key") long key);
 }

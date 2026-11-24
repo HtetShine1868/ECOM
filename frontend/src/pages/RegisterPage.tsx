@@ -20,6 +20,8 @@ function EyeIcon({ open }: { open: boolean }) {
   );
 }
 
+export const JUST_REGISTERED = "shopnow-just-registered";
+
 export default function RegisterPage() {
   const { register, isAuthenticated } = useAuth();
   const navigate = useNavigate();
@@ -54,8 +56,11 @@ export default function RegisterPage() {
 
     setLoading(true);
     try {
+      // Registering signs the user in, and the router then redirects signed-in users away from
+      // /register. This flag tells that redirect to go to /verify-email instead of home.
+      sessionStorage.setItem(JUST_REGISTERED, "1");
       await register(name, email, password);
-      navigate("/verify-email");
+      navigate("/verify-email", { state: { justRegistered: true }, replace: true });
     } catch (err: unknown) {
       const msg =
         err && typeof err === "object" && "message" in err

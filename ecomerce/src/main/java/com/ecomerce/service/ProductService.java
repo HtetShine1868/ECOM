@@ -42,6 +42,7 @@ public class ProductService {
     private final StorageService storageService;
     private final ProductCacheService productCacheService;
     private final AuditService auditService;
+    private final RatingEnricher ratingEnricher;
 
     /**
      * Returns a filtered, paginated list of products.
@@ -81,7 +82,9 @@ public class ProductService {
             }
             return cb.and(predicates.toArray(new Predicate[0]));
         };
-        return productRepository.findAll(spec, pageable).map(ProductResponse::from);
+        Page<ProductResponse> page = productRepository.findAll(spec, pageable).map(ProductResponse::from);
+        ratingEnricher.enrichAll(page.getContent());
+        return page;
     }
 
     /**
@@ -127,7 +130,7 @@ public class ProductService {
 
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> ResourceNotFoundException.product(id));
-        ProductResponse response = ProductResponse.from(product);
+        ProductResponse response = ratingEnricher.enrich(ProductResponse.from(product));
         productCacheService.putProduct(response);
         return response;
     }
@@ -278,8 +281,10 @@ public class ProductService {
             Long productId = ((Number) row[0]).longValue();
             Long totalSold = ((Number) row[1]).longValue();
 
-            productRepository.findById(productId).ifPresent(product ->
-                    result.add(toBestSeller(product, totalSold)));
+            // Deleted (deactivated) products keep their sales history but must never be shown to shoppers.
+            productRepository.findById(productId)
+                    .filter(product -> !preferInStock || Boolean.TRUE.equals(product.getActive()))
+                    .ifPresent(product -> result.add(toBestSeller(product, totalSold)));
         }
 
         if (!preferInStock) {

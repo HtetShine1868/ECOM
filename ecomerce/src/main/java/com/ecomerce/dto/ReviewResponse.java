@@ -15,6 +15,8 @@ public class ReviewResponse {
     private Long userId;
     private String userName;
     private Long productId;
+    private String productName;
+    private String productImageUrl;
     private Short rating;
     private String title;
     private String comment;
@@ -29,6 +31,8 @@ public class ReviewResponse {
                 .userId(review.getUser().getId())
                 .userName(anonymizeUserName(review.getUser().getName()))
                 .productId(review.getProduct().getId())
+                .productName(review.getProduct().getName())
+                .productImageUrl(com.ecomerce.service.ImageUrls.reachable(review.getProduct().getImageUrl()))
                 .rating(review.getRating())
                 .title(review.getTitle())
                 .comment(review.getComment())

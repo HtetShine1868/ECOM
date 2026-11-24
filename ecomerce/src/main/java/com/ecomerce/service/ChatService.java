@@ -37,15 +37,10 @@ public class ChatService {
     private final DeliveryZoneService deliveryZoneService;
     private final CategoryRepository categoryRepository;
     private final ChatSkills chatSkills;
-    private final com.ecomerce.ai.GeminiShopAssistant gemini;
 
-    /**
-     * Gemini answers first (understands any phrasing and uses live shop data through functions).
-     * If Gemini is not configured or unavailable, the built-in skills and rule-based matcher reply.
-     */
+    /** Rule-based and instant: the shopper-specific skills first, then the general matcher. */
     public ChatResponse reply(ChatRequest request) {
-        ChatResponse response = gemini.reply(request)
-                .or(() -> chatSkills.answer(request.getMessage(), this::toCard))
+        ChatResponse response = chatSkills.answer(request.getMessage(), this::toCard)
                 .orElseGet(() -> replyCore(request));
         return withSuggestions(response);
     }

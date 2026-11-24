@@ -37,7 +37,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         if (StringUtils.hasText(token) && jwtUtil.isTokenValid(token)) {
             String email = jwtUtil.extractEmail(token);
-            userRepository.findByEmail(email).ifPresent(user -> authenticate(request, user));
+            // A suspended account is signed out everywhere: its existing tokens stop working.
+            userRepository.findByEmail(email)
+                    .filter(user -> user.getAccountStatus() != User.AccountStatus.SUSPENDED)
+                    .ifPresent(user -> authenticate(request, user));
         }
 
         filterChain.doFilter(request, response);

@@ -53,4 +53,11 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
      */
     @Query(value = "SELECT id, stock, active FROM products WHERE id = :productId", nativeQuery = true)
     List<Object[]> findStockSnapshot(@Param("productId") Long productId);
+
+    /** Products that can be recommended for purchase: sold in the shop and in stock. */
+    @Query("SELECT p FROM Product p LEFT JOIN FETCH p.category WHERE p.active = TRUE AND p.stock > 0")
+    List<Product> findRecommendable(org.springframework.data.domain.Pageable pageable);
+
+    @Query("SELECT p FROM Product p LEFT JOIN FETCH p.category WHERE p.id IN :ids")
+    List<Product> findAllWithCategory(@Param("ids") java.util.Collection<Long> ids);
 }

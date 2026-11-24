@@ -31,4 +31,8 @@ public interface UserProductEventRepository extends JpaRepository<UserProductEve
     @Query("SELECT e.product.id, SUM(e.eventWeight) FROM UserProductEvent e " +
            "WHERE e.createdAt >= :since GROUP BY e.product.id ORDER BY SUM(e.eventWeight) DESC")
     List<Object[]> findPopularProductScores(@Param("since") OffsetDateTime since, Pageable pageable);
+
+    @Query("SELECT e FROM UserProductEvent e JOIN FETCH e.product p LEFT JOIN FETCH p.category " +
+           "WHERE e.user.id = :userId AND e.createdAt >= :since ORDER BY e.createdAt DESC")
+    List<UserProductEvent> findByUserSince(@Param("userId") Long userId, @Param("since") OffsetDateTime since, Pageable pageable);
 }

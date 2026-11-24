@@ -224,6 +224,7 @@ export default function ProductsPage() {
                 key={product.id}
                 product={product}
                 isPopular={sort === "popular" && (product.unitsSold ?? 0) > 0}
+                fromSearch={search.trim().length > 0}
               />
             ))}
           </div>

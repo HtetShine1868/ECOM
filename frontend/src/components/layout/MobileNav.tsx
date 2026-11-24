@@ -32,6 +32,9 @@ export default function MobileNav() {
           <p className="truncate text-sm font-semibold text-stone-900 dark:text-stone-50">{user?.name}</p>
           {user?.email && <p className="truncate text-xs text-stone-500">{user.email}</p>}
           <div className="mt-3 flex flex-col gap-2">
+            <Link to="/account" className="btn-secondary w-full" onClick={() => setAccountOpen(false)}>
+              Account and reviews
+            </Link>
             {isAdmin && (
               <Link to="/admin" className="btn-secondary w-full" onClick={() => setAccountOpen(false)}>
                 Admin

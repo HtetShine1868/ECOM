@@ -19,11 +19,6 @@ public class ProductRatingSummary {
     @Column(name = "product_id")
     private Long productId;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @MapsId
-    @JoinColumn(name = "product_id")
-    private Product product;
-
     @Column(name = "average_rating", nullable = false, precision = 3, scale = 2)
     @Builder.Default
     private BigDecimal averageRating = BigDecimal.ZERO;

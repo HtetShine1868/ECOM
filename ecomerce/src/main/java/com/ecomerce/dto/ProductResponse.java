@@ -27,6 +27,9 @@ public class ProductResponse {
     private String categoryName;
     private String category; // alias for frontend compatibility
     private Long unitsSold;
+    /** Average review rating (0 when unrated). Filled in by RatingEnricher, not by from(). */
+    private Double averageRating;
+    private Integer totalReviews;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 

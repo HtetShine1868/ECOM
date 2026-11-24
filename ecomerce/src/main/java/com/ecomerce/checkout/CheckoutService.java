@@ -216,8 +216,6 @@ public class CheckoutService {
         order.setOrderItems(items);
         Order saved = orderRepository.saveAndFlush(order);
 
-        userActivityService.recordOrderPlaced(saved);
-
         outboxService.recordOrderCreated(OrderCreatedEvent.of(
                 UUID.randomUUID(), saved.getId(), userId, OffsetDateTime.now(), RequestIdFilter.currentRequestId()));
 
@@ -230,6 +228,7 @@ public class CheckoutService {
         afterCommit(() -> {
             productCacheService.evictProducts(purchased); // cached stock is now stale
             cartService.removePurchased(userId, purchased);
+            userActivityService.recordPurchase(userId, purchased); // best effort; never affects the order
         });
         return OrderResponse.from(saved);
     }

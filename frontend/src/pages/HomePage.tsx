@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { productApi, bestSellerToProduct } from "../api/products";
+import { productApi } from "../api/products";
 import { recommendationsApi } from "../api/recommendations";
 import type { Category } from "../api/products";
 import type { Product, PageResponse, RecommendationItem } from "../types";
 import ProductCard from "../components/product/ProductCard";
+import RecommendationRail from "../components/product/RecommendationRail";
+import { useAuth } from "../context/AuthContext";
 import PopularShowcase from "../components/product/PopularShowcase";
 import { categoryKind } from "../utils/category";
 
@@ -18,42 +20,37 @@ const PROMISES = [
 
 export default function HomePage() {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const [search, setSearch] = useState("");
   const [categories, setCategories] = useState<Category[]>([]);
   const [popular, setPopular] = useState<Product[]>([]);
   const [recent, setRecent] = useState<Product[]>([]);
-  const [recommended, setRecommended] = useState<RecommendationItem[]>([]);
+  const [forYou, setForYou] = useState<RecommendationItem[]>([]);
   const [recentlyViewed, setRecentlyViewed] = useState<RecommendationItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
     setLoading(true);
-    const emptyPage: PageResponse<Product> = { content: [], totalElements: 0, totalPages: 0, size: 0, number: 0 };
+    const none: RecommendationItem[] = [];
     Promise.all([
-      productApi.getBestSellers(8).catch(() => []),
-      productApi.getPage({ sort: "popular", page: 0, size: 8 }).catch(() => emptyPage),
+      recommendationsApi.getPopular(8).catch(() => none),
       productApi.getPage({ sort: "newest", page: 0, size: 8 }),
       productApi.getCategories().catch(() => []),
-      recommendationsApi.getForYou(8).catch(() => []),
-      recommendationsApi.getRecentlyViewed(undefined, 4).catch(() => []),
+      isAuthenticated ? recommendationsApi.getForYou(8).catch(() => none) : Promise.resolve(none),
+      recommendationsApi.getRecentlyViewed(4).catch(() => none),
     ])
-      .then(([sellers, ranked, newestPage, cats, forYou, viewed]) => {
-        const fromSales = (Array.isArray(sellers) ? sellers : []).map(bestSellerToProduct);
-        const fromRank = ranked.content ?? [];
-        const newest = newestPage.content ?? [];
-        const picks = fromSales.length > 0 ? fromSales : fromRank.length > 0 ? fromRank : newest;
-        setPopular(picks.slice(0, 8));
-        setRecent(newest);
+      .then(([pop, newestPage, cats, mine, viewed]) => {
+        setPopular((Array.isArray(pop) ? pop : []).map((r) => r.product));
+        setRecent(newestPage.content ?? []);
         setCategories(Array.isArray(cats) ? cats : []);
-        setRecommended(Array.isArray(forYou) ? forYou : []);
+        // "For you" is only shown when it really is personalised; otherwise it would just repeat Popular.
+        setForYou((Array.isArray(mine) ? mine : []).filter((r) => r.recommendationType === "FOR_YOU"));
         setRecentlyViewed(Array.isArray(viewed) ? viewed : []);
       })
-      .catch(() => {
-        setError("Unable to load products. Please make sure the server is running.");
-      })
+      .catch(() => setError("Unable to load products. Please make sure the server is running."))
       .finally(() => setLoading(false));
-  }, []);
+  }, [isAuthenticated]);
 
   const submitSearch = (event: React.FormEvent) => {
     event.preventDefault();
@@ -62,8 +59,8 @@ export default function HomePage() {
   };
 
   const loved = popular.some((product) => (product.unitsSold ?? 0) > 0);
-  const popularIds = new Set(popular.map((product) => product.id));
-  const fresh = recent.filter((product) => !popularIds.has(product.id)).slice(0, 4);
+  const shownIds = new Set([...popular, ...forYou.map((r) => r.product)].map((product) => product.id));
+  const fresh = recent.filter((product) => !shownIds.has(product.id)).slice(0, 4);
 
   return (
     <div className="mx-auto max-w-7xl px-4 pb-16 pt-5 md:px-6 md:pb-12 md:pt-8">
@@ -133,6 +130,25 @@ export default function HomePage() {
         </div>
       </section>
 
+      {!loading && !error && (
+        <>
+          <RecommendationRail
+            title="Recommended for you"
+            hint="Picked from what you have browsed, added and bought."
+            items={forYou}
+            max={4}
+            action={{ label: "Browse shop", onClick: () => navigate("/products") }}
+          />
+          <RecommendationRail
+            title="Recently viewed"
+            hint="Pick up where you left off."
+            items={recentlyViewed}
+            max={4}
+            showReasons={false}
+          />
+        </>
+      )}
+
       {loading ? (
         <div className="mt-6 overflow-hidden rounded-3xl border border-primary-100 bg-primary-50 px-5 py-6 sm:px-7 dark:border-surface-800 dark:bg-surface-800">
           <div className="h-3 w-24 animate-pulse rounded-full bg-stone-200 dark:bg-white/10" />
@@ -151,7 +167,7 @@ export default function HomePage() {
       ) : error ? (
         <p className="mt-12 text-center text-sm text-red-600">{error}</p>
       ) : popular.length > 0 ? (
-        <div className="mt-6">
+        <div className="mt-10">
           <PopularShowcase
             products={popular}
             loved={loved}
@@ -162,38 +178,6 @@ export default function HomePage() {
         <div className="mt-10">
           <EmptyShelf message="Products show up here once the shop has something on the shelf." />
         </div>
-      )}
-
-      {!loading && !error && recommended.length > 0 && (
-        <section className="mt-12">
-          <SectionHead
-            title="Recommended for you"
-            hint="Personalized suggestions based on your shopping activities."
-            action="Browse shop"
-            onAction={() => navigate("/products")}
-          />
-          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-            {recommended.map((item) => (
-              <ProductCard key={item.product.id} product={item.product} />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {!loading && !error && recentlyViewed.length > 0 && (
-        <section className="mt-12">
-          <SectionHead
-            title="Recently viewed"
-            hint="Items you looked at recently."
-            action="Browse shop"
-            onAction={() => navigate("/products")}
-          />
-          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-            {recentlyViewed.map((item) => (
-              <ProductCard key={item.product.id} product={item.product} />
-            ))}
-          </div>
-        </section>
       )}
 
       {!loading && !error && fresh.length > 0 && (

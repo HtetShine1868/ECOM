@@ -38,6 +38,15 @@ public class ReviewController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    /** Step 1 of posting a review with photos: upload them, then send the returned URLs with the review. */
+    @PostMapping(value = "/reviews/images", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Map<String, java.util.List<String>>> uploadImages(
+            @RequestParam("files") java.util.List<org.springframework.web.multipart.MultipartFile> files,
+            @AuthenticationPrincipal UserDetails userDetails) throws java.io.IOException {
+        User user = authService.requireByEmail(userDetails.getUsername());
+        return ResponseEntity.ok(Map.of("urls", reviewService.uploadImages(user.getId(), files)));
+    }
+
     @GetMapping("/products/{id}/reviews")
     public ResponseEntity<Page<ReviewResponse>> getProductReviews(
             @PathVariable("id") Long productId,
@@ -53,15 +62,15 @@ public class ReviewController {
     }
 
     @GetMapping("/products/{id}/review-eligibility")
-    public ResponseEntity<Map<String, Boolean>> checkEligibility(
+    public ResponseEntity<Map<String, Object>> checkEligibility(
             @PathVariable("id") Long productId,
             @AuthenticationPrincipal UserDetails userDetails) {
         if (userDetails == null) {
-            return ResponseEntity.ok(Map.of("eligible", false));
+            return ResponseEntity.ok(Map.of("eligible", false, "reason", "SIGN_IN"));
         }
         User user = authService.requireByEmail(userDetails.getUsername());
         boolean eligible = reviewService.checkEligibility(user.getId(), productId);
-        return ResponseEntity.ok(Map.of("eligible", eligible));
+        return ResponseEntity.ok(Map.of("eligible", eligible, "reason", eligible ? "OK" : reviewService.ineligibleReason(user.getId(), productId)));
     }
 
     @PutMapping("/reviews/{id}")

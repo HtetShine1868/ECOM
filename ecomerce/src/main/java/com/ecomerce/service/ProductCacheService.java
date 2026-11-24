@@ -49,6 +49,8 @@ public class ProductCacheService {
     static final String PRODUCT_PREFIX = "product:";
     static final String CATEGORIES_ALL_KEY = "categories:all";
     static final String POPULAR_PREFIX = "products:popular:";
+    static final String RATING_PREFIX = "product:rating:";
+    public static final String REC_PREFIX = "recommendations:";
 
     private final StringRedisTemplate redis;
     private final RedisAvailability redisAvailability;
@@ -66,6 +68,9 @@ public class ProductCacheService {
 
     @Value("${app.cache.ttl.listing-seconds:120}")
     private long listingTtlSeconds;
+
+    @Value("${app.cache.ttl.rating-seconds:600}")
+    private long ratingTtlSeconds;
 
     // ─── Products ────────────────────────────────────────────────────────────
 
@@ -103,10 +108,48 @@ public class ProductCacheService {
 
     public void evictListings() {
         redisAvailability.run("evictListings", () -> deleteByPattern(POPULAR_PREFIX + "*"));
+        evictRecommendations(); // product, price, stock or sales changed
     }
 
     static String popularKey(Long categoryId, int limit) {
         return POPULAR_PREFIX + (categoryId == null ? "all" : categoryId) + ":" + limit;
+    }
+
+    // ─── Rating summaries ───────────────────────────────────────────────────
+
+    public Optional<com.ecomerce.dto.RatingSummaryResponse> getRating(Long productId) {
+        return read(RATING_PREFIX + productId, new TypeReference<>() {});
+    }
+
+    public void putRating(com.ecomerce.dto.RatingSummaryResponse summary) {
+        if (summary == null || summary.getProductId() == null) return;
+        write(RATING_PREFIX + summary.getProductId(), summary, ratingTtlSeconds);
+    }
+
+    public void evictRating(Long productId) {
+        if (productId == null) return;
+        redisAvailability.run("evictRating", () -> redis.delete(RATING_PREFIX + productId));
+    }
+
+    // ─── Recommendation caches (ids and reasons only; price and stock are always re-read) ───
+
+    public <T> Optional<T> getCached(String key, TypeReference<T> type) {
+        return read(key, type);
+    }
+
+    public void putCached(String key, Object value, long ttlSeconds) {
+        write(key, value, ttlSeconds);
+    }
+
+    /** One person's recommendations (their activity changed). */
+    public void evictUserRecommendations(Long userId) {
+        if (userId == null) return;
+        redisAvailability.run("evictUserRecommendations", () -> redis.delete(REC_PREFIX + "user:" + userId));
+    }
+
+    /** Everything derived from products, sales or reviews: popular, related, bought-together, per-user. */
+    public void evictRecommendations() {
+        redisAvailability.run("evictRecommendations", () -> deleteByPattern(REC_PREFIX + "*"));
     }
 
     // ─── Categories ─────────────────────────────────────────────────────────

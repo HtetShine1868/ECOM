@@ -83,3 +83,49 @@ Run against a throwaway PostgreSQL 16 and Redis 7, then a real browser (Chrome) 
 - browser: add to bag, place order (double click makes one order), bag cleared, price-change banner blocks checkout until accepted, deactivated item blocks checkout
 
 Existing unit tests still compile and pass (`./mvnw test`).
+
+
+---
+
+# Accounts, reviews and recommendations
+
+## Email verification
+
+- Registering creates the account as `PENDING_EMAIL` / unverified and emails a single-use link (24 h). Only the SHA-256 **hash** of the token is stored. A newer link invalidates older ones.
+- An unverified shopper can browse, search, view products, use the bag and see their profile. **Checkout, placing orders and reviews are blocked** with `403 EMAIL_NOT_VERIFIED`, checked from the database on every request (never from the token or the client). Suspended accounts get `403 ACCOUNT_SUSPENDED`, cannot sign in, and their existing sessions stop working.
+- `POST /api/auth/verify-email`, `POST /api/auth/resend-verification` (60 s cooldown; the answer is identical whether or not the account exists, and nothing is sent to verified accounts).
+- **Email needs SMTP.** Set `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM`. Without `MAIL_HOST` nothing is emailed; the link is written to the server log (development only: anyone who can read the log could verify the account).
+- **Set `FRONTEND_URL` on Render**, otherwise the links in emails point at `localhost`.
+- Existing users: social-login accounts and admins are marked verified by the schema migration. Existing password accounts stay unverified and confirm by email.
+
+## Google and Facebook
+
+- A social identity is (provider, provider user id). Google must report `email_verified=true`; Google and Facebook accounts are active immediately with no extra email step.
+- **Accounts are never merged on a matching email.** If the email already belongs to a password account (or another provider), the social login is refused with `error=account_exists` and the shopper is told to sign in the original way. (This closes a takeover where someone registers a victim's email first.) Linking a second login method from inside a signed-in session is **not implemented**.
+
+## Reviews
+
+`GET /api/products/{id}/reviews` (page, size, `sortBy=newest|oldest|highest|lowest`), `GET /api/products/{id}/rating-summary`, `GET /api/products/{id}/review-eligibility` (returns `eligible` and a `reason`), `POST /api/products/{id}/reviews`, `PUT|DELETE /api/reviews/{id}`, `GET /api/users/me/reviews`, `POST /api/reviews/images` (upload photos first; the review then carries the returned URLs, and any other URL is rejected).
+
+- Eligible only if: signed in, email verified, not suspended, **an order containing the product is DELIVERED**, not already reviewed (one per customer per product; one per order item).
+- Public immediately, editable and deletable by the author only. No moderation.
+- The rating summary is recomputed from the reviews table under a per-product advisory lock, so simultaneous reviews cannot lose each other.
+- Product cards, listings and detail responses carry `averageRating` and `totalReviews`.
+- Photos need Supabase Storage (same bucket, `reviews/` prefix). Photos uploaded but never attached to a posted review are not cleaned up.
+
+## Recommendations
+
+Computed in Java from PostgreSQL. No external AI is required for them.
+
+`GET /api/recommendations/for-you | popular | related/{id} | frequently-bought/{id} | recently-viewed | for-cart` (limits are clamped; each item has a `recommendationType` and a short `reason`).
+
+- `finalScore = content*0.40 + behavior*0.30 + popularity*0.20 + rating*0.10`, each part 0-100, weights configurable.
+- Events are decayed by `weight * exp(-lambda * ageInDays)`. Interests are rebuilt each time, never frozen to one category. Brand, tags and attributes do not exist in the schema, so content matching uses category and price band.
+- Rules: active and in-stock only, never the current product, no duplicates, already-bought items left out of "for you", one category cannot fill more than half the list, ties break by units sold then id. Too little activity returns popular products labelled as such; "frequently bought together" shows only real co-purchases.
+- **Tracking:** the browser reports only `VIEW` and `SEARCH_CLICK`. `ADD_TO_CART` and `PURCHASE` are recorded by the server (a client sending them gets 400). Weights come from configuration. Purchases are recorded after the order commits, so tracking can never fail an order. `product_co_occurrences` counts each product pair once per order, canonical order.
+- **Redis** holds only product IDs, reasons and scores (`recommendations:user:{id}`, `:related:{id}`, `:popular`, `:frequently-bought:{id}`) and rating summaries (`product:rating:{id}`), with the TTLs from the spec. Price, stock and rating are re-read from PostgreSQL on every response. Caches are cleared after the database commit when a product, stock, purchase or review changes. Redis is optional.
+- Limitation: a cancelled order still counts toward co-purchases and purchase history.
+
+## Verification run for these features
+
+Against PostgreSQL 16 and Redis 7: 100 API checks (token hashing, single use, expiry, resend cooldown, suspended accounts, delivered-only eligibility, duplicate prevention, rating math under a 3-way concurrent race, privacy of reviewer names, event weights and dedupe, co-purchase counting, every recommendation rule, cache keys, TTLs and invalidation) and 35 real-browser checks (signup to verified, checkout gating, writing/editing/deleting a review, account page, every recommendation section, bag suggestions never auto-adding, mobile layout). **Not exercised live:** Google/Facebook sign-in, SMTP delivery, and review photo storage (they need real provider accounts); their code compiles and follows the rules above.

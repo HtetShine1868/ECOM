@@ -10,6 +10,8 @@ import java.time.OffsetDateTime;
 
 @Data
 @Builder
+@lombok.NoArgsConstructor
+@lombok.AllArgsConstructor
 public class RatingSummaryResponse {
     private Long productId;
     private BigDecimal averageRating;

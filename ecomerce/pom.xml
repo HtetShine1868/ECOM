@@ -115,6 +115,12 @@
 			<scope>test</scope>
 		</dependency>
 
+		<!-- Verification emails (SMTP) -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-mail</artifactId>
+		</dependency>
+
 		<!-- Redis (Lettuce) -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

@@ -32,11 +32,7 @@ public class CoOccurrenceService {
             for (int j = i + 1; j < sortedList.size(); j++) {
                 Long pA = sortedList.get(i);
                 Long pB = sortedList.get(j);
-                try {
-                    coOccurrenceRepository.incrementCoOccurrence(pA, pB);
-                } catch (Exception e) {
-                    log.warn("Failed to increment co-occurrence for products {} and {}: {}", pA, pB, e.getMessage());
-                }
+                coOccurrenceRepository.incrementCoOccurrence(pA, pB); // atomic upsert
             }
         }
     }

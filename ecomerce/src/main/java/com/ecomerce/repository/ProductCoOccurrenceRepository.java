@@ -22,4 +22,7 @@ public interface ProductCoOccurrenceRepository extends JpaRepository<ProductCoOc
                    "DO UPDATE SET co_purchase_count = product_co_occurrences.co_purchase_count + 1, updated_at = CURRENT_TIMESTAMP",
            nativeQuery = true)
     void incrementCoOccurrence(@Param("pA") Long productAId, @Param("pB") Long productBId);
+
+    @Query("SELECT c FROM ProductCoOccurrence c WHERE c.productAId IN :ids OR c.productBId IN :ids")
+    List<ProductCoOccurrence> findInvolving(@Param("ids") java.util.Collection<Long> ids);
 }

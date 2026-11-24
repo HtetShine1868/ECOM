@@ -47,6 +47,9 @@ public class AuthService {
                 !passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
             throw new BadCredentialsException("Invalid email or password");
         }
+        if (user.getAccountStatus() == User.AccountStatus.SUSPENDED) {
+            throw new com.ecomerce.exception.AccountSuspendedException();
+        }
 
         return new AuthSession(user, tokenFor(user));
     }

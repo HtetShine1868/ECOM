@@ -13,7 +13,24 @@ import org.springframework.security.web.authentication.SimpleUrlAuthenticationSu
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.time.OffsetDateTime;
+import java.util.Optional;
 
+/**
+ * Google / Facebook sign-in.
+ *
+ * Account rules:
+ * <ul>
+ *   <li>A social identity is the pair (provider, provider user id). That pair finds the account.</li>
+ *   <li>Accounts are <b>never merged on a matching email alone</b>. If the email already belongs to an
+ *       account that was created another way (password, or another provider), the login is refused with
+ *       {@code error=account_exists}. Otherwise anyone could register a victim's email with a password
+ *       first and take over the victim's later Google login.</li>
+ *   <li>Google must report {@code email_verified=true}; then the account is verified and active with no
+ *       extra email step. Facebook accounts are activated without further verification.</li>
+ *   <li>Suspended accounts cannot sign in.</li>
+ * </ul>
+ */
 @Component
 @RequiredArgsConstructor
 @Slf4j
@@ -35,59 +52,66 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
             String email = attr(oAuth2User, "email");
             String name = attr(oAuth2User, "name");
-            String providerId = "facebook".equals(provider)
-                    ? attr(oAuth2User, "id")
-                    : attr(oAuth2User, "sub");
+            String providerId = "facebook".equals(provider) ? attr(oAuth2User, "id") : attr(oAuth2User, "sub");
             if (providerId == null) {
                 providerId = attr(oAuth2User, "id");
             }
-            if ((email == null || email.isBlank()) && providerId != null) {
-                email = providerId + "@" + provider + ".oauth.local";
+            if (providerId == null || providerId.isBlank()) {
+                throw new IllegalStateException("OAuth provider did not return a user id");
+            }
+
+            if ("google".equals(provider) && !Boolean.parseBoolean(String.valueOf(oAuth2User.getAttribute("email_verified")))) {
+                log.warn("Google login refused: email is not verified by Google");
+                redirectSupport.sendBrowser(response, base + "/login?error=email_not_verified");
+                return;
             }
             if (email == null || email.isBlank()) {
-                throw new IllegalStateException("OAuth provider did not return an email or id");
+                // Facebook can omit the email; the provider id identifies the person.
+                email = providerId + "@" + provider + ".oauth.local";
             }
-
-            final String resolvedEmail = email.trim();
+            final String resolvedEmail = email.trim().toLowerCase();
             final String resolvedName = (name == null || name.isBlank()) ? resolvedEmail : name;
-            final String resolvedProviderId = providerId;
+            final String pid = providerId;
 
-            User user = userRepository.findByEmail(resolvedEmail).orElseGet(() -> {
-                if (resolvedProviderId != null) {
-                    var byProvider = userRepository.findByProviderAndProviderId(provider, resolvedProviderId);
-                    if (byProvider.isPresent()) return byProvider.get();
+            Optional<User> byIdentity = userRepository.findByProviderAndProviderId(provider, pid);
+            User user;
+            if (byIdentity.isPresent()) {
+                user = byIdentity.get();
+            } else {
+                Optional<User> byEmail = userRepository.findByEmail(resolvedEmail);
+                if (byEmail.isPresent()) {
+                    User existing = byEmail.get();
+                    boolean sameProviderLegacy = provider.equals(existing.getProvider()) && existing.getProviderId() == null;
+                    if (!sameProviderLegacy) {
+                        log.warn("{} login refused: email already belongs to a different sign-in method", provider);
+                        redirectSupport.sendBrowser(response, base + "/login?error=account_exists");
+                        return;
+                    }
+                    existing.setProviderId(pid); // older social account created before ids were stored
+                    user = existing;
+                } else {
+                    user = User.builder()
+                            .email(resolvedEmail)
+                            .name(resolvedName)
+                            .provider(provider)
+                            .providerId(pid)
+                            .role(User.Role.BUYER)
+                            .build();
                 }
-                User created = User.builder()
-                        .email(resolvedEmail)
-                        .name(resolvedName)
-                        .provider(provider)
-                        .providerId(resolvedProviderId)
-                        .role(User.Role.BUYER)
-                        .emailVerified(true)
-                        .emailVerifiedAt(java.time.OffsetDateTime.now())
-                        .accountStatus(User.AccountStatus.ACTIVE)
-                        .build();
-                return userRepository.save(created);
-            });
+            }
 
-            if (user.getProvider() == null) {
-                user.setProvider(provider);
+            if (user.getAccountStatus() == User.AccountStatus.SUSPENDED) {
+                redirectSupport.sendBrowser(response, base + "/login?error=suspended");
+                return;
             }
-            if (user.getProviderId() == null && resolvedProviderId != null) {
-                user.setProviderId(resolvedProviderId);
-            }
-            // Google/Facebook social accounts are verified by provider
             if (!Boolean.TRUE.equals(user.getEmailVerified())) {
                 user.setEmailVerified(true);
-                user.setEmailVerifiedAt(java.time.OffsetDateTime.now());
-                if (user.getAccountStatus() == User.AccountStatus.PENDING_EMAIL) {
-                    user.setAccountStatus(User.AccountStatus.ACTIVE);
-                }
+                user.setEmailVerifiedAt(OffsetDateTime.now());
             }
-            userRepository.save(user);
+            user.setAccountStatus(User.AccountStatus.ACTIVE);
+            user = userRepository.save(user);
 
-            String token = jwtUtil.generateToken(
-                    user.getEmail(), user.getRole().name(), user.getId(), user.getName());
+            String token = jwtUtil.generateToken(user.getEmail(), user.getRole().name(), user.getId(), user.getName());
             authCookieService.setTokenCookie(request, response, token);
             redirectSupport.sendBrowser(response, base + "/oauth2/callback");
         } catch (RuntimeException ex) {

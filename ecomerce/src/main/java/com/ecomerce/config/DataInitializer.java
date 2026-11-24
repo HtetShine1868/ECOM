@@ -56,6 +56,9 @@ public class DataInitializer implements ApplicationRunner {
                 .name("Administrator")
                 .passwordHash(passwordEncoder.encode(adminPassword))
                 .role(User.Role.ADMIN)
+                .emailVerified(true)
+                .emailVerifiedAt(java.time.OffsetDateTime.now())
+                .accountStatus(User.AccountStatus.ACTIVE)
                 .build();
         userRepository.save(admin);
         log.info("Admin account created: {}", adminEmail);

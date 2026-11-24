@@ -115,9 +115,13 @@ export default function Navbar() {
                 )}
               </button>
               <div className="hidden items-center gap-2 sm:flex">
-                <span className="max-w-[8rem] truncate text-sm font-medium text-stone-700 dark:text-stone-200">
+                <Link
+                  to="/account"
+                  className="max-w-[8rem] truncate text-sm font-medium text-stone-700 hover:text-primary-700 dark:text-stone-200 dark:hover:text-primary-300"
+                  title="Your account"
+                >
                   {user?.name}
-                </span>
+                </Link>
                 <button
                   onClick={() => {
                     logout();

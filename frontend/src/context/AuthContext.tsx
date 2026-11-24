@@ -23,6 +23,8 @@ interface AuthContextType {
   verifyEmail: (token: string) => Promise<User>;
   resendVerification: (email: string) => Promise<void>;
   completeOAuth: () => Promise<User>;
+  /** Re-read the signed-in user from the server (verification status can change in another tab). */
+  refreshUser: () => Promise<User | null>;
   logout: () => void;
 }
 
@@ -116,6 +118,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return next;
   }, []);
 
+  const refreshUser = useCallback(async () => {
+    try {
+      const next = toUser(await api.get<AuthResponse>("/auth/me", 0));
+      setUser(next);
+      return next;
+    } catch {
+      return null;
+    }
+  }, []);
+
   const logout = useCallback(() => {
     sessionGen.current += 1;
     void api.post("/auth/logout").catch(() => undefined);
@@ -137,6 +149,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         verifyEmail,
         resendVerification,
         completeOAuth,
+        refreshUser,
         logout,
       }}
     >

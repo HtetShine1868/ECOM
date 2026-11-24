@@ -43,6 +43,7 @@ public class CartService {
     private final PostgresCartStore postgresStore;
     private final RedisAvailability redisAvailability;
     private final ProductRepository productRepository;
+    private final com.ecomerce.service.UserActivityService activityService;
 
     @Value("${app.cart.max-quantity-per-item:99}")
     private int maxQuantityPerItem;
@@ -70,6 +71,7 @@ public class CartService {
         if (result < 0) {
             throw new IllegalArgumentException("Your bag can hold up to " + maxDistinctItems + " different products.");
         }
+        activityService.recordCartAdd(userId, productId);
         return getCart(userId);
     }
 
