@@ -3,7 +3,7 @@ package com.ecomerce.security;
 import org.springframework.stereotype.Component;
 
 import java.security.SecureRandom;
-import java.util.Base64;
+import java.util.HexFormat;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -27,7 +27,8 @@ public class OAuthLoginCodeStore {
         purgeExpired();
         byte[] bytes = new byte[32];
         RANDOM.nextBytes(bytes);
-        String code = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+        // Hex only: base64url can contain "--", which the SQL-injection guard rejects.
+        String code = HexFormat.of().formatHex(bytes);
         codes.put(code, new Entry(token, System.currentTimeMillis() + TTL_MS));
         return code;
     }

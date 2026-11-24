@@ -1,32 +1,46 @@
-﻿import { useEffect, useRef } from "react";
+﻿import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import type { User } from "../types";
 
 function homeForRole(role?: string) {
   return role === "ADMIN" ? "/admin" : "/";
 }
 
+/**
+ * Shared across mounts: signing in swaps the signed-out route tree for the
+ * signed-in one, which mounts this page a second time. The second mount must
+ * wait for the same exchange instead of starting a new one without the code.
+ */
+let pending: Promise<User> | null = null;
+
 export default function OAuth2CallbackPage() {
-  const { completeOAuth } = useAuth();
+  const { completeOAuth, user } = useAuth();
   const navigate = useNavigate();
-  const processed = useRef(false);
 
   useEffect(() => {
-    if (processed.current) return;
-    processed.current = true;
-
-    if (window.location.hash === "#_=_") {
-      window.history.replaceState(null, "", window.location.pathname + window.location.search);
+    const code = new URLSearchParams(window.location.search).get("code");
+    // A code in the address bar is a new sign-in; otherwise reuse the one in progress.
+    if (code || !pending) {
+      // Drop the one-time code (and Facebook's #_=_) from the address bar and history.
+      window.history.replaceState(null, "", window.location.pathname);
+      pending = completeOAuth(code);
+      pending.catch(() => undefined);
     }
 
-    const code = new URLSearchParams(window.location.search).get("code");
-    // Drop the one-time code from the address bar and history.
-    window.history.replaceState(null, "", window.location.pathname);
-
-    completeOAuth(code)
-      .then((user) => navigate(homeForRole(user.role), { replace: true }))
-      .catch(() => navigate("/login?error=oauth", { replace: true }));
-  }, [completeOAuth, navigate]);
+    let active = true;
+    pending
+      .then((u) => active && navigate(homeForRole(u.role), { replace: true }))
+      .catch(() => {
+        if (!active) return;
+        if (user) navigate(homeForRole(user.role), { replace: true });
+        else navigate("/login?error=oauth", { replace: true });
+      });
+    return () => {
+      active = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="linen flex min-h-dvh items-center justify-center">

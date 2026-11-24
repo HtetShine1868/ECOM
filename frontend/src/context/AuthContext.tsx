@@ -69,8 +69,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(toUser(data));
       })
       .catch((err: { status?: number }) => {
-        if (err?.status === 401) setAuthToken(null);
+        // A sign-in that finished meanwhile (e.g. the OAuth exchange) owns the token now.
         if (sessionGen.current !== gen) return;
+        if (err?.status === 401) setAuthToken(null);
         setUser(null);
       })
       .finally(() => {
