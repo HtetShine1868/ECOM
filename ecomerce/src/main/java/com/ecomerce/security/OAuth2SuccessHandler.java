@@ -63,7 +63,10 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
                 throw new IllegalStateException("OAuth provider did not return a user id");
             }
 
-            if ("google".equals(provider) && !Boolean.parseBoolean(String.valueOf(oAuth2User.getAttribute("email_verified")))) {
+            // Read as Object first: getAttribute is generic, and passing it straight to String.valueOf
+            // makes Java pick valueOf(char[]), which throws ClassCastException for a Boolean.
+            Object emailVerified = oAuth2User.getAttribute("email_verified");
+            if ("google".equals(provider) && !Boolean.parseBoolean(String.valueOf(emailVerified))) {
                 log.warn("Google login refused: email is not verified by Google");
                 redirectSupport.sendBrowser(response, base + "/login?error=email_not_verified");
                 return;
