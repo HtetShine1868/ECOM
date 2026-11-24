@@ -101,14 +101,21 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
                 }
             }
 
-            if (user.getAccountStatus() == User.AccountStatus.SUSPENDED) {
+            // null-safe: existing DB rows loaded via JPA bypass @Builder.Default
+            User.AccountStatus status = user.getAccountStatus();
+            if (status == User.AccountStatus.SUSPENDED) {
+                log.warn("{} login refused for {}: account is suspended", provider, user.getEmail());
                 redirectSupport.sendBrowser(response, base + "/login?error=suspended");
                 return;
             }
+            // OAuth providers have already verified the email (Google requires email_verified=true above;
+            // Facebook identity is confirmed by the OAuth exchange itself).
             if (!Boolean.TRUE.equals(user.getEmailVerified())) {
                 user.setEmailVerified(true);
                 user.setEmailVerifiedAt(OffsetDateTime.now());
             }
+            // Always (re-)set to ACTIVE on a successful OAuth sign-in; this also
+            // upgrades PENDING_EMAIL accounts and fixes null rows from before the column existed.
             user.setAccountStatus(User.AccountStatus.ACTIVE);
             user = userRepository.save(user);
 
@@ -117,7 +124,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             String code = loginCodeStore.issue(token);
             redirectSupport.sendBrowser(response, base + "/oauth2/callback?code=" + code);
         } catch (RuntimeException ex) {
-            log.error("OAuth2 success handling failed", ex);
+            log.error("OAuth2 success handling failed: [{}] {}", ex.getClass().getSimpleName(), ex.getMessage(), ex);
             redirectSupport.sendBrowser(response, base + "/login?error=oauth");
         }
     }

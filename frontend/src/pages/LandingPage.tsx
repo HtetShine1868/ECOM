@@ -5,8 +5,11 @@ import kitchen from "../assets/landing-kitchen.jpg";
 import kids from "../assets/landing-kids.jpg";
 import daily from "../assets/landing-daily.jpg";
 import ShopMark from "../components/layout/ShopMark";
+import { useAuth } from "../context/AuthContext";
 
 export default function LandingPage() {
+  const { user, isAuthenticated, logout } = useAuth();
+
   return (
     <div className="relative min-h-dvh overflow-hidden bg-[#1c120d] text-white">
       <img
@@ -24,12 +27,29 @@ export default function LandingPage() {
           <ShopMark className="h-10 w-10" />
           <span className="font-display text-2xl font-semibold tracking-tight">ShopNow</span>
         </span>
-        <Link
-          to="/login"
-          className="rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-stone-900 shadow-shop transition hover:bg-apricot-100"
-        >
-          Sign in
-        </Link>
+        {isAuthenticated ? (
+          <div className="flex items-center gap-3">
+            <Link
+              to="/"
+              className="rounded-full bg-primary-600 px-5 py-2.5 text-sm font-semibold text-white shadow-shop transition hover:bg-primary-700"
+            >
+              Go to Shop
+            </Link>
+            <button
+              onClick={logout}
+              className="rounded-full border border-white/30 bg-white/10 px-5 py-2.5 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/20"
+            >
+              Sign out
+            </button>
+          </div>
+        ) : (
+          <Link
+            to="/login"
+            className="rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-stone-900 shadow-shop transition hover:bg-apricot-100"
+          >
+            Sign in
+          </Link>
+        )}
       </header>
 
       <main className="relative z-10 mx-auto grid min-h-[calc(100dvh-5.5rem)] max-w-7xl items-center gap-10 px-4 pb-10 pt-4 sm:px-5 md:px-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-6 lg:pb-16">
@@ -41,17 +61,37 @@ export default function LandingPage() {
             Come in for kitchen, kids, and the daily bits.
           </h1>
           <p className="mt-5 max-w-md text-base leading-relaxed text-stone-200/90 sm:text-lg">
-            Sign in to see what’s on the shelf, drop it in a bag, and have it brought to your township.
+            {isAuthenticated
+              ? `Welcome back, ${user?.name ?? ""}! Your shop is ready.`
+              : "Sign in to see what's on the shelf, drop it in a bag, and have it brought to your township."}
           </p>
-          <Link
-            to="/login"
-            className="mt-8 inline-flex items-center gap-2 rounded-full bg-primary-600 px-8 py-3.5 text-base font-semibold text-white shadow-glow transition hover:bg-primary-700 active:scale-[0.98]"
-          >
-            Sign in to shop
-            <span aria-hidden className="text-lg leading-none">
-              →
-            </span>
-          </Link>
+          {isAuthenticated ? (
+            <div className="mt-8 flex flex-wrap items-center gap-4">
+              <Link
+                to="/"
+                className="inline-flex items-center gap-2 rounded-full bg-primary-600 px-8 py-3.5 text-base font-semibold text-white shadow-glow transition hover:bg-primary-700 active:scale-[0.98]"
+              >
+                Continue shopping
+                <span aria-hidden className="text-lg leading-none">→</span>
+              </Link>
+              <button
+                onClick={logout}
+                className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-6 py-3.5 text-base font-semibold text-white backdrop-blur-sm transition hover:bg-white/20 active:scale-[0.98]"
+              >
+                Sign out
+              </button>
+            </div>
+          ) : (
+            <Link
+              to="/login"
+              className="mt-8 inline-flex items-center gap-2 rounded-full bg-primary-600 px-8 py-3.5 text-base font-semibold text-white shadow-glow transition hover:bg-primary-700 active:scale-[0.98]"
+            >
+              Sign in to shop
+              <span aria-hidden className="text-lg leading-none">
+                →
+              </span>
+            </Link>
+          )}
           <ul className="mt-10 flex flex-wrap gap-x-5 gap-y-2 text-sm text-stone-300/90">
             <li>Live stock</li>
             <li className="hidden sm:list-item">·</li>
