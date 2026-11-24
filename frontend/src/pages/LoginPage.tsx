@@ -35,7 +35,13 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState(OAUTH_ERRORS[searchParams.get("error") ?? ""] ?? "");
+  const errorKey = searchParams.get("error") ?? "";
+  const reason = searchParams.get("reason");
+  let defaultError = OAUTH_ERRORS[errorKey] ?? "";
+  if (reason) {
+    defaultError = defaultError ? `${defaultError} (${reason})` : `Sign-in failed: ${reason}`;
+  }
+  const [error, setError] = useState(defaultError);
   const [loading, setLoading] = useState(false);
 
   const next = safeNextPath(searchParams.get("next"));

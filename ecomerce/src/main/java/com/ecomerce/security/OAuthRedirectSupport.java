@@ -114,9 +114,10 @@ public class OAuthRedirectSupport {
     }
 
     private ResponseCookie cookie(HttpServletRequest request, String value, Duration maxAge) {
+        boolean secure = request.isSecure() || !"localhost".equalsIgnoreCase(request.getServerName());
         return ResponseCookie.from(COOKIE_NAME, value)
                 .httpOnly(true)
-                .secure(request.isSecure())
+                .secure(secure)
                 .path("/")
                 .maxAge(maxAge)
                 .sameSite("Lax")

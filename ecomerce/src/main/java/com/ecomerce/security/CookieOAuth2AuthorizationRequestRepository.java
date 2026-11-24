@@ -2,6 +2,7 @@ package com.ecomerce.security;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.oauth2.client.web.AuthorizationRequestRepository;
@@ -19,11 +20,12 @@ import java.util.Base64;
  * sends the browser back to the Google/Facebook login page.
  */
 @Component
+@Slf4j
 public class CookieOAuth2AuthorizationRequestRepository
         implements AuthorizationRequestRepository<OAuth2AuthorizationRequest> {
 
     static final String COOKIE_NAME = "oauth2_auth_request";
-    private static final Duration MAX_AGE = Duration.ofMinutes(3);
+    private static final Duration MAX_AGE = Duration.ofMinutes(5);
 
     @Override
     public OAuth2AuthorizationRequest loadAuthorizationRequest(HttpServletRequest request) {
@@ -54,7 +56,10 @@ public class CookieOAuth2AuthorizationRequestRepository
     }
 
     private OAuth2AuthorizationRequest readCookie(HttpServletRequest request) {
-        if (request.getCookies() == null) return null;
+        if (request.getCookies() == null) {
+            log.warn("OAuth authorization cookie check: request has no cookies at all");
+            return null;
+        }
         for (var cookie : request.getCookies()) {
             if (!COOKIE_NAME.equals(cookie.getName()) || cookie.getValue() == null || cookie.getValue().isBlank()) {
                 continue;
@@ -65,10 +70,12 @@ public class CookieOAuth2AuthorizationRequestRepository
                 if (value instanceof OAuth2AuthorizationRequest authorizationRequest) {
                     return authorizationRequest;
                 }
-            } catch (RuntimeException ignored) {
+            } catch (Exception ex) {
+                log.warn("Failed to deserialize OAuth2 authorization request cookie: {}", ex.getMessage());
                 return null;
             }
         }
+        log.warn("OAuth authorization cookie '{}' not found in {} cookies received", COOKIE_NAME, request.getCookies().length);
         return null;
     }
 
@@ -81,9 +88,10 @@ public class CookieOAuth2AuthorizationRequestRepository
     }
 
     private ResponseCookie baseCookie(HttpServletRequest request, String value, Duration maxAge) {
+        boolean secure = request.isSecure() || !"localhost".equalsIgnoreCase(request.getServerName());
         return ResponseCookie.from(COOKIE_NAME, value)
                 .httpOnly(true)
-                .secure(request.isSecure())
+                .secure(secure)
                 .path("/")
                 .maxAge(maxAge)
                 .sameSite("Lax")

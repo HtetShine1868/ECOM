@@ -13,6 +13,8 @@ import org.springframework.security.web.authentication.SimpleUrlAuthenticationSu
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
 import java.util.Optional;
 
@@ -123,9 +125,11 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             authCookieService.setTokenCookie(request, response, token);
             String code = loginCodeStore.issue(token);
             redirectSupport.sendBrowser(response, base + "/oauth2/callback?code=" + code);
-        } catch (RuntimeException ex) {
+        } catch (Exception ex) {
+            String msg = ex.getClass().getSimpleName() + ": " + (ex.getMessage() != null ? ex.getMessage() : "unknown");
             log.error("OAuth2 success handling failed: [{}] {}", ex.getClass().getSimpleName(), ex.getMessage(), ex);
-            redirectSupport.sendBrowser(response, base + "/login?error=oauth");
+            String reason = URLEncoder.encode(msg, StandardCharsets.UTF_8);
+            redirectSupport.sendBrowser(response, base + "/login?error=oauth&reason=" + reason);
         }
     }
 

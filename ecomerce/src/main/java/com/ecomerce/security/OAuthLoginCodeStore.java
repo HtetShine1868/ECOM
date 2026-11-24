@@ -33,11 +33,22 @@ public class OAuthLoginCodeStore {
         return code;
     }
 
-    /** Returns the token once; null if the code is unknown, used or expired. */
+    /**
+     * Returns the token once; keeps it valid for 15s grace period to allow
+     * React StrictMode / component double-mounts to complete the exchange.
+     */
     public String consume(String code) {
         if (code == null || code.isBlank()) return null;
-        Entry entry = codes.remove(code);
-        if (entry == null || entry.expiresAt() < System.currentTimeMillis()) return null;
+        Entry entry = codes.get(code);
+        if (entry == null || entry.expiresAt() < System.currentTimeMillis()) {
+            codes.remove(code);
+            return null;
+        }
+        // Shorten expiration to 15 seconds from first read to prevent race conditions on double-mount
+        long grace = System.currentTimeMillis() + 15_000;
+        if (entry.expiresAt() > grace) {
+            codes.put(code, new Entry(entry.token(), grace));
+        }
         return entry.token();
     }
 

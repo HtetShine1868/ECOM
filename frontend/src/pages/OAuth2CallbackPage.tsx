@@ -1,4 +1,4 @@
-﻿import { useEffect } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import type { User } from "../types";
@@ -7,11 +7,6 @@ function homeForRole(role?: string) {
   return role === "ADMIN" ? "/admin" : "/";
 }
 
-/**
- * Shared across mounts: signing in swaps the signed-out route tree for the
- * signed-in one, which mounts this page a second time. The second mount must
- * wait for the same exchange instead of starting a new one without the code.
- */
 let pending: Promise<User> | null = null;
 
 export default function OAuth2CallbackPage() {
@@ -20,22 +15,33 @@ export default function OAuth2CallbackPage() {
 
   useEffect(() => {
     const code = new URLSearchParams(window.location.search).get("code");
-    // A code in the address bar is a new sign-in; otherwise reuse the one in progress.
-    if (code || !pending) {
-      // Drop the one-time code (and Facebook's #_=_) from the address bar and history.
+
+    if (code) {
       window.history.replaceState(null, "", window.location.pathname);
       pending = completeOAuth(code);
-      pending.catch(() => undefined);
+    } else if (!pending) {
+      // If no code and nothing pending, do not call completeOAuth(null) which would fail with 401
+      navigate("/login?error=oauth&reason=no_code_provided", { replace: true });
+      return;
     }
 
     let active = true;
     pending
-      .then((u) => active && navigate(homeForRole(u.role), { replace: true }))
-      .catch(() => {
+      .then((u) => {
+        pending = null;
+        if (active) navigate(homeForRole(u.role), { replace: true });
+      })
+      .catch((err: any) => {
+        pending = null;
         if (!active) return;
-        if (user) navigate(homeForRole(user.role), { replace: true });
-        else navigate("/login?error=oauth", { replace: true });
+        if (user) {
+          navigate(homeForRole(user.role), { replace: true });
+        } else {
+          const reasonMsg = err?.message || err?.status || "exchange_failed";
+          navigate(`/login?error=oauth&reason=${encodeURIComponent(String(reasonMsg))}`, { replace: true });
+        }
       });
+
     return () => {
       active = false;
     };
