@@ -25,6 +25,8 @@ public class AuthController {
 
     private final AuthService authService;
     private final AuthCookieService authCookieService;
+    private final com.ecomerce.security.OAuthLoginCodeStore oAuthLoginCodeStore;
+    private final com.ecomerce.security.JwtUtil jwtUtil;
     private final com.ecomerce.ratelimit.RateLimiter rateLimiter;
     private final com.ecomerce.ratelimit.RateLimitPolicies rateLimitPolicies;
 
@@ -51,6 +53,22 @@ public class AuthController {
         AuthService.AuthSession session = authService.login(request);
         authCookieService.setTokenCookie(httpRequest, httpResponse, session.token());
         return ResponseEntity.ok(AuthResponse.from(session.user()));
+    }
+
+    /** Trades the one-time code from the Google/Facebook callback for the session. */
+    @PostMapping("/oauth/exchange")
+    public ResponseEntity<AuthResponse> exchangeOAuthCode(@RequestBody java.util.Map<String, String> body,
+                                                          HttpServletRequest httpRequest,
+                                                          HttpServletResponse httpResponse) {
+        String token = oAuthLoginCodeStore.consume(body == null ? null : body.get("code"));
+        if (token == null || !jwtUtil.isTokenValid(token)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        com.ecomerce.entity.User user = authService.requireByEmail(jwtUtil.extractEmail(token));
+        authCookieService.setTokenCookie(httpRequest, httpResponse, token);
+        AuthResponse response = AuthResponse.from(user);
+        response.setToken(token);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/me")

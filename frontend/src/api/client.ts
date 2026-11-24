@@ -3,6 +3,29 @@ import { assertSqlSafe } from "../utils/sqlSafe";
 
 const BASE_URL = API_URL;
 
+/**
+ * Fallback for browsers that block the API's cross-site cookie (Safari, Brave,
+ * Firefox, Chrome incognito). Set after Google/Facebook sign-in.
+ */
+const TOKEN_KEY = "auth_token";
+
+export function setAuthToken(token: string | null) {
+  try {
+    if (token) localStorage.setItem(TOKEN_KEY, token);
+    else localStorage.removeItem(TOKEN_KEY);
+  } catch {
+    /* storage unavailable */
+  }
+}
+
+function getAuthToken(): string | null {
+  try {
+    return localStorage.getItem(TOKEN_KEY);
+  } catch {
+    return null;
+  }
+}
+
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export type ApiError = {
@@ -70,8 +93,10 @@ async function request<T>(
     assertSqlSafe(JSON.parse(options.body));
   }
 
+  const token = getAuthToken();
   const headers: HeadersInit = {
     Accept: "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...(isFormData ? {} : { "Content-Type": "application/json" }),
     ...(options.headers || {}),
   };

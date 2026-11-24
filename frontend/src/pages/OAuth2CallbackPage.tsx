@@ -19,7 +19,11 @@ export default function OAuth2CallbackPage() {
       window.history.replaceState(null, "", window.location.pathname + window.location.search);
     }
 
-    completeOAuth()
+    const code = new URLSearchParams(window.location.search).get("code");
+    // Drop the one-time code from the address bar and history.
+    window.history.replaceState(null, "", window.location.pathname);
+
+    completeOAuth(code)
       .then((user) => navigate(homeForRole(user.role), { replace: true }))
       .catch(() => navigate("/login?error=oauth", { replace: true }));
   }, [completeOAuth, navigate]);

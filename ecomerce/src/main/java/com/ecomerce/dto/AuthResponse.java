@@ -14,6 +14,10 @@ public class AuthResponse {
     private Boolean emailVerified;
     private String accountStatus;
 
+    /** Only set by the OAuth code exchange, for browsers that block the cross-site cookie. */
+    @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+    private String token;
+
     public static AuthResponse from(User user) {
         return AuthResponse.builder()
                 .userId(user.getId())

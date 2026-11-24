@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import type { ReactNode } from "react";
 import type { User } from "../types";
-import api from "../api/client";
+import api, { setAuthToken } from "../api/client";
 
 interface AuthResponse {
   userId: number;
@@ -22,7 +22,7 @@ interface AuthContextType {
   register: (name: string, email: string, password: string) => Promise<User>;
   verifyEmail: (token: string) => Promise<User>;
   resendVerification: (email: string) => Promise<void>;
-  completeOAuth: () => Promise<User>;
+  completeOAuth: (code?: string | null) => Promise<User>;
   /** Re-read the signed-in user from the server (verification status can change in another tab). */
   refreshUser: () => Promise<User | null>;
   logout: () => void;
@@ -68,7 +68,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (sessionGen.current !== gen) return;
         setUser(toUser(data));
       })
-      .catch(() => {
+      .catch((err: { status?: number }) => {
+        if (err?.status === 401) setAuthToken(null);
         if (sessionGen.current !== gen) return;
         setUser(null);
       })
@@ -80,6 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async (email: string, password: string) => {
     sessionGen.current += 1;
+    setAuthToken(null); // a password session uses the cookie, not an old social-login token
     const data = await api.post<AuthResponse>("/auth/login", { email, password });
     const next = toUser(data);
     setUser(next);
@@ -89,6 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = useCallback(async (name: string, email: string, password: string) => {
     sessionGen.current += 1;
+    setAuthToken(null); // a password session uses the cookie, not an old social-login token
     const data = await api.post<AuthResponse>("/auth/register", { name, email, password });
     const next = toUser(data);
     setUser(next);
@@ -98,6 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const verifyEmail = useCallback(async (token: string) => {
     sessionGen.current += 1;
+    setAuthToken(null); // a password session uses the cookie, not an old social-login token
     const data = await api.post<AuthResponse>("/auth/verify-email", { token });
     const next = toUser(data);
     setUser(next);
@@ -109,9 +113,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await api.post("/auth/resend-verification", { email });
   }, []);
 
-  const completeOAuth = useCallback(async () => {
+  const completeOAuth = useCallback(async (code?: string | null) => {
     sessionGen.current += 1;
-    const data = await api.get<AuthResponse>("/auth/me");
+    let data: AuthResponse;
+    if (code) {
+      const exchanged = await api.post<AuthResponse & { token?: string }>("/auth/oauth/exchange", { code });
+      if (exchanged.token) setAuthToken(exchanged.token);
+      data = exchanged;
+    } else {
+      data = await api.get<AuthResponse>("/auth/me");
+    }
     const next = toUser(data);
     setUser(next);
     setLoading(false);
@@ -130,6 +141,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(() => {
     sessionGen.current += 1;
+    setAuthToken(null);
     void api.post("/auth/logout").catch(() => undefined);
     clearLegacyTokens();
     setUser(null);
