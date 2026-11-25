@@ -82,15 +82,23 @@ export default function LandingPage() {
               </button>
             </div>
           ) : (
-            <Link
-              to="/login"
-              className="mt-8 inline-flex items-center gap-2 rounded-full bg-primary-600 px-8 py-3.5 text-base font-semibold text-white shadow-glow transition hover:bg-primary-700 active:scale-[0.98]"
-            >
-              Sign in to shop
-              <span aria-hidden className="text-lg leading-none">
-                →
-              </span>
-            </Link>
+            <div className="mt-8 flex flex-wrap items-center gap-4">
+              <Link
+                to="/login"
+                className="inline-flex items-center gap-2 rounded-full bg-primary-600 px-8 py-3.5 text-base font-semibold text-white shadow-glow transition hover:bg-primary-700 active:scale-[0.98]"
+              >
+                Sign in to shop
+                <span aria-hidden className="text-lg leading-none">
+                  →
+                </span>
+              </Link>
+              <Link
+                to="/register"
+                className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-6 py-3.5 text-base font-semibold text-white backdrop-blur-sm transition hover:bg-white/20 active:scale-[0.98]"
+              >
+                Create account
+              </Link>
+            </div>
           )}
           <ul className="mt-10 flex flex-wrap gap-x-5 gap-y-2 text-sm text-stone-300/90">
             <li>Live stock</li>
